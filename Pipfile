@@ -6,11 +6,28 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
+beautifulsoup4 = "==4.8.2"
+bs4 = "==0.0.1"
+certifi = "==2019.11.28"
+cffi = "==1.14.0"
+chardet = "==3.0.4"
+cheroot = "==8.3.0"
+cryptography = "==2.8"
+decorator = "==4.4.1"
+future = "==0.18.2"
+idna = "==2.8"
+jaraco-functools = "==3.0.0"
+markdown = "==3.2"
+more-itertools = "==8.2.0"
+pycparser = "==2.19"
 python-telegram-bot = "==12.4.2"
-bs4 = "*"
-requests = "*"
-web = "*"
-web-py = "*"
+requests = "==2.22.0"
+six = "==1.14.0"
+soupsieve = "==1.9.5"
+telegram = "==0.0.1"
+tornado = "==6.0.3"
+urllib3 = "==1.25.8"
+"web.py" = "==0.40"
 
 [requires]
 python_version = "3.7"
