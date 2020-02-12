@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "3e299ef7e8705dbbf859884ac7ab31185835c83307731b044cf699debb685390"
+            "sha256": "4ce5990571d738d634c5b9735cd499ec88f51df5cf47344c29453966e5830d44"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -140,18 +140,12 @@
             "index": "pypi",
             "version": "==2.8"
         },
-        "jaraco-functools": {
-            "hashes": [
-                "sha256:1db5ed25d8bb6cafc48b1c575743e1b4847a5ca7fca72497e89723832aa52529"
-            ],
-            "index": "pypi",
-            "version": "==3.0.0"
-        },
         "jaraco.functools": {
             "hashes": [
                 "sha256:1db5ed25d8bb6cafc48b1c575743e1b4847a5ca7fca72497e89723832aa52529",
                 "sha256:5cb0eea0f254584241c519641328a4d4ec2001a86c3cd6d17a8fd228493f6d97"
             ],
+            "index": "pypi",
             "version": "==3.0.0"
         },
         "markdown": {
