@@ -12,14 +12,13 @@ from multiprocessing import Pool
 # import itertools
 import os
 
-inmetSateliteBrasilVPR_URL = "http://www.inmet.gov.br/projetos/cga/capre/sepra/GEO/GOES12/REGIOES/BRASIL/"
 
-
+INMET_SATELITE_BRASIL__VPR_URL = "http://www.inmet.gov.br/projetos/cga/capre/sepra/GEO/GOES12/REGIOES/BRASIL/"
+TARGET_PAGE_VPR = "http://www.inmet.gov.br/satelites/?area=0&produto=GO_br_VPR&ct=1"
 def vpr_last_image():
-    headers = {
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
+    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 
-    req = requests.get(targetPage, headers=headers, allow_redirects=False)
+    req = requests.get(TARGET_PAGE_VPR, headers=headers, allow_redirects=False)
     if req.status_code == 200:
         print('Successful GET request!')
         # Retrieve the HTML content
@@ -29,10 +28,12 @@ def vpr_last_image():
         # Skip first option element (not a photo)
         # Get option's value if it is a filename (not Mapa or numbers)
         option = html.find_all("option")[1]["value"]
-        imageURL = f"{inmetSateliteBrasilVPR_URL}{option}"
+        imageURL = f"{INMET_SATELITE_BRASIL__VPR_URL}{option}"
         return imageURL
     else:
         print("Failed GET request.")
+        return None
+
 
 def images_last_day():
     fp_in = "satelite_vpr_imgs/*.jpg"
