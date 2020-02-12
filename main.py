@@ -7,11 +7,12 @@ import web
 import scrap_satelites
 
 # To prevent the bot from sleeping
-urls = ('/', 'index')
+urls = ('/input', 'index')
 class index:
     def GET(self):
-        return "200"
-
+        i = web.input(name=None)
+        return render.index(i.name)
+render = web.template.render('templates/')
 
 # CREDENTIALS
 token = os.environ.get("TELEGRAM_INMETBOT_APIKEY")
