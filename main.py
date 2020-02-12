@@ -38,12 +38,9 @@ def vpr_last_image():
 
 
 # CONFIG SETUP
-config = ConfigParser()
-config.read('config.ini')
-
 # CREDENTIALS
-token = config.get('access', 'token')
-# print(token)
+token = os.environ.get("TELEGRAM_INMETBOT_APIKEY")
+# print(os.environ.get("TELEGRAM_INMETBOT_APIKEY"))
 
 # CONFIG TELEGRAM
 updater = Updater(token=token, use_context=True)
