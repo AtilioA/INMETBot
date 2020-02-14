@@ -1,5 +1,4 @@
 import re
-import os
 import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -65,6 +64,7 @@ class Alert():
         endDateMatch = re.search(endDatePattern, str(item))
         if endDateMatch:
             self.endDate = datetime.strptime(endDateMatch.group(1), '%Y-%m-%d %H:%M:%S.%f')
+
 
 def get_alerts_objects(items):
     alertsObjects = []
