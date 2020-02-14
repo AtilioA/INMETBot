@@ -27,6 +27,8 @@ urllib3 = "==1.25.8"
 "jaraco.functools" = "==3.0.0"
 Markdown = "==3.2"
 "web.py" = "==0.40"
+pycep-correios = "*"
+imageio = "*"
 
 [requires]
 python_version = "3.7"
