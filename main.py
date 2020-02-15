@@ -1,11 +1,10 @@
 import os
-from functools import wraps
 import telegram
 from telegram.ext import Updater, CommandHandler
 import scrap_satelites
 import parse_alerts
 import pycep_correios as pycep
-
+import bot_utils
 # Webserver to prevent the bot from sleeping
 import webserver
 
@@ -16,25 +15,6 @@ token = os.environ.get("TELEGRAM_INMETBOT_APIKEY")
 updater = Updater(token=token, use_context=True)
 dispatcher = updater.dispatcher
 bot = telegram.Bot(token)
-
-
-# Decorators to simulate user feedback
-def send_action(action):
-    """Sends `action` while processing func command."""
-
-    def decorator(func):
-        @wraps(func)
-        def command_func(update, context, *args, **kwargs):
-            context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=action)
-            return func(update, context,  *args, **kwargs)
-        return command_func
-
-    return decorator
-
-send_typing_action = send_action(telegram.ChatAction.TYPING)
-send_upload_photo_action = send_action(telegram.ChatAction.UPLOAD_PHOTO)
-send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
-send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 
 # BOT MESSAGES
@@ -54,26 +34,27 @@ Criado por @AtilioA
 
 
 # BOT FUNCTIONS AND HANDLERS
-@send_typing_action
+@bot_utils.send_typing_action
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=welcomeMessage, parse_mode="markdown")
 
 
-@send_upload_photo_action
+@bot_utils.send_upload_photo_action
 def vpr(update, context):
     vprImageURL = scrap_satelites.get_vpr_last_image()
     # print(vprImageURL)
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=vprImageURL)
 
 
-@send_upload_document_action
+@bot_utils.send_upload_document_action
 def vpr_gif(update, context):
+    pass
     # scrap_satelites.scrap_page()
-    vprImageURL = "VPR.gif"
-    context.bot.send_document(chat_id=update.effective_chat.id, document=open(vprImageURL, 'rb'))
+    # vprImageURL = "VPR.gif"
+    # context.bot.send_document(chat_id=update.effective_chat.id, document=open(vprImageURL, 'rb'))
 
 
-@send_upload_photo_action
+@bot_utils.send_upload_photo_action
 def acumulada(update, context):
     print("Getting acumulada images...")
 
@@ -82,7 +63,8 @@ def acumulada(update, context):
         interval = text.split(' ')[1]
     except:
         context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
-        pass
+        return None
+
     print(interval)
     acumuladaImageURL = scrap_satelites.get_acumulada_last_image(interval)
     if acumuladaImageURL:
@@ -91,26 +73,24 @@ def acumulada(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
 
 
-@send_upload_photo_action
+@bot_utils.send_upload_photo_action
 def acumulada_previsao_24hrs(update, context):
     print("Getting acumulada previsão images...")
+
     acumuladaPrevisaoImageURL = scrap_satelites.get_acumulada_previsao_24hrs()
     context.bot.send_message(chat_id=update.effective_chat.id, text="Precipitação acumulada prevista para as próximas 24 horas:")
     context.bot.send_photo(chat_id=update.effective_chat.id, photo=acumuladaPrevisaoImageURL)
 
 
-@send_typing_action
+@bot_utils.send_typing_action
 def alertas_brasil(update, context):
     print("Getting alerts...")
 
-    alerts = parse_alerts.parse_alerts()
+    alerts = parse_alerts.parse_alerts(ignoreModerate=True)
     if alerts:
         alertMessage = ""
         for alert in alerts:
-            if alert.severity == "Perigo":
-                severityEmoji = "🔶"
-            else:
-                severityEmoji = "🚨"
+            severityEmoji = bot_utils.determine_severity_emoji(alert.severity)
 
             area = ','.join(alert.area)
 
@@ -123,17 +103,14 @@ def alertas_brasil(update, context):
             *Áreas afetadas*: {area}.
             *Vigor*: De {formattedStartDate} a {formattedEndDate}.
             {alert.description}
-
     """
-            # Gráfico do alerta: {alert.graphURL}
-
-        alertMessage += "Veja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
+        alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
     else:
-        alertMessage = "✅ Não há alertas graves no Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+        alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
     context.bot.send_message(chat_id=update.effective_chat.id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
-@send_typing_action
+@bot_utils.send_typing_action
 def alertas_CEP(update, context):
     print("Getting alerts by CEP (zip code)...")
 
@@ -142,24 +119,21 @@ def alertas_CEP(update, context):
         cep = text.split(' ')[1]
     except IndexError:  # No number after /alertas_CEP
         context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível verificar a região - CEP inválido!\nExemplo:\n/alertas_CEP 29075-910")
-        pass
+        return None
 
     if pycep.validar_cep(cep):
         cepJSON = pycep.consultar_cep(cep)
         city = cepJSON["cidade"]
+        cityWarned = False
         alerts = parse_alerts.parse_alerts(ignoreModerate=False)
         if alerts:
             alertMessage = ""
             for alert in alerts:
-                print(alert.area)
-                if city in alert.area:
-                    print("ta ae")
-                    if alert.severity == "Perigo Potencial":
-                        severityEmoji = "⚠️"
-                    elif alert.severity == "Perigo":
-                        severityEmoji = "🔶"
-                    else:
-                        severityEmoji = "🚨"
+                # print(alert.cities)
+                if city in alert.cities:
+                    cityWarned = True
+
+                    severityEmoji = bot_utils.determine_severity_emoji(alert.severity)
 
                     area = ','.join(alert.area)
 
@@ -172,29 +146,25 @@ def alertas_CEP(update, context):
                 *Áreas afetadas*: {area}.
                 *Vigor*: De {formattedStartDate} a {formattedEndDate}.
                 {alert.description}
-
-    """
-                    # Gráfico do alerta: {alert.graphURL}
-
-                    alertMessage += "Veja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
-                else:
-                    alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
-
+"""
+            alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
+            if not cityWarned:
+                alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
         else:
-            alertMessage = "✅ Não há alertas para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+            alertMessage = "✅ Não há alertas para o Brasil no momento."
 
         context.bot.send_message(chat_id=update.effective_chat.id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível verificar a região - CEP inválido!\nExemplo:\n/alertas_CEP 29075-910")
 
 
-@send_upload_video_action
+@bot_utils.send_upload_video_action
 def sorrizoronaldo(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="É O *SORRIZO RONALDO* 😁 QUE CHEGOU...", parse_mode="markdown")
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
 
 
-@send_upload_video_action
+@bot_utils.send_upload_video_action
 def sorrizoronaldo_will_rock_you(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="👊👊👏 *SORRIZ*..", parse_mode="markdown")
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
