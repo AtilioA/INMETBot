@@ -66,18 +66,22 @@ class Alert():
             self.endDate = datetime.strptime(endDateMatch.group(1), '%Y-%m-%d %H:%M:%S.%f')
 
 
-def get_alerts_objects(items):
+def get_alerts_objects(items, ignoreModerate):
     alertsObjects = []
     dateNow = datetime.now()
     for item in items:
         alert = Alert(item)
-        if (alert.endDate > dateNow) and (alert.severity != "Perigo Potencial"):
-            alertsObjects.append(alert)
 
+        if ignoreModerate:
+            if (alert.endDate > dateNow) and (alert.severity != "Perigo Potencial"):
+                alertsObjects.append(alert)
+        else:
+            if (alert.endDate > dateNow):
+                alertsObjects.append(alert)
     return alertsObjects
 
 
-def parse_alerts():
+def parse_alerts(ignoreModerate=True):
     """ Extract Danger/Great Danger alerts from INMET's RSS feed """
 
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
@@ -93,12 +97,13 @@ def parse_alerts():
 
         # Get alerts from each item entry
         items = xml.channel.find_all("item")
-        alerts = get_alerts_objects(items)
+        alerts = get_alerts_objects(items, ignoreModerate)
 
         # print(len(alerts))
         return alerts
     else:
         print("Failed GET request to alerts RSS.")
+        return None
 
 
 if __name__ == "__main__":

@@ -1,5 +1,4 @@
 import os
-import web
 from functools import wraps
 import telegram
 from telegram.ext import Updater, CommandHandler
@@ -7,17 +6,11 @@ import scrap_satelites
 import parse_alerts
 import pycep_correios as pycep
 
-
 # Webserver to prevent the bot from sleeping
-urls = ('/', 'index')
-class index:
-    def GET(self):
-        return "200"
-
+import webserver
 
 # CREDENTIALS
 token = os.environ.get("TELEGRAM_INMETBOT_APIKEY")
-# print(os.environ.get("TELEGRAM_INMETBOT_APIKEY"))
 
 # TELEGRAM CONFIG
 updater = Updater(token=token, use_context=True)
@@ -46,7 +39,13 @@ send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 # BOT MESSAGES
 welcomeMessage = """Olá! Este bot pode enviar imagens e informações úteis disponíveis no site do INMET diretamente pelo Telegram.
-*EM CONSTRUÇÃO*
+
+*COMANDOS DISPONÍVEIS*:
+`/start` exibe esta mensagem de boas-vindas
+`/alertas` ou `/alertas_brasil` exibe alertas graves em vigor no Brasil
+`/acumulada` exibe imagem de precipitação acumulada no intervalo de dias especificado (1, 3, 5, 10, 15, 30 ou 90) anteriores ao atual no Brasil. Ex: `/acumulada 3`
+`/acumulada_previsao_24hrs` exibe imagem de precipitação acumulada prevista para as próximas 24 horas no Brasil
+`/alertas_CEP` exibe alertas graves em vigor para o CEP fornecido. Ex: `/alertas_CEP 29075-910`
 
 —
 Não filiado ao INMET
@@ -82,14 +81,14 @@ def acumulada(update, context):
     try:
         interval = text.split(' ')[1]
     except:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível obter a imagem!\nOs intervalos permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
         pass
     print(interval)
     acumuladaImageURL = scrap_satelites.get_acumulada_last_image(interval)
     if acumuladaImageURL:
         context.bot.send_photo(chat_id=update.effective_chat.id, photo=acumuladaImageURL)
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível obter a imagem!\nOs intervalos permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
+        context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
 
 
 @send_upload_photo_action
@@ -139,16 +138,25 @@ def alertas_CEP(update, context):
     print("Getting alerts by CEP (zip code)...")
 
     text = update.message.text
-    cep = text.split(' ')[1]
-    if pycp.validar_cep(cep):
+    try:
+        cep = text.split(' ')[1]
+    except IndexError:  # No number after /alertas_CEP
+        context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível verificar a região - CEP inválido!\nExemplo:\n/alertas_CEP 29075-910")
+        pass
+
+    if pycep.validar_cep(cep):
         cepJSON = pycep.consultar_cep(cep)
         city = cepJSON["cidade"]
-        alerts = parse_alerts.parse_alerts()
+        alerts = parse_alerts.parse_alerts(ignoreModerate=False)
         if alerts:
             alertMessage = ""
             for alert in alerts:
+                print(alert.area)
                 if city in alert.area:
-                    if alert.severity == "Perigo":
+                    print("ta ae")
+                    if alert.severity == "Perigo Potencial":
+                        severityEmoji = "⚠️"
+                    elif alert.severity == "Perigo":
                         severityEmoji = "🔶"
                     else:
                         severityEmoji = "🚨"
@@ -159,21 +167,23 @@ def alertas_CEP(update, context):
                     formattedEndDate = alert.endDate.strftime("%d/%m/%Y %H:%M")
 
                     alertMessage += f"""
-    {severityEmoji} *{alert.event}*
+        {severityEmoji} *{alert.event}*
 
-            *Áreas afetadas*: {area}.
-            *Vigor*: De {formattedStartDate} a {formattedEndDate}.
-            {alert.description}
+                *Áreas afetadas*: {area}.
+                *Vigor*: De {formattedStartDate} a {formattedEndDate}.
+                {alert.description}
 
     """
                     # Gráfico do alerta: {alert.graphURL}
 
-                alertMessage += "Veja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
-            else:
-                alertMessage = "✅ Não há alertas graves na região no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+                    alertMessage += "Veja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
+                else:
+                    alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+
         else:
-            alertMessage = "✅ Não há alertas graves no Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
-            context.bot.send_message(chat_id=update.effective_chat.id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+            alertMessage = "✅ Não há alertas para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+
+        context.bot.send_message(chat_id=update.effective_chat.id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, text="❌ Não foi possível verificar a região - CEP inválido!\nExemplo:\n/alertas_CEP 29075-910")
 
@@ -193,17 +203,17 @@ def sorrizoronaldo_will_rock_you(update, context):
 # Initialize handlers
 start_handler = CommandHandler('start', start)
 
-vpr_handler = CommandHandler('vpr', vpr)
+vpr_handler = CommandHandler(('vpr', 'vapor_de_agua', 'nuvens'), vpr)
 vpr_gif_handler = CommandHandler('vpr_gif', vpr_gif)
 
 acumulada_handler = CommandHandler('acumulada', acumulada)
 acumulada_previsao_24hrs_handler = CommandHandler('acumulada_previsao_24hrs', acumulada_previsao_24hrs)
 
-alertas_brasil_handler = CommandHandler('alertas_brasil', alertas_brasil)
+alertas_brasil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'), alertas_brasil)
 alertas_CEP_handler = CommandHandler('alertas_CEP', alertas_CEP)
 
-sorrizoronaldo_handler = CommandHandler('sorrizoronaldo', sorrizoronaldo)
-sorrizoronaldo_will_rock_you_handler = CommandHandler('sorrizoronaldo_will_rock_you', sorrizoronaldo_will_rock_you)
+sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), sorrizoronaldo)
+sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), sorrizoronaldo_will_rock_you)
 
 # Add handlers to dispatcher
 dispatcher.add_handler(start_handler)
@@ -215,15 +225,14 @@ dispatcher.add_handler(acumulada_handler)
 dispatcher.add_handler(acumulada_previsao_24hrs_handler)
 
 dispatcher.add_handler(alertas_brasil_handler)
-dispatcher.add_handler(CommandHandler(('alertas', 'alertas_brasil', 'avisos'), alertas_brasil_handler))
 dispatcher.add_handler(alertas_CEP_handler)
 
-dispatcher.add_handler(CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), sorrizoronaldo))
-dispatcher.add_handler(CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), sorrizoronaldo_will_rock_you))
+dispatcher.add_handler(sorrizoronaldo_handler)
+dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
 
 
 updater.start_polling()
 
 if __name__ == "__main__":
-    app = web.application(urls, globals())
+    app = webserver.web.application(webserver.urls, globals())
     app.run()
