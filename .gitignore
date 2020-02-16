@@ -104,3 +104,4 @@ dmypy.json
 
 *.ini
 *ignoreme*
+.vscode
