@@ -7,12 +7,17 @@ import bot_messages
 
 
 @bot_utils.send_typing_action
-def all(update, context):
+def catch_all(update, context):
     update.message.reply_text('Instruções de uso: `/help` ou `/ajuda`', parse_mode="markdown")
 
 
+def catch_all_if_not_group(update,context):
+    if update.effective_chat.id > 0:
+        catch_all(update, context)
+
+
 @bot_utils.send_typing_action
-def help(update, context):
+def help_msg(update, context):
     update.message.reply_text(text=bot_messages.helpMessage, parse_mode="markdown")
 
 
@@ -27,7 +32,7 @@ def alertas_location(update, context):
         print("Successful GET request to reverse geocoding API!")
         json = reverseGeocode.json()
         print(json)
-        city = json["osmtags"]["name"]
+        city = json["nearest"]["region"]
         cityWarned = False
 
         alerts = parse_alerts.parse_alerts(ignoreModerate=False)
@@ -91,7 +96,7 @@ def acumulada(update, context):
     text = update.message.text
     try:
         interval = text.split(' ')[1]
-    except:
+    except IndexError:
         update.message.reply_text(text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
         return None
     print(interval)

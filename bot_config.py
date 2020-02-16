@@ -1,6 +1,6 @@
 import os
 import telegram
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater
 
 
 # CREDENTIALS

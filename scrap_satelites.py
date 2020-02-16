@@ -1,14 +1,9 @@
 # import logging
-# import re
+import re
 import requests
 from bs4 import BeautifulSoup
-
 import imageio
-# import glob
-# import shutil
-from datetime import datetime
-import re
-import os
+
 
 INMET_DOMAIN = "http://www.inmet.gov.br/"
 
@@ -107,7 +102,7 @@ def get_vpr_gif(nImages):
 
 
         readImages = []
-        for i, img in enumerate(reversed(imagesURLS[:5])):
+        for img in reversed(imagesURLS[:5]):
             # img = Image.open(BytesIO(response.content))
             # img.save(f'satelite_vpr_imgs/{i}.jpg', 'JPEG', dpi=[300, 300], quality=40)
             # open(f'satelite_vpr_imgs/{i}.jpg', 'wb').write(requests.get(img, allow_redirects=True).content)
@@ -123,4 +118,3 @@ def get_vpr_gif(nImages):
 if __name__ == "__main__":
     # print(get_acumulada_last_image(1))
     get_acumulada_previsao_24hrs()
-    pass

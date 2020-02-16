@@ -113,7 +113,7 @@ def parse_alerts_xml(ignoreModerate=True):
 
 
 def parse_alert_xml(xmlURL=""):
-    """ Parse alerts XML URL from INMET """
+    """ Parse alerts XML URL from INMET. """
 
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 
@@ -131,7 +131,7 @@ def parse_alert_xml(xmlURL=""):
 
 
 def get_alerts_xml(ignoreModerate=True):
-    """ Extract alerts XML URLs from INMET's RSS feed """
+    """ Extract alerts XML URLs from INMET's RSS feed. """
 
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 
