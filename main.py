@@ -18,6 +18,8 @@ def main():
     app = webserver.web.application(webserver.urls, globals())
     app.run()
 
+    # Run the bot until you press Ctrl-C
+    updater.idle()
 
 if __name__ == "__main__":
     main()
