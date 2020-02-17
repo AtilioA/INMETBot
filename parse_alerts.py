@@ -1,29 +1,51 @@
-from models import Alert
 import re
+import logging
 import requests
 import arrow
 from bs4 import BeautifulSoup
+from models import Alert
 
+parsingLogger = logging.getLogger(__name__)
+parsingLogger.setLevel(logging.DEBUG)
 
 BRAZIL_TIME = arrow.utcnow().to("Brazil/East")
 
 
 def parse_alerts(ignoreModerate=True):
+    """ Parse alerts published by INMET.
+
+    Args:
+        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+
+    Return:
+        list of alert objects.
+    """
+
     alertsXML = parse_alerts_xml(ignoreModerate)
     alerts = instantiate_alerts_objects(alertsXML, ignoreModerate)
     return alerts
 
 
-def is_wanted_alert(item, ignoreModerate=True):
+def is_wanted_alert(alertXML, ignoreModerate=True):
+    """ Check if alert is wanted - an alert is wanted if endDate has not already passed and the alert isn't moderate if `ignoreModerate` is set to `True`.
+
+    Args:
+        alert: the alert's XML parsed from BS4.
+        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+
+    Return:
+        True if alert is wanted, False otherwise.
+    """
+
     severityPattern = r"(?<=Severidade Grau: )(.*)(?=<\/title)"
-    severityMatch = re.search(severityPattern, str(item))
+    severityMatch = re.search(severityPattern, str(alertXML))
     if severityMatch:
         severity = severityMatch.group(1)
         if severity == "Perigo Potencial" and ignoreModerate:
             return False
         else:
             endDatePattern = r"Fim<\/th><td>(\d{4}-\d{2}-\d{2} \d\d:\d\d:\d\d\.\d)"
-            endDateMatch = re.search(endDatePattern, str(item))
+            endDateMatch = re.search(endDatePattern, str(alertXML))
             if endDateMatch:
                 endDate = arrow.get(endDateMatch.group(1))
                 if BRAZIL_TIME < endDate:
@@ -31,14 +53,29 @@ def is_wanted_alert(item, ignoreModerate=True):
                 else:
                     return False
             else:
-                print("No match.")
+                parsingLogger.error("No match.")
 
 
 def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
+    """ Create and return `list` of `alert` objects from list of alert XMLs
+
+    Args:
+        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+    """
+
     return [Alert(alertXML) for alertXML in alertsXML]
 
 
 def parse_alerts_xml(ignoreModerate=True):
+    """ Parse XMLs from list of XML urls.
+
+    Args:
+        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+
+    Return:
+        xmls: list of parsed XMLs.
+    """
+
     xmlURLs = get_alerts_xml(ignoreModerate)
 
     xmls = []
@@ -47,38 +84,50 @@ def parse_alerts_xml(ignoreModerate=True):
     return xmls
 
 
-def parse_alert_xml(xmlURL=""):
-    """ Parse alerts XML URL from INMET. """
+def parse_alert_xml(xmlURL):
+    """ Parse alerts XML URL from INMET with BeautifulSoup.
+
+    Args:
+        xmlURL: URL to the XML file.
+    Return:
+        parsed XML or None if GET request to XML URL fails.
+    """
 
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 
     req = requests.get(xmlURL, headers=headers, allow_redirects=False)
     if req.status_code == 200:
-        print("Successful GET request to alert XML!")
+        parsingLogger.info("Successful GET request to alert XML!")
 
         # Retrieve the XML content
         content = req.content
         alertXML = BeautifulSoup(content, 'xml')
         return alertXML
     else:
-        print("Failed GET request to alert XML.")
+        parsingLogger.error("Failed GET request to alert XML.")
         return None
 
 
 def get_alerts_xml(ignoreModerate=True):
-    """ Extract alerts XML URLs from INMET's RSS feed. """
+    """ Extract alerts XML URLs from INMET's RSS feed.
+
+    Args:
+        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+    Return:
+        List of all available XML URLs for alerts.
+    """
 
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 
     alertsURL = "https://alerts.inmet.gov.br/cap_12/rss/alert-as.rss"
     req = requests.get(alertsURL, headers=headers, allow_redirects=False)
     if req.status_code == 200:
-        print("Successful GET request to alerts RSS!")
+        parsingLogger.info("Successful GET request to alerts RSS!")
 
         # Retrieve the RSS feed content
         content = req.content
         xml = BeautifulSoup(content, 'html.parser')
-        # print(xml)
+        # parsingLogger.debug(xml)
 
         # Get alerts' XML URL from each item entry
         items = xml.channel.find_all("item")
@@ -86,12 +135,9 @@ def get_alerts_xml(ignoreModerate=True):
 
         return itemsXMLURL
     else:
-        print("Failed GET request to alerts RSS.")
+        parsingLogger.error("Failed GET request to alerts RSS.")
         return None
 
 
 if __name__ == "__main__":
     alerts = parse_alerts(ignoreModerate=False)
-    # print(len(alerts))
-    # for alert in alerts:
-        # print(alert.area)
