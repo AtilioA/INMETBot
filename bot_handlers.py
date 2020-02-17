@@ -40,3 +40,5 @@ dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
 
 dispatcher.add_handler(alertas_location_handler)
 dispatcher.add_handler(catch_all_if_not_group_handler)
+
+dispatcher.add_error_handler(bot_functions.error)
