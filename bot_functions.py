@@ -120,7 +120,7 @@ def cmd_alertas_CEP(update, context):
         cep = text.split(' ')[1]  # Get string after "/alertas_CEP"
     except IndexError as indexE:  # No number after /alertas_CEP
         functionsLogger.error(f"{indexE} on cmd_alertas_CEP. Message text: \"{text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não informado!\nExemplo:\n/alertas_CEP 29075-910", parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não informado!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
         return None
 
     try:
@@ -147,11 +147,11 @@ def cmd_alertas_CEP(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
         else:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n/alertas_CEP 29075-910", parse_mode="markdown")
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
 
     except pycep.excecoes.ExcecaoPyCEPCorreios as zipError:  # Invalid zip code
         functionsLogger.error(f"{zipError} on cmd_alertas_cep. Message text: \"{text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n/alertas_CEP 29075-910", parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
         return None
 
 
@@ -208,7 +208,7 @@ def cmd_sorrizoronaldo(update, context):
     """ Send default Sorrizo Ronaldo video. """
 
     context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
+    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
 
 
 @bot_utils.send_upload_video_action
@@ -216,7 +216,7 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
     """ Send "We Will Rock You" Sorrizo Ronaldo video variation. """
 
     context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
+    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
 
 def error(update, context):
