@@ -1,34 +1,41 @@
 import requests
+import logging
 import scrap_satelites
 import parse_alerts
 import pycep_correios as pycep
 import bot_utils
 import bot_messages
 
-@bot_utils.send_typing_action
-def catch_all(update, context):
-    """ Answer any message not handled if not sent in a group """
+functionsLogger = logging.getLogger(__name__)
+functionsLogger.setLevel(logging.DEBUG)
 
-    update.message.reply_text('Instruções de uso: `/help` ou `/ajuda`', parse_mode="markdown")
+@bot_utils.send_typing_action
+def send_instructions_message(update, context):
+    """ Reply to the last message with the instructions message. """
+
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.instructions)
 
 
 def catch_all_if_not_group(update, context):
-    if not bot_utils.is_group_or_channel(update.effective.chat_id):
-        catch_all(update, context)
+    """ Reply to any message not handled (if not sent to a group/channel). """
+
+    if not bot_utils.is_group_or_channel(update.effective_chat.id):
+        functionsLogger.debug("catch_all: not group")
+        send_instructions_message(update, context)
 
 
 @bot_utils.send_typing_action
 def cmd_help(update, context):
     """ Send the help message to the user. """
 
-    update.message.reply_text(text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @bot_utils.send_typing_action
 def cmd_start(update, context):
     """ Send the help message to the user.  """
 
-    update.message.reply_text(bot_messages.welcomeMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.welcomeMessage, parse_mode="markdown")
 
 
 @bot_utils.send_upload_photo_action
@@ -36,8 +43,8 @@ def cmd_vpr(update, context):
     """ Fetch and send latest VPR satellite image to the user """
 
     vprImageURL = scrap_satelites.get_vpr_last_image()
-    # print(vprImageURL)
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=vprImageURL)
+    # functionsLogger.debug(vprImageURL)
+    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL)
 
 
 @bot_utils.send_upload_document_action
@@ -54,39 +61,41 @@ def cmd_vpr_gif(update, context):
 def cmd_acumulada(update, context):
     """ Fetch and send accumulated precipitation within given interval satellite image to the user. """
 
-    print("Getting acumulada images...")
+    functionsLogger.debug("Getting acumulada images...")
 
     text = update.message.text
     try:
         interval = text.split(' ')[1]
-    except IndexError:
-        update.message.reply_text(text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
+    except IndexError as indexE:
+        functionsLogger.error(f"{indexE} on cmd_acumulada. Message text: \"{text}\"")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3", parse_mode="markdown")
         return None
-    print(interval)
 
     acumuladaImageURL = scrap_satelites.get_acumulada_last_image(interval)
     if acumuladaImageURL:
-        context.bot.send_photo(chat_id=update.effective_chat.id, photo=acumuladaImageURL)
+        context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaImageURL)
     else:
-        update.message.reply_text(text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3", parse_mode="markdown")
 
 
 @bot_utils.send_upload_photo_action
 def cmd_acumulada_previsao_24hrs(update, context):
     """ Fetch and send accumulated precipitation satellite image forecast for the next 24 hours to the user. """
 
-    print("Getting acumulada previsão images...")
+    functionsLogger.debug("Getting acumulada previsão images...")
 
     acumuladaPrevisaoImageURL = scrap_satelites.get_acumulada_previsao_24hrs()
-    update.message.reply_text(text="Precipitação acumulada prevista para as próximas 24 horas:")
-    context.bot.send_photo(chat_id=update.effective_chat.id, photo=acumuladaPrevisaoImageURL)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Precipitação acumulada prevista para as próximas 24 horas:", parse_mode="markdown")
+
+    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL)
 
 
 @bot_utils.send_typing_action
 def cmd_alertas_brasil(update, context):
     """ Fetch and send active high-risk alerts for Brazil. """
 
-    print("Getting alerts...")
+    functionsLogger.debug("Getting alerts for Brazil...")
 
     alerts = parse_alerts.parse_alerts(ignoreModerate=True)
     if alerts:
@@ -97,20 +106,21 @@ def cmd_alertas_brasil(update, context):
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
 
-    update.message.reply_text(text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @bot_utils.send_typing_action
 def cmd_alertas_CEP(update, context):
     """ Fetch and send active high-risk alerts for given CEP (zip code). """
 
-    print("Getting alerts by CEP (zip code)...")
+    functionsLogger.debug("Getting alerts by CEP (zip code)...")
 
     text = update.message.text
     try:
         cep = text.split(' ')[1]  # Get string after "/alertas_CEP"
-    except IndexError:  # No number after /alertas_CEP
-        update.message.reply_text(text="❌ CEP não informado!\nExemplo:\n/alertas_CEP 29075-910")
+    except IndexError as indexE:  # No number after /alertas_CEP
+        functionsLogger.error(f"{indexE} on cmd_alertas_CEP. Message text: \"{text}\"")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não informado!\nExemplo:\n/alertas_CEP 29075-910", parse_mode="markdown")
         return None
 
     try:
@@ -123,7 +133,7 @@ def cmd_alertas_CEP(update, context):
             if alerts:
                 alertMessage = ""
                 for alert in alerts:
-                    # print(alert.cities)
+                    # functionsLogger.debug(alert.cities)
                     if city in alert.cities:
                         cityWarned = True
                         alertMessage += bot_utils.get_alert_message(alert, city)
@@ -134,13 +144,14 @@ def cmd_alertas_CEP(update, context):
             else:
                 alertMessage = "✅ Não há alertas para o Brasil no momento."
 
-            update.message.reply_text(text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
         else:
-            update.message.reply_text(text="❌ Não foi possível verificar a região - CEP inválido!\nExemplo:\n/alertas_CEP 29075-910")
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n/alertas_CEP 29075-910", parse_mode="markdown")
 
-    except pycep.excecoes.ExcecaoPyCEPCorreios:  # Invalid zip code
-        update.message.reply_text(text="❌ Não foi possível verificar a região - CEP inválido/não existe!\nExemplo:\n/alertas_CEP 29075-910")
+    except pycep.excecoes.ExcecaoPyCEPCorreios as zipError:  # Invalid zip code
+        functionsLogger.error(f"{zipError} on cmd_alertas_cep. Message text: \"{text}\"")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n/alertas_CEP 29075-910", parse_mode="markdown")
         return None
 
 
@@ -158,9 +169,9 @@ def alertas_location(update, context):
 
         reverseGeocode = requests.get(f"https://api.3geonames.org/{latitude},{longitude}.json")
         if reverseGeocode.status_code == 200:
-            print("Successful GET request to reverse geocoding API!")
+            functionsLogger.info("Successful GET request to reverse geocoding API!")
             json = reverseGeocode.json()
-            print(json)
+            functionsLogger.debug(f"reverseGeocode json: {json}")
             state = json["nearest"]["state"]
             if state == "BR":
                 city = json["nearest"]["region"]
@@ -170,7 +181,7 @@ def alertas_location(update, context):
                 if alerts:
                     alertMessage = ""
                     for alert in alerts:
-                        # print(alert.cities)
+                        # functionsLogger.debug(alert.cities)
                         if city in alert.cities:
                             cityWarned = True
                             alertMessage += bot_utils.get_alert_message(alert, city)
@@ -182,24 +193,33 @@ def alertas_location(update, context):
                 else:
                     alertMessage = "✅ Não há alertas para o Brasil no momento."
 
-                update.message.reply_text(text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+
             else:
-                update.message.reply_text(text="❌ A localização indica uma região fora do Brasil.")
+                context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ A localização indica uma região fora do Brasil.", parse_mode="markdown")
+
         else:
-            print("Failed GET request to reverse geocoding API.")
-            update.message.reply_text(text="❌ Não foi possível verificar a região 😔")
+            functionsLogger.error("Failed GET request to reverse geocoding API.")
+            context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
 
 
 @bot_utils.send_upload_video_action
 def cmd_sorrizoronaldo(update, context):
     """ Send default Sorrizo Ronaldo video. """
 
-    update.message.reply_text(text=bot_messages.sorrizoChegou, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
+    context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
+    context.bot.send_video(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
+
 
 @bot_utils.send_upload_video_action
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """ Send "We Will Rock You" Sorrizo Ronaldo video variation. """
 
-    update.message.reply_text(text=bot_messages.sorrizoQueen, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
+    context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
+    context.bot.send_video(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
+
+
+def error(update, context):
+    """ Log errors caused by Updates. """
+
+    functionsLogger.warning('Update "%s" caused error "%s"', update, context.error)

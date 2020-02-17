@@ -3,7 +3,7 @@ from functools import wraps
 
 # Decorators to simulate user feedback
 def send_action(action):
-    """Sends `action` while processing func command."""
+    """Send `action` while processing func command."""
 
     def decorator(func):
         @wraps(func)
@@ -21,7 +21,7 @@ send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 
 def determine_severity_emoji(severity):
-    """ Determine emoji for alert message. """
+    """ Determine emoji for alert message and return it. """
 
     if severity == "Perigo Potencial":
         return "⚠️"  # Yellow alert
@@ -32,6 +32,8 @@ def determine_severity_emoji(severity):
 
 
 def get_alert_message(alert, location=None):
+    """ Create alert message string from alert object and return it. """
+
     severityEmoji = determine_severity_emoji(alert.severity)
     area = ','.join(alert.area)
     formattedStartDate = alert.startDate.strftime("%d/%m/%Y %H:%M")
@@ -53,9 +55,9 @@ def get_alert_message(alert, location=None):
 
 
 def is_group_or_channel(chat_id):
-    """ Check if current chat is group or channel. """
+    """ Check if chat_id represents a group or channel. """
 
-    if update.effective_chat.id < 0:
+    if chat_id < 0:
         return True
     else:
         return False
