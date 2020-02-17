@@ -14,8 +14,6 @@ logging.basicConfig(format='%(asctime)s %(message)s',
 
 def main():
     updater.start_polling()
-    # Run the bot until you press Ctrl-C
-    updater.idle()
 
     app = webserver.web.application(webserver.urls, globals())
     app.run()
