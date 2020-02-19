@@ -1,11 +1,17 @@
 import logging
+import os
 import re
 import requests
 from bs4 import BeautifulSoup
 import imageio
+import arrow
 
 scrapingLogger = logging.getLogger(__name__)
 scrapingLogger.setLevel(logging.DEBUG)
+
+MIN_VPR_IMAGES = 2
+DEFAULT_VPR_IMAGES = 9  # 2 hours of images
+MAX_VPR_IMAGES = 20
 
 INMET_DOMAIN = "http://www.inmet.gov.br/"
 
@@ -104,18 +110,19 @@ def get_acumulada_previsao_24hrs():
         return None
 
 
-def get_vpr_gif(nImages):
-    """ TODO """
+def get_vpr_gif(nImages=DEFAULT_VPR_IMAGES):
+    """ Fetch the last `nImages` VPR sattelite images and create a .mp4 file.
 
-    if 1 > nImages > 10:
-        nImages = 10
+        Return:
+            mp4 filename if successful, None otherwise.
+    """
 
     headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
 
     req = requests.get(TARGET_PAGE_VPR, headers=headers, allow_redirects=False)
     if req.status_code == 200:
-        scrapingLogger.info('Successful GET request!')
+        scrapingLogger.info('Successful GET request to VPR page!')
         # Retrieve the HTML content
         content = req.content
         html = BeautifulSoup(content, 'html.parser')
@@ -125,20 +132,26 @@ def get_vpr_gif(nImages):
         options = [option["value"] for option in html.find_all("option")[1:] if "Mapa" not in option.text and re.match(r"\s*\d+\s*", option["value"]) is None]
         imagesURLS = [f"{INMET_SATELITE_BRASIL_VPR_URL}{option}" for option in options]
 
-
         readImages = []
-        for img in reversed(imagesURLS[:5]):
-            # img = Image.open(BytesIO(response.content))
-            # img.save(f'satelite_vpr_imgs/{i}.jpg', 'JPEG', dpi=[300, 300], quality=40)
-            # open(f'satelite_vpr_imgs/{i}.jpg', 'wb').write(requests.get(img, allow_redirects=True).content)
-            scrapingLogger.debug(f"Processing {img}...")
+        scrapingLogger.debug((f"Reading {imagesURLS[:1]}..."))
+        for img in reversed(imagesURLS[:nImages]):
             readImages.append(imageio.imread(img))
-        # scrapingLogger.debug(len(readImages))
+        scrapingLogger.debug(f"Read {(len(readImages))} images.")
 
-        imageio.mimsave('VPR.gif', readImages, fps=2)
+        timeNow = arrow.utcnow().timestamp
+        gifFilename = os.path.join("tmp", f"VPR_{timeNow}.mp4")
+        # print(gifFilename)
+        kargs = {'fps': 10, 'macro_block_size': None}
+        imageio.mimsave(f'{gifFilename}', readImages, 'MP4', **kargs)
+        # finalGIFFilename = os.path.join("tmp", f"VPR_{resolution}p_{timeNow}.mp4")
+        # print(finalGIFFilename)
+        # os.system(f"ffmpeg -i {gifFilename} -vf scale={resolution}:{resolution} {finalGIFFilename}")
+        # os.remove(gifFilename)
+        return gifFilename
     else:
         scrapingLogger.error("Failed GET request to VPR page.")
+        return None
 
 
 if __name__ == "__main__":
-    get_acumulada_previsao_24hrs()
+    get_vpr_gif(3)
