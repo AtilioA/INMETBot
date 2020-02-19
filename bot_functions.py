@@ -7,9 +7,11 @@ import pycep_correios as pycep
 import models
 import bot_utils
 import bot_messages
+from telegram.ext.dispatcher import run_async
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
+
 
 @bot_utils.send_typing_action
 def send_instructions_message(update, context):
@@ -18,6 +20,7 @@ def send_instructions_message(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.instructions)
 
 
+@run_async
 def catch_all_if_not_group(update, context):
     """ Reply to any message not handled (if not sent to a group/channel). """
 
@@ -26,6 +29,7 @@ def catch_all_if_not_group(update, context):
         return send_instructions_message(update, context)
 
 
+@run_async
 @bot_utils.send_typing_action
 def cmd_help(update, context):
     """ Send the help message to the user. """
@@ -33,6 +37,7 @@ def cmd_help(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
+@run_async
 @bot_utils.send_typing_action
 def cmd_start(update, context):
     """ Send the help message to the user.  """
@@ -40,6 +45,7 @@ def cmd_start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.welcomeMessage, parse_mode="markdown")
 
 
+@run_async
 @bot_utils.send_upload_photo_action
 def cmd_vpr(update, context):
     """ Fetch and send latest VPR satellite image to the user """
@@ -67,6 +73,7 @@ def get_n_images_input(update, context, text):
 
     try:
         nImages = text.split(' ')[1]
+
         if nImages.isnumeric():
             nImages = int(nImages)
             if scrap_satelites.MAX_VPR_IMAGES < nImages:
@@ -86,6 +93,7 @@ def get_n_images_input(update, context, text):
     return nImages
 
 
+@run_async
 @bot_utils.send_typing_action
 def cmd_vpr_gif(update, context):
     """ Create and send GIF made of recent VPR satellite images to the user. """
@@ -101,6 +109,7 @@ def cmd_vpr_gif(update, context):
         return send_vpr_video(update, context, vprVideoPath)
 
 
+@run_async
 @bot_utils.send_upload_photo_action
 def cmd_acumulada(update, context):
     """ Fetch and send accumulated precipitation within given interval satellite image to the user. """
@@ -122,6 +131,7 @@ def cmd_acumulada(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
 
 
+@run_async
 @bot_utils.send_upload_photo_action
 def cmd_acumulada_previsao_24hrs(update, context):
     """ Fetch and send accumulated precipitation satellite image forecast for the next 24 hours to the user. """
@@ -135,6 +145,7 @@ def cmd_acumulada_previsao_24hrs(update, context):
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL)
 
 
+@run_async
 @bot_utils.send_typing_action
 def cmd_alertas_brasil(update, context):
     """ Fetch and send active high-risk alerts for Brazil. """
@@ -153,6 +164,7 @@ def cmd_alertas_brasil(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
+@run_async
 @bot_utils.send_typing_action
 def cmd_alertas_CEP(update, context):
     """ Fetch and send active high-risk alerts for given CEP (zip code). """
@@ -197,6 +209,7 @@ def cmd_alertas_CEP(update, context):
         return None
 
 
+@run_async
 @bot_utils.send_typing_action
 def alertas_location(update, context):
     """ Handle location messages by checking for alerts in that region.
@@ -245,6 +258,7 @@ def alertas_location(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
 
 
+@run_async
 @bot_utils.send_typing_action
 def cmd_inscrito_alertas(update, context):
     statusMessage = ""
@@ -268,7 +282,6 @@ def cmd_inscrito_alertas(update, context):
         else:
             statusMessage += "Você não está inscrito nos alertas."
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=statusMessage, parse_mode="markdown")
-
 
 
 @bot_utils.send_typing_action
@@ -356,6 +369,7 @@ def cmd_subscribe_alerts(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔔 Inscrevi você.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva-se com /desinscrever.", parse_mode="markdown")
 
 
+@run_async
 @bot_utils.send_upload_video_action
 def cmd_sorrizoronaldo(update, context):
     """ Send default Sorrizo Ronaldo video. """
@@ -364,6 +378,7 @@ def cmd_sorrizoronaldo(update, context):
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
 
 
+@run_async
 @bot_utils.send_upload_video_action
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """ Send "We Will Rock You" Sorrizo Ronaldo video variation. """
@@ -372,6 +387,7 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
 
+@run_async
 def error(update, context):
     """ Log errors caused by Updates. """
 
