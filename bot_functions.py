@@ -4,6 +4,7 @@ import logging
 import scrap_satelites
 import parse_alerts
 import pycep_correios as pycep
+import models
 import bot_utils
 import bot_messages
 
@@ -75,11 +76,11 @@ def get_n_images_input(update, context, text):
                 nImages = scrap_satelites.DEFAULT_VPR_IMAGES
                 context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número mínimo de imagens é {scrap_satelites.MIN_VPR_IMAGES}! Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).", reply_to_message_id=update.message.message_id, parse_mode="markdown")
         else:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr\_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id,  parse_mode="markdown")
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id,  parse_mode="markdown")
             return None
     except IndexError as indexE:
-        context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/vpr\_gif 4` buscará as 4 últimas imagens.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
-        functionsLogger.error(f"{indexE} on cmd_vpr_gif. Message text: \"{text}\"")
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `{text.split(' ')[0]} 4` buscará as 4 últimas imagens.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+        functionsLogger.warning(f"{indexE} on cmd_vpr_gif. Message text: \"{text}\"")
         nImages = scrap_satelites.DEFAULT_VPR_IMAGES
 
     return nImages
@@ -110,7 +111,7 @@ def cmd_acumulada(update, context):
     try:
         interval = text.split(' ')[1]
     except IndexError as indexE:
-        functionsLogger.error(f"{indexE} on cmd_acumulada. Message text: \"{text}\"")
+        functionsLogger.warning(f"{indexE} on cmd_acumulada. Message text: \"{text}\"")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível identificar o intervalo! Portanto, utilizarei 1 como valor.\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`", parse_mode="markdown")
         interval = 1
 
@@ -190,11 +191,11 @@ def cmd_alertas_CEP(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
         else:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
 
     except pycep.excecoes.ExcecaoPyCEPCorreios as zipError:  # Invalid zip code
         functionsLogger.error(f"{zipError} on cmd_alertas_cep. Message text: \"{text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
         return None
 
 
@@ -244,6 +245,117 @@ def alertas_location(update, context):
         else:
             functionsLogger.error("Failed GET request to reverse geocoding API.")
             context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
+
+
+@bot_utils.send_typing_action
+def cmd_inscrito_alertas(update, context):
+    statusMessage = ""
+    isGroupOrChannel = bot_utils.is_group_or_channel(update.effective_chat.id)
+
+    if models.is_subscribed(update.effective_chat.id):
+        if isGroupOrChannel:
+            statusMessage += "O grupo está inscrito nos alertas.\n\n"
+        else:
+            statusMessage += "Você está inscrito nos alertas.\n\n"
+        CEPs = models.get_CEPs(update.effective_chat.id)
+        if CEPs:
+            statusMessage += "CEPs inscritos:\n"
+            for cep in CEPs:
+                statusMessage += f"{cep}\n"
+        else:
+            statusMessage += "Não há CEPs inscritos."
+    else:
+        if isGroupOrChannel:
+            statusMessage += "O grupo não está inscrito nos alertas."
+        else:
+            statusMessage += "Você não está inscrito nos alertas."
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=statusMessage, parse_mode="markdown")
+
+
+
+@bot_utils.send_typing_action
+def cmd_desinscrever_alertas(update, context):
+    text = update.message.text
+
+    # Parse input
+    try:
+        cep = text.split(' ')[1].replace("-", "")  # Get string after "/alertas_CEP"
+    except IndexError as indexE:  # No number after /alertas_CEP
+        functionsLogger.warning(f"{indexE} on cmd_subscribe_alerts. Message text: \"{text}\"")
+        cep = None
+    else:
+        if not pycep.validar_cep(cep):
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`", parse_mode="markdown")
+            return None
+
+    # Check if is subscribed and cep was given
+    if models.is_subscribed(update.effective_chat.id) and not cep:
+        models.unsubscribe_chat(update.effective_chat.id, cep)
+        if bot_utils.is_group_or_channel(update.effective_chat.id):
+            unsubscribed = models.unsubscribe_chat(update.effective_chat.id, cep)
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔕 O grupo foi desinscrito dos alertas.\nInscreva o grupo com /inscrever.", parse_mode="markdown")
+        else:
+            unsubscribed = models.unsubscribe_chat(update.effective_chat.id, cep)
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔕 Você foi desinscrito dos alertas.\nInscreva-se com /inscrever.", parse_mode="markdown")
+    elif models.is_subscribed(update.effective_chat.id) and cep:
+        unsubscribed = models.unsubscribe_chat(update.effective_chat.id, cep)
+        if unsubscribed:
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔕 Desinscrevi o CEP {cep}.", parse_mode="markdown")
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`", parse_mode="markdown")
+    else:
+        if bot_utils.is_group_or_channel(update.effective_chat.id):
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ O grupo não está inscrito nos alertas.\nInscreva-o com /inscrever.", parse_mode="markdown")
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Você não está inscrito nos alertas.\nInscreva-se com /inscrever.", parse_mode="markdown")
+
+
+@bot_utils.send_typing_action
+def cmd_subscribe_alerts(update, context):
+    text = update.message.text
+
+    # Parse input
+    try:
+        cep = text.split(' ')[1].replace("-", "")  # Get string after "/alertas_CEP"
+    except IndexError as indexE:  # No number after /alertas_CEP
+        functionsLogger.warning(f"{indexE} on cmd_subscribe_alerts. Message text: \"{text}\"")
+        cep = None
+    else:
+        if not pycep.validar_cep(cep):
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`", parse_mode="markdown")
+            return None
+
+    # Check if is subscribed and cep was given
+    if models.is_subscribed(update.effective_chat.id) and not cep:
+        if bot_utils.is_group_or_channel(update.effective_chat.id):
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❕O grupo já está inscrito.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❕Você já está inscrito.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva-se com /desinscrever.", parse_mode="markdown")
+    elif models.is_subscribed(update.effective_chat.id) and cep:
+        subscribed = models.subscribe_chat(update.effective_chat.id, cep)
+        if subscribed:
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.", parse_mode="markdown")
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❕O CEP {cep} já está inscrito.\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
+
+    elif not models.is_subscribed(update.effective_chat.id) and cep:
+        if bot_utils.is_group_or_channel(update.effective_chat.id):
+            functionsLogger.debug("Inscrevendo grupo")
+            models.subscribe_chat(update.effective_chat.id, cep)
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔔 Inscrevi o grupo e o CEP {cep}.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
+        else:
+            functionsLogger.debug("Inscrevendo privado")
+            models.subscribe_chat(update.effective_chat.id, cep)
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔔 Inscrevi você e o CEP {cep}.\nDesinscreva-se com /desinscrever.", parse_mode="markdown")
+    else:  # Not subscribed and cep not given
+        if bot_utils.is_group_or_channel(update.effective_chat.id):
+            functionsLogger.debug("Inscrevendo grupo")
+            models.subscribe_chat(update.effective_chat.id, cep)
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔔 Inscrevi o grupo.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
+        else:
+            functionsLogger.debug("Inscrevendo privado")
+            models.subscribe_chat(update.effective_chat.id, cep)
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔔 Inscrevi você.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva-se com /desinscrever.", parse_mode="markdown")
 
 
 @bot_utils.send_upload_video_action

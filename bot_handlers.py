@@ -16,6 +16,9 @@ acumulada_previsao_24hrs_handler = CommandHandler('acumulada_previsao_24hrs', bo
 alertas_brasil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'), bot_functions.cmd_alertas_brasil)
 alertas_CEP_handler = CommandHandler('alertas_CEP', bot_functions.cmd_alertas_CEP)
 alertas_location_handler = MessageHandler(Filters.location, bot_functions.alertas_location)
+inscrever_alertas_handler = CommandHandler(('inscrever_alertas', 'alertas_inscrever', 'inscrever'), bot_functions.cmd_subscribe_alerts)
+desinscrever_alertas_handler = CommandHandler(('desinscrever_alertas', 'alertas_desinscrever', 'desinscrever'), bot_functions.cmd_desinscrever_alertas)
+inscrito_alertas_handler = CommandHandler(('inscrito', 'status'), bot_functions.cmd_inscrito_alertas)
 
 sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), bot_functions.cmd_sorrizoronaldo)
 sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), bot_functions.cmd_sorrizoronaldo_will_rock_you)
@@ -34,6 +37,9 @@ dispatcher.add_handler(acumulada_previsao_24hrs_handler)
 
 dispatcher.add_handler(alertas_brasil_handler)
 dispatcher.add_handler(alertas_CEP_handler)
+dispatcher.add_handler(inscrever_alertas_handler)
+dispatcher.add_handler(desinscrever_alertas_handler)
+dispatcher.add_handler(inscrito_alertas_handler)
 
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
