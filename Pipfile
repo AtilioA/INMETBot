@@ -32,6 +32,9 @@ pycep-correios = "*"
 imageio = "*"
 arrow = "*"
 imageio-ffmpeg = "*"
+schedule = "*"
+pymongo = "*"
+dnspython = "*"
 
 [requires]
 python_version = "3.7"
