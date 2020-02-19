@@ -7,8 +7,8 @@ import bot_functions
 start_handler = CommandHandler('start', bot_functions.cmd_start)
 help_handler = CommandHandler(('help', 'ajuda'), bot_functions.cmd_help)
 
-vpr_handler = CommandHandler(('vpr', 'vapor_de_agua', 'nuvens'), bot_functions.cmd_vpr)
-vpr_gif_handler = CommandHandler('vpr_gif', bot_functions.cmd_vpr_gif)
+vpr_handler = CommandHandler(('vpr', 'vapor_de_agua', 'nuvem'), bot_functions.cmd_vpr)
+vpr_gif_handler = CommandHandler(('vpr_gif', 'nuvens'), bot_functions.cmd_vpr_gif)
 
 acumulada_handler = CommandHandler('acumulada', bot_functions.cmd_acumulada)
 acumulada_previsao_24hrs_handler = CommandHandler('acumulada_previsao_24hrs', bot_functions.cmd_acumulada_previsao_24hrs)
