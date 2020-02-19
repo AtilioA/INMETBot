@@ -105,3 +105,5 @@ dmypy.json
 *.ini
 *ignoreme*
 .vscode
+tmp/*.mp4
+ignore/

@@ -31,6 +31,7 @@ Markdown = "==3.2"
 pycep-correios = "*"
 imageio = "*"
 arrow = "*"
+imageio-ffmpeg = "*"
 
 [requires]
 python_version = "3.7"
