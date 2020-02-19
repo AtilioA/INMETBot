@@ -1,3 +1,4 @@
+import os
 import requests
 import logging
 import scrap_satelites
@@ -21,7 +22,7 @@ def catch_all_if_not_group(update, context):
 
     if not bot_utils.is_group_or_channel(update.effective_chat.id):
         functionsLogger.debug("catch_all: not group")
-        send_instructions_message(update, context)
+        return send_instructions_message(update, context)
 
 
 @bot_utils.send_typing_action
@@ -47,14 +48,56 @@ def cmd_vpr(update, context):
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL)
 
 
-@bot_utils.send_upload_document_action
-def cmd_vpr_gif(update, context):
-    """ TODO: Create and send GIF made of recent VPR satellite images to the user. """
+@bot_utils.send_upload_video_action
+def send_vpr_video(update, context, vprVideoPath):
+    """ Send the .mp4 file to the user and delete it """
 
-    pass
-    # scrap_satelites.scrap_page()
-    # vprImageURL = "VPR.gif"
-    # context.bot.send_document(chat_id=update.effective_chat.id, document=open(vprImageURL, 'rb'))
+    context.bot.send_video(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, video=open(vprVideoPath, 'rb'))
+    os.remove(vprVideoPath)
+    functionsLogger.info(f"Deleted {vprVideoPath}.")
+
+
+def get_n_images_input(update, context, text):
+    """ Parse input for VPR gifs. Input must exist and be numeric.
+
+        Return:
+            Number of images if successful, None otherwise.
+    """
+
+    try:
+        nImages = text.split(' ')[1]
+        if nImages.isnumeric():
+            nImages = int(nImages)
+            if scrap_satelites.MAX_VPR_IMAGES < nImages:
+                nImages = scrap_satelites.DEFAULT_VPR_IMAGES
+                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número máximo de imagens é {scrap_satelites.MAX_VPR_IMAGES}! Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+            elif scrap_satelites.MIN_VPR_IMAGES > nImages:
+                nImages = scrap_satelites.DEFAULT_VPR_IMAGES
+                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número mínimo de imagens é {scrap_satelites.MIN_VPR_IMAGES}! Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+        else:
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr\_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id,  parse_mode="markdown")
+            return None
+    except IndexError as indexE:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/vpr\_gif 4` buscará as 4 últimas imagens.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+        functionsLogger.error(f"{indexE} on cmd_vpr_gif. Message text: \"{text}\"")
+        nImages = scrap_satelites.DEFAULT_VPR_IMAGES
+
+    return nImages
+
+
+@bot_utils.send_typing_action
+def cmd_vpr_gif(update, context):
+    """ Create and send GIF made of recent VPR satellite images to the user. """
+
+    text = update.message.text
+
+    nImages = get_n_images_input(update, context, text)
+    if nImages:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
+
+        vprVideoPath = scrap_satelites.get_vpr_gif(nImages)
+
+        return send_vpr_video(update, context, vprVideoPath)
 
 
 @bot_utils.send_upload_photo_action
@@ -68,14 +111,14 @@ def cmd_acumulada(update, context):
         interval = text.split(' ')[1]
     except IndexError as indexE:
         functionsLogger.error(f"{indexE} on cmd_acumulada. Message text: \"{text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3", parse_mode="markdown")
-        return None
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível identificar o intervalo! Portanto, utilizarei 1 como valor.\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`", parse_mode="markdown")
+        interval = 1
 
     acumuladaImageURL = scrap_satelites.get_acumulada_last_image(interval)
     if acumuladaImageURL:
         context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaImageURL)
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n/acumulada 3", parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
 
 
 @bot_utils.send_upload_photo_action
