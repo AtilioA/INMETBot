@@ -145,7 +145,7 @@ def cmd_alertas_brasil(update, context):
     if alerts:
         alertMessage = ""
         for alert in alerts:
-                alertMessage += bot_utils.get_alert_message(alert)
+                alertMessage += bot_utils.get_alert_message_object(alert)
         alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
@@ -180,7 +180,7 @@ def cmd_alertas_CEP(update, context):
                     # functionsLogger.debug(alert.cities)
                     if city in alert.cities:
                         cityWarned = True
-                        alertMessage += bot_utils.get_alert_message(alert, city)
+                        alertMessage += bot_utils.get_alert_message_object(alert, city)
 
                 alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
                 if not cityWarned:
@@ -189,10 +189,8 @@ def cmd_alertas_CEP(update, context):
                 alertMessage = "✅ Não há alertas para o Brasil no momento."
 
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
-
     except pycep.excecoes.ExcecaoPyCEPCorreios as zipError:  # Invalid zip code
         functionsLogger.error(f"{zipError} on cmd_alertas_cep. Message text: \"{text}\"")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
@@ -228,7 +226,7 @@ def alertas_location(update, context):
                         # functionsLogger.debug(alert.cities)
                         if city in alert.cities:
                             cityWarned = True
-                            alertMessage += bot_utils.get_alert_message(alert, city)
+                            alertMessage += bot_utils.get_alert_message_object(alert, city)
 
                     alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
 

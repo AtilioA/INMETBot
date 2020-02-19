@@ -1,5 +1,6 @@
-import telegram
 from functools import wraps
+import telegram
+import arrow
 
 # Decorators to simulate user feedback
 def send_action(action):
@@ -31,7 +32,7 @@ def determine_severity_emoji(severity):
         return "🚨"  # Red alert
 
 
-def get_alert_message(alert, location=None):
+def get_alert_message_object(alert, location=None):
     """ Create alert message string from alert object and return it. """
 
     severityEmoji = determine_severity_emoji(alert.severity)
@@ -50,6 +51,28 @@ def get_alert_message(alert, location=None):
         *Áreas afetadas*: {area}.
         *Vigor*: De {formattedStartDate} a {formattedEndDate}.
         {alert.description}
+"""
+    return messageString
+
+def get_alert_message_dict(alert, location=None):
+    """ Create alert message string from alert dictionary and return it. """
+
+    severityEmoji = determine_severity_emoji(alert['severity'])
+    area = ','.join(alert['area'])
+    formattedStartDate = arrow.get(alert["startDate"]).strftime("%d/%m/%Y %H:%M")
+    formattedEndDate = arrow.get(alert["endDate"]).strftime("%d/%m/%Y %H:%M")
+
+    if location:
+        header = f"{severityEmoji} *{alert['event'][:-1]} para {location}.*"
+    else:
+        header = f"{severityEmoji} *{alert['event']}*"
+
+    messageString = f"""
+{header}
+
+        *Áreas afetadas*: {area}.
+        *Vigor*: De {formattedStartDate} a {formattedEndDate}.
+        {alert["description"]}
 """
     return messageString
 

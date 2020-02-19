@@ -81,6 +81,7 @@ def parse_alerts_xml(ignoreModerate=True):
     xmls = []
     for xmlURL in xmlURLs:
         xmls.append(parse_alert_xml(xmlURL))
+    parsingLogger.debug("Done parsing XMLs.")
     return xmls
 
 
@@ -140,4 +141,5 @@ def get_alerts_xml(ignoreModerate=True):
 
 
 if __name__ == "__main__":
-    alerts = parse_alerts(ignoreModerate=False)
+    parse_alerts()
+    # alerts = parse_alerts(ignoreModerate=False)

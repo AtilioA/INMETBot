@@ -51,7 +51,6 @@ def unsubscribe_chat(chatID, cep=None):
         return True
 
 
-
 def subscribe_chat(chatID, cep):
     queryChat = subscribedChatsCollection.find_one({"chatID": chatID})
     if queryChat:
