@@ -7,7 +7,7 @@ Olá! Este bot pode enviar imagens e informações úteis disponíveis pelo INME
 /vpr ou /nuvem exibe imagens de vapor de água realçado (vapor de água na média e alta atmosfera).
 /vpr\_gif ou /nuvens exibe GIF feito do número de imagens fornecido.
 Exemplo: `/nuvens 5`
-/alertas ou /alertas_brasil exibe alertas graves em vigor no Brasil.
+/alertas ou /alertas\_brasil exibe alertas graves em vigor no Brasil.
 `/alertas_CEP` exibe alertas graves em vigor para o CEP fornecido.
 Exemplo: `/alertas_CEP 29075-910`
 \* Você também pode simplesmente enviar sua localização para checar alertas em sua cidade.

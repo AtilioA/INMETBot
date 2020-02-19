@@ -31,6 +31,7 @@ def is_subscribed(chatID):
     else:
         return False
 
+
 def unsubscribe_chat(chatID, cep=None):
     if cep:
         queryChat = subscribedChatsCollection.find_one({"chatID": chatID})
@@ -183,7 +184,4 @@ if __name__ == '__main__':
     alertXML = parse_alerts.get_alerts_xml(ignoreModerate=False)[0]
     alertParsedXML = parse_alerts.parse_alert_xml(alertXML)
     alertObj = Alert(alertParsedXML)
-
-    # alertDocumentDict = create_alert_document(alertObj)
     insert_alert(alertObj)
-    # alertsCollection.insert_one(alertDocumentDict)

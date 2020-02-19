@@ -35,6 +35,7 @@ imageio-ffmpeg = "*"
 schedule = "*"
 pymongo = "*"
 dnspython = "*"
+ujson = "*"
 
 [requires]
 python_version = "3.7"
