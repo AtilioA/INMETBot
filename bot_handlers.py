@@ -1,6 +1,6 @@
 from telegram.ext import CommandHandler, Filters, MessageHandler
 
-from bot_config import dispatcher, bot
+from bot_config import dispatcher
 import bot_functions
 
 # Initialize handlers
@@ -13,12 +13,12 @@ vpr_gif_handler = CommandHandler(('vpr_gif', 'nuvens'), bot_functions.cmd_vpr_gi
 acumulada_handler = CommandHandler('acumulada', bot_functions.cmd_acumulada)
 acumulada_previsao_24hrs_handler = CommandHandler('acumulada_previsao_24hrs', bot_functions.cmd_acumulada_previsao_24hrs)
 
-alertas_brasil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'), bot_functions.cmd_alertas_brasil)
-alertas_CEP_handler = CommandHandler('alertas_CEP', bot_functions.cmd_alertas_CEP)
-alertas_location_handler = MessageHandler(Filters.location, bot_functions.alertas_location)
+alertas_brasil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'), bot_functions.cmd_alerts_brasil)
+alertas_CEP_handler = CommandHandler('alertas_CEP', bot_functions.cmd_alerts_CEP)
+alerts_location_handler = MessageHandler(Filters.location, bot_functions.alerts_location)
 inscrever_alertas_handler = CommandHandler(('inscrever_alertas', 'alertas_inscrever', 'inscrever'), bot_functions.cmd_subscribe_alerts)
-desinscrever_alertas_handler = CommandHandler(('desinscrever_alertas', 'alertas_desinscrever', 'desinscrever'), bot_functions.cmd_desinscrever_alertas)
-inscrito_alertas_handler = CommandHandler(('inscrito', 'status'), bot_functions.cmd_inscrito_alertas)
+desinscrever_alertas_handler = CommandHandler(('desinscrever_alertas', 'alertas_desinscrever', 'desinscrever'), bot_functions.cmd_unsubscribe_alerts)
+inscrito_alertas_handler = CommandHandler(('inscrito', 'status'), bot_functions.cmd_subscribed_alerts)
 
 sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), bot_functions.cmd_sorrizoronaldo)
 sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), bot_functions.cmd_sorrizoronaldo_will_rock_you)
@@ -44,7 +44,7 @@ dispatcher.add_handler(inscrito_alertas_handler)
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
 
-dispatcher.add_handler(alertas_location_handler)
+dispatcher.add_handler(alerts_location_handler)
 dispatcher.add_handler(catch_all_if_not_group_handler)
 
 dispatcher.add_error_handler(bot_functions.error)

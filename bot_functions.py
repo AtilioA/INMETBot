@@ -51,7 +51,6 @@ def cmd_vpr(update, context):
     """ Fetch and send latest VPR satellite image to the user """
 
     vprImageURL = scrap_satelites.get_vpr_last_image()
-    # functionsLogger.debug(vprImageURL)
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL)
 
 
@@ -64,35 +63,6 @@ def send_vpr_video(update, context, vprVideoPath):
     functionsLogger.info(f"Deleted {vprVideoPath}.")
 
 
-def get_n_images_input(update, context, text):
-    """ Parse input for VPR gifs. Input must exist and be numeric.
-
-        Return:
-            Number of images if successful, None otherwise.
-    """
-
-    try:
-        nImages = text.split(' ')[1]
-
-        if nImages.isnumeric():
-            nImages = int(nImages)
-            if scrap_satelites.MAX_VPR_IMAGES < nImages:
-                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número máximo de imagens é {scrap_satelites.MAX_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
-                nImages = scrap_satelites.MAX_VPR_IMAGES
-            elif scrap_satelites.MIN_VPR_IMAGES > nImages:
-                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número mínimo de imagens é {scrap_satelites.MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
-                nImages = scrap_satelites.MIN_VPR_IMAGES
-        else:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id,  parse_mode="markdown")
-            return None
-    except IndexError as indexE:
-        context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `{text.split(' ')[0]} 4` buscará as 4 últimas imagens.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
-        functionsLogger.warning(f"{indexE} on cmd_vpr_gif. Message text: \"{text}\"")
-        nImages = scrap_satelites.DEFAULT_VPR_IMAGES
-
-    return nImages
-
-
 @run_async
 @bot_utils.send_typing_action
 def cmd_vpr_gif(update, context):
@@ -100,7 +70,7 @@ def cmd_vpr_gif(update, context):
 
     text = update.message.text
 
-    nImages = get_n_images_input(update, context, text)
+    nImages = bot_utils.parse_n_images_input(update, context, text)
     if nImages:
         context.bot.send_message(chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
 
@@ -117,12 +87,14 @@ def cmd_acumulada(update, context):
     functionsLogger.debug("Getting acumulada images...")
 
     text = update.message.text
+
+    # Parse input
     try:
         interval = text.split(' ')[1]
-    except IndexError as indexE:
-        functionsLogger.warning(f"{indexE} on cmd_acumulada. Message text: \"{text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível identificar o intervalo! Portanto, utilizarei 1 como valor.\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`", parse_mode="markdown")
-        interval = 1
+    except IndexError:
+        functionsLogger.warning(f"No input in cmd_acumulada. Message text: \"{text}\"")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.acumuladaError, parse_mode="markdown")
+        interval = 1  # Use 24 hours as default
 
     acumuladaImageURL = scrap_satelites.get_acumulada_last_image(interval)
     if acumuladaImageURL:
@@ -141,22 +113,23 @@ def cmd_acumulada_previsao_24hrs(update, context):
     acumuladaPrevisaoImageURL = scrap_satelites.get_acumulada_previsao_24hrs()
 
     context.bot.send_message(chat_id=update.effective_chat.id, text="Precipitação acumulada prevista para as próximas 24 horas:", parse_mode="markdown")
-
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL)
 
 
 @run_async
 @bot_utils.send_typing_action
-def cmd_alertas_brasil(update, context):
+def cmd_alerts_brasil(update, context):
     """ Fetch and send active high-risk alerts for Brazil. """
 
     functionsLogger.debug("Getting alerts for Brazil...")
 
-    alerts = parse_alerts.parse_alerts(ignoreModerate=True)
+    # Ignore moderate alerts
+    alerts = models.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
     if alerts:
         alertMessage = ""
         for alert in alerts:
-                alertMessage += bot_utils.get_alert_message_object(alert)
+            alertObj = models.Alert(alertDict=alert)
+            alertMessage += bot_utils.get_alert_message(alertObj)
         alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
@@ -166,16 +139,18 @@ def cmd_alertas_brasil(update, context):
 
 @run_async
 @bot_utils.send_typing_action
-def cmd_alertas_CEP(update, context):
+def cmd_alerts_CEP(update, context):
     """ Fetch and send active high-risk alerts for given CEP (zip code). """
 
     functionsLogger.debug("Getting alerts by CEP (zip code)...")
 
     text = update.message.text
+
+    # Parse input
     try:
-        cep = text.split(' ')[1]  # Get string after "/alertas_CEP"
-    except IndexError as indexE:  # No number after /alertas_CEP
-        functionsLogger.error(f"{indexE} on cmd_alertas_CEP. Message text: \"{text}\"")
+        cep = text.split(' ')[1].strip()  # Get string after "/alertas_CEP"
+    except IndexError:  # No number after /alertas_CEP
+        functionsLogger.error(f"No input in cmd_alerts_CEP. Message text: \"{text}\"")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não informado!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
         return None
 
@@ -185,14 +160,15 @@ def cmd_alertas_CEP(update, context):
             city = cepJSON["cidade"]
             cityWarned = False
 
-            alerts = parse_alerts.parse_alerts(ignoreModerate=False)
+            # Include moderate alerts
+            alerts = models.alertsCollection.find({})
             if alerts:
                 alertMessage = ""
                 for alert in alerts:
-                    # functionsLogger.debug(alert.cities)
-                    if city in alert.cities:
+                    alertObj = models.Alert(alertDict=alert)
+                    if city in alertObj.cities:
                         cityWarned = True
-                        alertMessage += bot_utils.get_alert_message_object(alert, city)
+                        alertMessage += bot_utils.get_alert_message(alertObj, city)
 
                 alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
                 if not cityWarned:
@@ -204,14 +180,14 @@ def cmd_alertas_CEP(update, context):
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
     except pycep.excecoes.ExcecaoPyCEPCorreios as zipError:  # Invalid zip code
-        functionsLogger.error(f"{zipError} on cmd_alertas_cep. Message text: \"{text}\"")
+        functionsLogger.error(f"{zipError} on cmd_alerts_CEP. Message text: \"{text}\"")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
         return None
 
 
 @run_async
 @bot_utils.send_typing_action
-def alertas_location(update, context):
+def alerts_location(update, context):
     """ Handle location messages by checking for alerts in that region.
 
         Send message with current alerts, if any.
@@ -232,14 +208,15 @@ def alertas_location(update, context):
                 city = json["nearest"]["region"]
                 cityWarned = False
 
-                alerts = parse_alerts.parse_alerts(ignoreModerate=False)
+                # Ignore moderate alerts
+                alerts = models.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
                 if alerts:
                     alertMessage = ""
                     for alert in alerts:
-                        # functionsLogger.debug(alert.cities)
-                        if city in alert.cities:
+                        alertObj = models.Alert(alertDict=alert)
+                        if city in alertObj.cities:
                             cityWarned = True
-                            alertMessage += bot_utils.get_alert_message_object(alert, city)
+                            alertMessage += bot_utils.get_alert_message(alertObj, city)
 
                     alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
 
@@ -248,19 +225,19 @@ def alertas_location(update, context):
                 else:
                     alertMessage = "✅ Não há alertas para o Brasil no momento."
 
-                context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
             else:
-                context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ A localização indica uma região fora do Brasil.", parse_mode="markdown")
+                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ A localização indica uma região fora do Brasil.", parse_mode="markdown")
 
         else:
             functionsLogger.error("Failed GET request to reverse geocoding API.")
-            context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
 
 
 @run_async
 @bot_utils.send_typing_action
-def cmd_inscrito_alertas(update, context):
+def cmd_subscribed_alerts(update, context):
     statusMessage = ""
     isGroupOrChannel = bot_utils.is_group_or_channel(update.effective_chat.id)
 
@@ -269,6 +246,7 @@ def cmd_inscrito_alertas(update, context):
             statusMessage += "O grupo está inscrito nos alertas.\n\n"
         else:
             statusMessage += "Você está inscrito nos alertas.\n\n"
+
         CEPs = models.get_CEPs(update.effective_chat.id)
         if CEPs:
             statusMessage += "CEPs inscritos:\n"
@@ -281,92 +259,48 @@ def cmd_inscrito_alertas(update, context):
             statusMessage += "O grupo não está inscrito nos alertas."
         else:
             statusMessage += "Você não está inscrito nos alertas."
+
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=statusMessage, parse_mode="markdown")
-
-
-@bot_utils.send_typing_action
-def cmd_desinscrever_alertas(update, context):
-    text = update.message.text
-
-    # Parse input
-    try:
-        cep = text.split(' ')[1].replace("-", "")  # Get string after "/alertas_CEP"
-    except IndexError as indexE:  # No number after /alertas_CEP
-        functionsLogger.warning(f"{indexE} on cmd_subscribe_alerts. Message text: \"{text}\"")
-        cep = None
-    else:
-        if not pycep.validar_cep(cep):
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`", parse_mode="markdown")
-            return None
-
-    # Check if is subscribed and cep was given
-    if models.is_subscribed(update.effective_chat.id) and not cep:
-        models.unsubscribe_chat(update.effective_chat.id, cep)
-        if bot_utils.is_group_or_channel(update.effective_chat.id):
-            unsubscribed = models.unsubscribe_chat(update.effective_chat.id, cep)
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔕 O grupo foi desinscrito dos alertas.\nInscreva o grupo com /inscrever.", parse_mode="markdown")
-        else:
-            unsubscribed = models.unsubscribe_chat(update.effective_chat.id, cep)
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔕 Você foi desinscrito dos alertas.\nInscreva-se com /inscrever.", parse_mode="markdown")
-    elif models.is_subscribed(update.effective_chat.id) and cep:
-        unsubscribed = models.unsubscribe_chat(update.effective_chat.id, cep)
-        if unsubscribed:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔕 Desinscrevi o CEP {cep}.", parse_mode="markdown")
-        else:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`", parse_mode="markdown")
-    else:
-        if bot_utils.is_group_or_channel(update.effective_chat.id):
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ O grupo não está inscrito nos alertas.\nInscreva-o com /inscrever.", parse_mode="markdown")
-        else:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Você não está inscrito nos alertas.\nInscreva-se com /inscrever.", parse_mode="markdown")
 
 
 @bot_utils.send_typing_action
 def cmd_subscribe_alerts(update, context):
     text = update.message.text
+    textArgs = text.split(' ')
 
     # Parse input
     try:
-        cep = text.split(' ')[1].replace("-", "")  # Get string after "/alertas_CEP"
-    except IndexError as indexE:  # No number after /alertas_CEP
-        functionsLogger.warning(f"{indexE} on cmd_subscribe_alerts. Message text: \"{text}\"")
+        cep = textArgs[1].strip().replace("-", "")  # Get string after "/alertas_CEP"
+    except IndexError:  # No string after /alertas_CEP
+        functionsLogger.warning(f"No input in cmd_subscribe_alerts. Message text: \"{text}\"")
+        cep = None
+    else:
+        if not pycep.validar_cep(cep):
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{textArgs[0]} 29075-910`", parse_mode="markdown")
+            return None
+
+    subscribeMessage = bot_utils.get_subscribe_message(update, cep, textArgs)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscribeMessage, parse_mode="markdown")
+
+
+@bot_utils.send_typing_action
+def cmd_unsubscribe_alerts(update, context):
+    text = update.message.text
+    textArgs = text.split(' ')
+
+    # Parse input
+    try:
+        cep = text.split(' ')[1].strip().replace("-", "")  # Get string after "/alertas_CEP"
+    except IndexError:  # No number after /alertas_CEP
+        functionsLogger.warning(f"No input in cmd_unsubscribe_alerts. Message text: \"{text}\"")
         cep = None
     else:
         if not pycep.validar_cep(cep):
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`", parse_mode="markdown")
             return None
 
-    # Check if is subscribed and cep was given
-    if models.is_subscribed(update.effective_chat.id) and not cep:
-        if bot_utils.is_group_or_channel(update.effective_chat.id):
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❕O grupo já está inscrito.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
-        else:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❕Você já está inscrito.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva-se com /desinscrever.", parse_mode="markdown")
-    elif models.is_subscribed(update.effective_chat.id) and cep:
-        subscribed = models.subscribe_chat(update.effective_chat.id, cep)
-        if subscribed:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.", parse_mode="markdown")
-        else:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❕O CEP {cep} já está inscrito.\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
-
-    elif not models.is_subscribed(update.effective_chat.id) and cep:
-        if bot_utils.is_group_or_channel(update.effective_chat.id):
-            functionsLogger.debug("Inscrevendo grupo")
-            models.subscribe_chat(update.effective_chat.id, cep)
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔔 Inscrevi o grupo e o CEP {cep}.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
-        else:
-            functionsLogger.debug("Inscrevendo privado")
-            models.subscribe_chat(update.effective_chat.id, cep)
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"🔔 Inscrevi você e o CEP {cep}.\nDesinscreva-se com /desinscrever.", parse_mode="markdown")
-    else:  # Not subscribed and cep not given
-        if bot_utils.is_group_or_channel(update.effective_chat.id):
-            functionsLogger.debug("Inscrevendo grupo")
-            models.subscribe_chat(update.effective_chat.id, cep)
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔔 Inscrevi o grupo.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva o grupo com /desinscrever.", parse_mode="markdown")
-        else:
-            functionsLogger.debug("Inscrevendo privado")
-            models.subscribe_chat(update.effective_chat.id, cep)
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="🔔 Inscrevi você.\nAdicione CEPs: `/inscrever 29075-910`.\nDesinscreva-se com /desinscrever.", parse_mode="markdown")
+    unsubscribeMessage = bot_utils.get_subscribe_message(update, cep, textArgs)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
 
 
 @run_async
@@ -374,7 +308,7 @@ def cmd_subscribe_alerts(update, context):
 def cmd_sorrizoronaldo(update, context):
     """ Send default Sorrizo Ronaldo video. """
 
-    context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
 
 
@@ -383,7 +317,7 @@ def cmd_sorrizoronaldo(update, context):
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """ Send "We Will Rock You" Sorrizo Ronaldo video variation. """
 
-    context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
 
