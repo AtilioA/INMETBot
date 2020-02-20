@@ -77,11 +77,11 @@ def get_n_images_input(update, context, text):
         if nImages.isnumeric():
             nImages = int(nImages)
             if scrap_satelites.MAX_VPR_IMAGES < nImages:
-                nImages = scrap_satelites.DEFAULT_VPR_IMAGES
-                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número máximo de imagens é {scrap_satelites.MAX_VPR_IMAGES}! Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número máximo de imagens é {scrap_satelites.MAX_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+                nImages = scrap_satelites.MAX_VPR_IMAGES
             elif scrap_satelites.MIN_VPR_IMAGES > nImages:
-                nImages = scrap_satelites.DEFAULT_VPR_IMAGES
-                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número mínimo de imagens é {scrap_satelites.MIN_VPR_IMAGES}! Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+                context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número mínimo de imagens é {scrap_satelites.MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+                nImages = scrap_satelites.MIN_VPR_IMAGES
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id,  parse_mode="markdown")
             return None
