@@ -74,7 +74,7 @@ def insert_alert(alertObj):
         alertDocument = create_alert_document(alertObj)
         alertsCollection.insert_one(alertDocument)
         modelsLogger.info("Inserted new alert.")
-    modelsLogger.info("Not inserted. Alert already exists.")
+    modelsLogger.info("Alert already exists; not inserted.")
 
 
 def create_alert_document(alertObj):

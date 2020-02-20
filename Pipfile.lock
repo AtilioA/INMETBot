@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d2cde9453d8667631adfe8c07896d61ebfe660b7f07fddd9e0c7fb352b121cb6"
+            "sha256": "43fd04419e23da817624c9690c6afd40bcebc0f4e778c24903f4f2442dfe6edf"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -503,13 +503,6 @@
             ],
             "index": "pypi",
             "version": "==1.25.8"
-        },
-        "viacep": {
-            "hashes": [
-                "sha256:ba7b68f73277bc33a91d1dab7b0b97f4f7ca3946a024c21ff21988c1667de747"
-            ],
-            "index": "pypi",
-            "version": "==1.3.1"
         },
         "web.py": {
             "hashes": [

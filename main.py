@@ -9,7 +9,7 @@ from bot_config import updater
 import bot_handlers  # noqa (ignore linter warning)
 from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine
 
-PARSE_ALERTS_INTERVAL = 20
+ROUTINES_INTERVAL = 30
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s %(message)s',
@@ -39,9 +39,9 @@ def run_threaded(job_function):
     jobThread.start()
 
 
-schedule.every(PARSE_ALERTS_INTERVAL).minutes.do(run_threaded, parse_alerts_routine)
-schedule.every(PARSE_ALERTS_INTERVAL + 1).minutes.do(run_threaded, delete_past_alerts_routine)
-schedule.every(PARSE_ALERTS_INTERVAL + 2).minutes.do(run_threaded, notify_chats_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(run_threaded, parse_alerts_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(run_threaded, delete_past_alerts_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(run_threaded, notify_chats_routine)
 
 
 def main():

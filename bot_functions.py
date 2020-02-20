@@ -192,7 +192,6 @@ def cmd_alerts_map(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
 
     alertsMapPath = parse_alerts.take_screenshot_alerts_map()
-    functionsLogger.debug(alertsMapPath)
     send_alerts_map_screenshot(update, context, alertsMapPath)
 
 

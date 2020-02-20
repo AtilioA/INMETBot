@@ -38,7 +38,6 @@ def take_screenshot_alerts_map():
 
     return alertsMapPath
 
-
 def parse_alerts(ignoreModerate=True):
     """ Parse alerts published by INMET.
 

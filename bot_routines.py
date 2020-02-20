@@ -59,12 +59,13 @@ def notify_chats_routine():
                         routinesLogger.debug(f"Checking {city}...")
                         if city in alert["cities"]:
                             warnedCities.append(city)
+                            routinesLogger.info(f"Appended warned city.-")
                     except Exception as error:
                         routinesLogger.error(error)
 
                 if warnedCities:
                     alertObj = models.Alert(alertDict=alert)
-                    routinesLogger.debug(f"Notifying chat {chat['chatID']} for alert {alert['alertID']}...")
+                    routinesLogger.info(f"-- Notifying chat {chat['chatID']} for alert {alert['alertID']}... --")
 
                     alertMessage = bot_utils.get_alert_message(alertObj, warnedCities)
                     alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
