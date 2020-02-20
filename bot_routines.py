@@ -28,18 +28,14 @@ def parse_alerts_routine(ignoreModerate=False):
 
 
 def notify_chats_routine():
-    subscribedChats = models.subscribedChatsCollection.find({})
-    alerts = models.alertsCollection.find({})
-
-    routinesLogger.debug(subscribedChats, alerts)
+    subscribedChats = list(models.subscribedChatsCollection.find({}))
+    alerts = list(models.alertsCollection.find({}))
 
     for chat in subscribedChats:
-        print(chat["chatID"])
         routinesLogger.debug(f"Checking chat {chat['chatID']}")
         for alert in alerts:
-            routinesLogger.debug(chat["chatID"], alert["notifiedChats"])
             if chat["chatID"] not in alert["notifiedChats"]:
-                routinesLogger.debug(f"Chat {chat['chatID']} has not been notified yet.")
+                # routinesLogger.debug(f"Chat {chat['chatID']} has not been notified yet.")
                 for cep in chat["CEPs"]:
                     try:
                         cepJSON = pycep.consultar_cep(cep)
@@ -52,8 +48,8 @@ def notify_chats_routine():
                             routinesLogger.debug(f"Notifying chat {chat['chatID']}...")
                             alertMessage = bot_utils.get_alert_message_dict(alert, city)
                             alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
-                            updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown")
-                            models.alertsCollection.update({"alertID": alert["alertID"]}, {"$addSet": {"notifiedChats": chat['chatID']}})
+                            updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                            models.alertsCollection.update({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
 
 
 if __name__ == "__main__":
