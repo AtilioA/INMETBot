@@ -4,7 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-pylint = "*"
+flake8 = "*"
 
 [packages]
 beautifulsoup4 = "==4.8.2"

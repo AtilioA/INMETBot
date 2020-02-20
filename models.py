@@ -3,7 +3,6 @@ import os
 import arrow
 import re
 from pymongo import MongoClient
-import parse_alerts
 
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
@@ -79,7 +78,17 @@ def insert_alert(alertObj):
 
 
 def create_alert_document(alertObj):
-    alertDocument = {"alertID": alertObj.id, "event": alertObj.event, "severity": alertObj.severity, "startDate": alertObj.startDate.for_json(), "endDate": alertObj.endDate.for_json(), "description": alertObj.description, "area": alertObj.area, "cities": alertObj.cities, "notifiedChats": []}
+    alertDocument = {
+        "alertID": alertObj.id,
+        "event": alertObj.event,
+        "severity": alertObj.severity,
+        "startDate": alertObj.startDate.for_json(),
+        "endDate": alertObj.endDate.for_json(),
+        "description": alertObj.description,
+        "area": alertObj.area,
+        "cities": alertObj.cities,
+        "notifiedChats": []
+    }
     return alertDocument
 
 
@@ -181,7 +190,8 @@ class Alert():
 
 
 if __name__ == '__main__':
-    alertXML = parse_alerts.get_alerts_xml(ignoreModerate=False)[0]
-    alertParsedXML = parse_alerts.parse_alert_xml(alertXML)
-    alertObj = Alert(alertParsedXML)
-    insert_alert(alertObj)
+    # alertXML = parse_alerts.get_alerts_xml(ignoreModerate=False)[0]
+    # alertParsedXML = parse_alerts.parse_alert_xml(alertXML)
+    # alertObj = Alert(alertParsedXML)
+    # insert_alert(alertObj)
+    pass

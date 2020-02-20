@@ -3,12 +3,10 @@ import webserver
 import logging
 import time
 import schedule
-import parse_alerts
-from datetime import timedelta
 from threading import Thread
 
 from bot_config import updater
-import bot_handlers
+import bot_handlers  # noqa (ignore linter warning)
 from bot_routines import parse_alerts_routine, notify_chats_routine
 
 PARSE_ALERTS_INTERVAL = 20
@@ -39,6 +37,8 @@ class CheckAlertsThread(Thread):
 def run_threaded(job_function):
     jobThread = Thread(target=job_function)
     jobThread.start()
+
+
 schedule.every(PARSE_ALERTS_INTERVAL).minutes.do(run_threaded, parse_alerts_routine)
 schedule.every(PARSE_ALERTS_INTERVAL + 1).minutes.do(run_threaded, notify_chats_routine)
 

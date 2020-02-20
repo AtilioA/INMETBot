@@ -83,7 +83,7 @@ def get_n_images_input(update, context, text):
                 context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕O número mínimo de imagens é {scrap_satelites.MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
                 nImages = scrap_satelites.MIN_VPR_IMAGES
         else:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id,  parse_mode="markdown")
+            context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id, parse_mode="markdown")
             return None
     except IndexError as indexE:
         context.bot.send_message(chat_id=update.effective_chat.id, text=f"❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {scrap_satelites.DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `{text.split(' ')[0]} 4` buscará as 4 últimas imagens.", reply_to_message_id=update.message.message_id, parse_mode="markdown")
@@ -156,7 +156,7 @@ def cmd_alertas_brasil(update, context):
     if alerts:
         alertMessage = ""
         for alert in alerts:
-                alertMessage += bot_utils.get_alert_message_object(alert)
+            alertMessage += bot_utils.get_alert_message_object(alert)
         alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
@@ -248,14 +248,14 @@ def alertas_location(update, context):
                 else:
                     alertMessage = "✅ Não há alertas para o Brasil no momento."
 
-                context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
             else:
-                context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ A localização indica uma região fora do Brasil.", parse_mode="markdown")
+                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ A localização indica uma região fora do Brasil.", parse_mode="markdown")
 
         else:
             functionsLogger.error("Failed GET request to reverse geocoding API.")
-            context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
 
 
 @run_async
@@ -374,7 +374,7 @@ def cmd_subscribe_alerts(update, context):
 def cmd_sorrizoronaldo(update, context):
     """ Send default Sorrizo Ronaldo video. """
 
-    context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
 
 
@@ -383,7 +383,7 @@ def cmd_sorrizoronaldo(update, context):
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """ Send "We Will Rock You" Sorrizo Ronaldo video variation. """
 
-    context.bot.send_message(chat_id=update.effective_chat.id,  reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
 

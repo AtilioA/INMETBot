@@ -11,7 +11,7 @@ scrapingLogger.setLevel(logging.DEBUG)
 
 MIN_VPR_IMAGES = 2
 DEFAULT_VPR_IMAGES = 9  # 2 hours of images
-MAX_VPR_IMAGES = 20
+MAX_VPR_IMAGES = 40
 
 INMET_DOMAIN = "http://www.inmet.gov.br/"
 
@@ -118,7 +118,8 @@ def get_vpr_gif(nImages=DEFAULT_VPR_IMAGES):
     """
 
     headers = {
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+    }
 
     req = requests.get(TARGET_PAGE_VPR, headers=headers, allow_redirects=False)
     if req.status_code == 200:
@@ -140,13 +141,9 @@ def get_vpr_gif(nImages=DEFAULT_VPR_IMAGES):
 
         timeNow = arrow.utcnow().timestamp
         gifFilename = os.path.join("tmp", f"VPR_{timeNow}.mp4")
-        # print(gifFilename)
         kargs = {'fps': 10, 'macro_block_size': None}
         imageio.mimsave(f'{gifFilename}', readImages, 'MP4', **kargs)
-        # finalGIFFilename = os.path.join("tmp", f"VPR_{resolution}p_{timeNow}.mp4")
-        # print(finalGIFFilename)
-        # os.system(f"ffmpeg -i {gifFilename} -vf scale={resolution}:{resolution} {finalGIFFilename}")
-        # os.remove(gifFilename)
+
         return gifFilename
     else:
         scrapingLogger.error("Failed GET request to VPR page.")
