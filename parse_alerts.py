@@ -1,12 +1,41 @@
+import os
 import re
 import logging
 import requests
 import arrow
 from bs4 import BeautifulSoup
+import uuid
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from models import Alert
 
 parsingLogger = logging.getLogger(__name__)
 parsingLogger.setLevel(logging.DEBUG)
+
+
+def take_screenshot_alerts_map():
+    """ Take screenshot of the alerts map and store it in the tmp folder """
+
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--window-size=2160x4320")
+
+    if 'ON_HEROKU' in os.environ:
+        os.environ.get('GOOGLE_CHROME_PATH')
+        os.environ.get('CHROMEDRIVER_PATH')
+        chrome_options.binary_location = GOOGLE_CHROME_PATH
+        driver = webdriver.Chrome(execution_path=CHROMEDRIVER_PATH, chrome_options=chrome_options)
+    else:
+        chrome_driver = os.path.join(os.getcwd(), "chromedriver.exe")
+        driver = webdriver.Chrome(options=chrome_options, executable_path=chrome_driver)
+
+    driver.get("http://alert-as.inmet.gov.br/cv/")
+    parsingLogger.debug(f"Accessed alert-as map.")
+
+    alertsMapPath = os.path.join("tmp", f"alerts_map{uuid.uuid4().hex}.png")
+    driver.find_element_by_id('OpenLayers.Map_3_OpenLayers_ViewPort').screenshot(alertsMapPath)
+
+    return alertsMapPath
 
 
 def parse_alerts(ignoreModerate=True):
@@ -141,5 +170,6 @@ def get_alerts_xml(ignoreModerate=True):
 
 
 if __name__ == "__main__":
-    parse_alerts()
+    # parse_alerts()
+    take_screenshot_alerts_map()
     # alerts = parse_alerts(ignoreModerate=False)

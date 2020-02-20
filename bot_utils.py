@@ -57,7 +57,9 @@ def get_alert_message(alert, location=None):
     formattedStartDate = alert.startDate.strftime("%d/%m/%Y %H:%M")
     formattedEndDate = alert.endDate.strftime("%d/%m/%Y %H:%M")
 
-    if location:
+    if isinstance(location, list):
+        header = f"{severityEmoji} *{alert.event[:-1]} para {', '.join(location)}.*"
+    elif location:
         header = f"{severityEmoji} *{alert.event[:-1]} para {location}.*"
     else:
         header = f"{severityEmoji} *{alert.event}*"
@@ -86,9 +88,9 @@ def parse_n_images_input(update, context, text):
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id, parse_mode="markdown")
             return None
-    except IndexError as indexE:
+    except IndexError:
         nImages, nImagesMessage = get_n_images_and_message(None)
-        utilsLogger.warning(f"{indexE} in parse_n_images_input. Message text: \"{text}\"")
+        utilsLogger.warning(f"No input in parse_n_images_input. Message text: \"{text}\"")
 
     if nImagesMessage:
         context.bot.send_message(chat_id=update.effective_chat.id, text=nImagesMessage, reply_to_message_id=update.message.message_id, parse_mode="markdown")
@@ -100,7 +102,7 @@ def get_n_images_and_message(nImages=None):
     if nImages:
         nImages = int(nImages)
         if nImages > MAX_VPR_IMAGES:
-            nImagesMessage = f"❕O número máximo de imagens é {MAX_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
+            nImagesMessage = f"❕O número máximo de imagens é {MAX_VPR_IMAGES} (24 horas de imagens)! Utilizarei-o no lugar de {nImages}."
             nImages = MAX_VPR_IMAGES
         elif nImages < MIN_VPR_IMAGES:
             nImagesMessage = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
@@ -139,11 +141,9 @@ def get_subscribe_message(update, cep, textArgs):
             subscribeMessage = f"🔔 Inscrevi você e o CEP {cep}.\nDesinscreva-se com /desinscrever."
     else:  # Chat not subscribed and cep not given
         if is_group_or_channel(update.effective_chat.id):
-            utilsLogger.debug("Subscribing group")
             models.subscribe_chat(update.effective_chat.id, cep)
             subscribeMessage = f"🔔 Inscrevi o grupo.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever."
         else:
-            utilsLogger.debug("Subscribing private")
             models.subscribe_chat(update.effective_chat.id, cep)
             subscribeMessage = f"🔔 Inscrevi você.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever."
 
@@ -171,3 +171,5 @@ def get_unsubscribe_message(update, cep, textArgs):
             unsubscribeMessage = "❌ O grupo não está inscrito nos alertas.\nInscreva-o com /inscrever."
         else:
             unsubscribeMessage = "❌ Você não está inscrito nos alertas.\nInscreva-se com /inscrever."
+
+    return unsubscribeMessage

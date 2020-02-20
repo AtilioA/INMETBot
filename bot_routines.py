@@ -2,7 +2,8 @@ import arrow
 import logging
 import parse_alerts
 import models
-import pycep_correios as pycep
+# import pycep_correios as pycep
+import viacep
 from bot_config import updater
 import bot_utils
 
@@ -19,6 +20,7 @@ def delete_past_alerts_routine():
         if timeNow > arrow.get(alert["endDate"]):
             routinesLogger.info(f"alert {alert['alertID']} is past and will be deleted.")
             models.alertsCollection.delete_one({"alertID": alert["alertID"]})
+    routinesLogger.info("Finished delete_past_alerts_routine routine.")
 
 
 def parse_alerts_routine(ignoreModerate=False):
@@ -33,6 +35,7 @@ def parse_alerts_routine(ignoreModerate=False):
     routinesLogger.debug(alerts)
     for alert in alerts:
         models.insert_alert(alert)
+    routinesLogger.info("Finished parsed_alerts_routine routine.")
 
 
 def notify_chats_routine():
@@ -49,27 +52,31 @@ def notify_chats_routine():
         routinesLogger.debug(f"Checking chat {chat['chatID']}")
         for alert in alerts:
             if chat["chatID"] not in alert["notifiedChats"]:
+                warnedCities = []
                 for cep in chat["CEPs"]:
                     try:
-                        cepJSON = pycep.consultar_cep(cep)
-                        city = cepJSON["cidade"]
+                        city = viacep.get_cep_city(cep)
                         routinesLogger.debug(f"Checking {city}...")
+                        if city in alert["cities"]:
+                            warnedCities.append(city)
                     except Exception as error:
                         routinesLogger.error(error)
-                    else:
-                        if city in alert["cities"]:
-                            alertObj = models.Alert(alertDict=alert)
-                            routinesLogger.debug(f"Notifying chat {chat['chatID']} for alert {alert['alertID']}...")
 
-                            alertMessage = bot_utils.get_alert_message(alertObj, city)
-                            alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
+                if warnedCities:
+                    alertObj = models.Alert(alertDict=alert)
+                    routinesLogger.debug(f"Notifying chat {chat['chatID']} for alert {alert['alertID']}...")
 
-                            updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                            models.alertsCollection.update_one({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
+                    alertMessage = bot_utils.get_alert_message(alertObj, warnedCities)
+                    alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
+
+                    updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    models.alertsCollection.update_one({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
+
+    routinesLogger.info("Finished notify_chats_routine routine.")
 
 
 if __name__ == "__main__":
     # parse_alerts_routine()
-    # notify_chats_routine()
+    notify_chats_routine()
     # delete_past_alerts_routine()
     pass
