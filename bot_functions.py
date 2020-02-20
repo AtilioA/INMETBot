@@ -1,12 +1,13 @@
 import os
-import requests
 import logging
-import scrap_satelites
-import parse_alerts
+import requests
 import pycep_correios as pycep
+import viacep
 import models
-import bot_utils
+import scrap_satelites
 import bot_messages
+import bot_utils
+import parse_alerts
 from telegram.ext.dispatcher import run_async
 
 functionsLogger = logging.getLogger(__name__)
@@ -51,14 +52,14 @@ def cmd_vpr(update, context):
     """ Fetch and send latest VPR satellite image to the user """
 
     vprImageURL = scrap_satelites.get_vpr_last_image()
-    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL)
+    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=1000)
 
 
 @bot_utils.send_upload_video_action
 def send_vpr_video(update, context, vprVideoPath):
     """ Send the .mp4 file to the user and delete it """
 
-    context.bot.send_video(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, video=open(vprVideoPath, 'rb'))
+    context.bot.send_animation(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, animation=open(vprVideoPath, 'rb'), timeout=1000)
     os.remove(vprVideoPath)
     functionsLogger.info(f"Deleted {vprVideoPath}.")
 
@@ -98,7 +99,7 @@ def cmd_acumulada(update, context):
 
     acumuladaImageURL = scrap_satelites.get_acumulada_last_image(interval)
     if acumuladaImageURL:
-        context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaImageURL)
+        context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaImageURL, timeout=1000)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
 
@@ -113,7 +114,7 @@ def cmd_acumulada_previsao_24hrs(update, context):
     acumuladaPrevisaoImageURL = scrap_satelites.get_acumulada_previsao_24hrs()
 
     context.bot.send_message(chat_id=update.effective_chat.id, text="Precipitação acumulada prevista para as próximas 24 horas:", parse_mode="markdown")
-    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL)
+    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL, timeout=1000)
 
 
 @run_async
@@ -156,8 +157,7 @@ def cmd_alerts_CEP(update, context):
 
     try:
         if pycep.validar_cep(cep):
-            cepJSON = pycep.consultar_cep(cep)
-            city = cepJSON["cidade"]
+            city = viacep.get_cep_city(cep)
             cityWarned = False
 
             # Include moderate alerts
@@ -183,6 +183,26 @@ def cmd_alerts_CEP(update, context):
         functionsLogger.error(f"{zipError} on cmd_alerts_CEP. Message text: \"{text}\"")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
         return None
+
+
+@run_async
+@bot_utils.send_typing_action
+def cmd_alerts_map(update, context):
+    """ Take screenshot of the alerts map and send to the user """
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
+
+    alertsMapPath = parse_alerts.take_screenshot_alerts_map()
+    functionsLogger.debug(alertsMapPath)
+    send_alerts_map_screenshot(update, context, alertsMapPath)
+
+
+@bot_utils.send_upload_photo_action
+def send_alerts_map_screenshot(update, context, alertsMapPath):
+    context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/", reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=1000)
+
+    os.remove(alertsMapPath)
+    functionsLogger.info(f"Deleted {alertsMapPath}.")
 
 
 @run_async
@@ -299,7 +319,7 @@ def cmd_unsubscribe_alerts(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`", parse_mode="markdown")
             return None
 
-    unsubscribeMessage = bot_utils.get_subscribe_message(update, cep, textArgs)
+    unsubscribeMessage = bot_utils.get_unsubscribe_message(update, cep, textArgs)
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
 
 
