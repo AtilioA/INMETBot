@@ -123,11 +123,13 @@ def cmd_alerts_brasil(update, context):
 
     functionsLogger.debug("Getting alerts for Brazil...")
 
-    alerts = parse_alerts.parse_alerts(ignoreModerate=True)
+    # Ignore moderate alerts
+    alerts = models.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
     if alerts:
         alertMessage = ""
         for alert in alerts:
-            alertMessage += bot_utils.get_alert_message(alert)
+            alertObj = models.Alert(alertDict=alert)
+            alertMessage += bot_utils.get_alert_message(alertObj)
         alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
@@ -158,14 +160,15 @@ def cmd_alerts_CEP(update, context):
             city = cepJSON["cidade"]
             cityWarned = False
 
-            alerts = parse_alerts.parse_alerts(ignoreModerate=False)
+            # Include moderate alerts
+            alerts = models.alertsCollection.find({})
             if alerts:
                 alertMessage = ""
                 for alert in alerts:
-                    # functionsLogger.debug(alert.cities)
-                    if city in alert.cities:
+                    alertObj = models.Alert(alertDict=alert)
+                    if city in alertObj.cities:
                         cityWarned = True
-                        alertMessage += bot_utils.get_alert_message(alert, city)
+                        alertMessage += bot_utils.get_alert_message(alertObj, city)
 
                 alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
                 if not cityWarned:
@@ -205,13 +208,15 @@ def alerts_location(update, context):
                 city = json["nearest"]["region"]
                 cityWarned = False
 
-                alerts = parse_alerts.parse_alerts(ignoreModerate=False)
+                # Ignore moderate alerts
+                alerts = models.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
                 if alerts:
                     alertMessage = ""
                     for alert in alerts:
-                        if city in alert.cities:
+                        alertObj = models.Alert(alertDict=alert)
+                        if city in alertObj.cities:
                             cityWarned = True
-                            alertMessage += bot_utils.get_alert_message(alert, city)
+                            alertMessage += bot_utils.get_alert_message(alertObj, city)
 
                     alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
 
