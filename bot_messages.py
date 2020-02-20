@@ -1,3 +1,5 @@
+# Plain strings for the bot
+
 welcomeMessage = """🌥 @INMETBot
 Olá! Este bot pode enviar imagens e informações úteis disponíveis pelo INMET diretamente pelo Telegram.
 
@@ -49,3 +51,4 @@ Criado por @AtilioA
 sorrizoChegou = "É O *SORRIZO RONALDO* 😁 QUE CHEGOU..."
 sorrizoQueen = "👊👊👏 *SORRIZ*.."
 instructions = "Instruções de uso: clique em /help ou /ajuda"
+acumuladaError = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei 1 como valor.\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
