@@ -185,7 +185,6 @@ def cmd_alerts_CEP(update, context):
         return None
 
 
-@run_async
 @bot_utils.send_typing_action
 def cmd_alerts_map(update, context):
     """ Take screenshot of the alerts map and send to the user """
@@ -197,6 +196,7 @@ def cmd_alerts_map(update, context):
     send_alerts_map_screenshot(update, context, alertsMapPath)
 
 
+@run_async
 @bot_utils.send_upload_photo_action
 def send_alerts_map_screenshot(update, context, alertsMapPath):
     context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/", reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=1000)
