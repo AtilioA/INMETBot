@@ -36,7 +36,6 @@ schedule = "*"
 pymongo = "*"
 dnspython = "*"
 selenium = "*"
-viacep = "*"
 
 [requires]
 python_version = "3.7"
