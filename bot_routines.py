@@ -1,3 +1,4 @@
+import arrow
 import logging
 import parse_alerts
 import models
@@ -7,6 +8,17 @@ import bot_utils
 
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
+
+
+def delete_past_alerts_routine():
+    """ Delete past alerts published by INMET from the database. """
+
+    alerts = list(models.alertsCollection.find({}))
+    timeNow = arrow.utcnow().to("Brazil/East")
+    for alert in alerts:
+        if timeNow > arrow.get(alert["endDate"]):
+            routinesLogger.info(f"alert {alert['alertID']} is past and will be deleted.")
+            models.alertsCollection.delete_one({"alertID": alert["alertID"]})
 
 
 def parse_alerts_routine(ignoreModerate=False):
@@ -46,16 +58,18 @@ def notify_chats_routine():
                         routinesLogger.error(error)
                     else:
                         if city in alert["cities"]:
-                            routinesLogger.debug(f"Notifying chat {chat['chatID']}...")
+                            alertObj = models.Alert(alertDict=alert)
+                            routinesLogger.debug(f"Notifying chat {chat['chatID']} for alert {alert['alertID']}...")
 
-                            alertMessage = bot_utils.get_alert_message_dict(alert, city)
+                            alertMessage = bot_utils.get_alert_message(alertObj, city)
                             alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
 
                             updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                            models.alertsCollection.update({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
+                            models.alertsCollection.update_one({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
 
 
 if __name__ == "__main__":
     # parse_alerts_routine()
-    notify_chats_routine()
+    # notify_chats_routine()
+    # delete_past_alerts_routine()
     pass

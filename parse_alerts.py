@@ -8,8 +8,6 @@ from models import Alert
 parsingLogger = logging.getLogger(__name__)
 parsingLogger.setLevel(logging.DEBUG)
 
-BRAZIL_TIME = arrow.utcnow().to("Brazil/East")
-
 
 def parse_alerts(ignoreModerate=True):
     """ Parse alerts published by INMET.
@@ -37,6 +35,8 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
         True if alert is wanted, False otherwise.
     """
 
+    brazilTime = arrow.utcnow().to("Brazil/East")
+
     severityPattern = r"(?<=Severidade Grau: )(.*)(?=<\/title)"
     severityMatch = re.search(severityPattern, str(alertXML))
     if severityMatch:
@@ -48,7 +48,7 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
             endDateMatch = re.search(endDatePattern, str(alertXML))
             if endDateMatch:
                 endDate = arrow.get(endDateMatch.group(1))
-                if BRAZIL_TIME < endDate:
+                if brazilTime < endDate:
                     return True
                 else:
                     return False

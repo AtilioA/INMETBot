@@ -101,7 +101,7 @@ def create_subscribed_chats_document(chatID, cep=None):
 
 
 class Alert():
-    def __init__(self, alertXML=None):
+    def __init__(self, alertXML=None, alertDict=None):
         """ Carry information about an alert (reads from XML file). """
 
         if alertXML:
@@ -113,16 +113,25 @@ class Alert():
             self.get_description_from_XML(alertXML)
             self.get_area_from_XML(alertXML)
             self.get_cities_from_XML(alertXML)
+        elif alertDict:
+            self.id = alertDict["alertID"]
+            self.event = alertDict["event"]
+            self.severity = alertDict["severity"]
+            self.startDate = arrow.get(alertDict["startDate"])
+            self.endDate = arrow.get(alertDict["endDate"])
+            self.description = alertDict["description"]
+            self.area = alertDict["area"]
+            self.cities = alertDict["cities"]
         else:
-            self.id = ""
-            self.event = ""
-            self.severity = ""
-            self.startDate = ""
-            self.endDate = ""
-            self.description = ""
-            self.area = ""
-            self.cities = ""
-        self.graphURL = "http://www.inmet.gov.br/portal/alert-as/"
+            self.id = None
+            self.event = None
+            self.severity = None
+            self.startDate = None
+            self.endDate = None
+            self.description = None
+            self.area = None
+            self.cities = None
+        # self.graphURL = "http://www.inmet.gov.br/portal/alert-as/"
 
     def get_id_from_XML(self, alertXML):
         alertID = alertXML.identifier.text.replace("urn:oid:", "")

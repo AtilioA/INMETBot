@@ -1,10 +1,10 @@
+import uuid
 import logging
 import os
 import re
 import requests
 from bs4 import BeautifulSoup
 import imageio
-import arrow
 
 scrapingLogger = logging.getLogger(__name__)
 scrapingLogger.setLevel(logging.DEBUG)
@@ -134,13 +134,14 @@ def get_vpr_gif(nImages=DEFAULT_VPR_IMAGES):
         imagesURLS = [f"{INMET_SATELITE_BRASIL_VPR_URL}{option}" for option in options]
 
         readImages = []
-        scrapingLogger.debug((f"Reading {imagesURLS[:1]}..."))
+        scrapingLogger.debug((f"Reading {imagesURLS[:1]}... URLs"))
         for img in reversed(imagesURLS[:nImages]):
             readImages.append(imageio.imread(img))
-        scrapingLogger.debug(f"Read {(len(readImages))} images.")
+        scrapingLogger.debug(f"Finished reading {(len(readImages))} images.")
 
-        timeNow = arrow.utcnow().timestamp
-        gifFilename = os.path.join("tmp", f"VPR_{timeNow}.mp4")
+        uniqueID = uuid.uuid4().hex
+        gifFilename = os.path.join("tmp", f"VPR_{uniqueID}.mp4")
+
         kargs = {'fps': 10, 'macro_block_size': None}
         imageio.mimsave(f'{gifFilename}', readImages, 'MP4', **kargs)
 
