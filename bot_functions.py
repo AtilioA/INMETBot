@@ -9,6 +9,7 @@ import bot_messages
 import bot_utils
 import parse_alerts
 from telegram.ext.dispatcher import run_async
+from telegram.error import BadRequest
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
@@ -139,7 +140,11 @@ def cmd_alerts_brasil(update, context):
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    try:
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    except BadRequest:
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="Erro! Muitos alertas.\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/", parse_mode="markdown", disable_web_page_preview=True)
+
 
 
 @run_async
