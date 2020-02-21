@@ -36,6 +36,7 @@ schedule = "*"
 pymongo = "*"
 dnspython = "*"
 selenium = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.7"

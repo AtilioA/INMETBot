@@ -9,6 +9,7 @@ import bot_messages
 import bot_utils
 import parse_alerts
 from telegram.ext.dispatcher import run_async
+from telegram.error import BadRequest
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
@@ -22,11 +23,11 @@ def send_instructions_message(update, context):
 
 
 @run_async
-def catch_all_if_not_group(update, context):
+def catch_all_if_private(update, context):
     """ Reply to any message not handled (if not sent to a group/channel). """
 
-    if not bot_utils.is_group_or_channel(update.effective_chat.id):
-        functionsLogger.debug("catch_all: not group")
+    if update.message.chat.type == "private":
+        functionsLogger.debug(f"catch_all: {update.message.chat.type} to @{update.message.chat.username}")
         return send_instructions_message(update, context)
 
 
@@ -35,6 +36,8 @@ def catch_all_if_not_group(update, context):
 def cmd_help(update, context):
     """ Send the help message to the user. """
 
+    functionsLogger.debug(f"{update.message.chat.type} to @{update.message.chat.username}")
+
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
@@ -42,6 +45,8 @@ def cmd_help(update, context):
 @bot_utils.send_typing_action
 def cmd_start(update, context):
     """ Send the help message to the user.  """
+
+    functionsLogger.debug(f"{update.message.chat.type} to @{update.message.chat.username}")
 
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.welcomeMessage, parse_mode="markdown")
 
@@ -135,7 +140,11 @@ def cmd_alerts_brasil(update, context):
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    try:
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    except BadRequest:
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="Erro! Muitos alertas.\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/", parse_mode="markdown", disable_web_page_preview=True)
+
 
 
 @run_async
@@ -258,7 +267,7 @@ def alerts_location(update, context):
 @bot_utils.send_typing_action
 def cmd_subscribed_alerts(update, context):
     statusMessage = ""
-    isGroupOrChannel = bot_utils.is_group_or_channel(update.effective_chat.id)
+    isGroupOrChannel = bot_utils.is_group_or_channel(update.message.chat.type)
 
     if models.is_subscribed(update.effective_chat.id):
         if isGroupOrChannel:

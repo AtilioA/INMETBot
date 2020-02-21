@@ -24,7 +24,7 @@ subscribed_alerts_handler = CommandHandler(('inscrito', 'status'), bot_functions
 sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), bot_functions.cmd_sorrizoronaldo)
 sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), bot_functions.cmd_sorrizoronaldo_will_rock_you)
 
-catch_all_if_not_group_handler = MessageHandler(Filters.text, bot_functions.catch_all_if_not_group)
+catch_all_if_private_handler = MessageHandler(Filters.text, bot_functions.catch_all_if_private)
 
 # Add handlers to dispatcher
 dispatcher.add_handler(start_handler)
@@ -50,4 +50,4 @@ dispatcher.add_handler(alerts_location_handler)
 
 dispatcher.add_error_handler(bot_functions.error)
 
-dispatcher.add_handler(catch_all_if_not_group_handler)
+dispatcher.add_handler(catch_all_if_private_handler)

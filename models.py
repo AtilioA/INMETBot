@@ -16,6 +16,8 @@ modelsLogger.debug("Connected to the INMETBot database.")
 
 
 def get_CEPs(chatID):
+    """ Get chat's subscribed CEPs. """
+
     queryChat = subscribedChatsCollection.find_one({"chatID": chatID})
     if queryChat:
         return queryChat["CEPs"]
@@ -24,6 +26,8 @@ def get_CEPs(chatID):
 
 
 def is_subscribed(chatID):
+    """ Check if chat is subscribed to alerts. """
+
     queryChat = subscribedChatsCollection.find_one({"chatID": chatID})
     if queryChat:
         return True
@@ -32,6 +36,8 @@ def is_subscribed(chatID):
 
 
 def unsubscribe_chat(chatID, cep=None):
+    """ Unsubscribe chat and/or CEP from alerts. """
+
     if cep:
         queryChat = subscribedChatsCollection.find_one({"chatID": chatID})
         if queryChat:
@@ -52,6 +58,8 @@ def unsubscribe_chat(chatID, cep=None):
 
 
 def subscribe_chat(chatID, cep):
+    """ Subscribe chat and/or CEP from alerts. """
+
     queryChat = subscribedChatsCollection.find_one({"chatID": chatID})
     if queryChat:
         if cep in queryChat["CEPs"]:
@@ -68,31 +76,10 @@ def subscribe_chat(chatID, cep):
         return True
 
 
-def insert_alert(alertObj):
-    queryAlert = alertsCollection.find_one({"alertID": alertObj.id})
-    if not queryAlert:
-        alertDocument = create_alert_document(alertObj)
-        alertsCollection.insert_one(alertDocument)
-        modelsLogger.info("Inserted new alert.")
-    modelsLogger.info("Alert already exists; not inserted.")
-
-
-def create_alert_document(alertObj):
-    alertDocument = {
-        "alertID": alertObj.id,
-        "event": alertObj.event,
-        "severity": alertObj.severity,
-        "startDate": alertObj.startDate.for_json(),
-        "endDate": alertObj.endDate.for_json(),
-        "description": alertObj.description,
-        "area": alertObj.area,
-        "cities": alertObj.cities,
-        "notifiedChats": []
-    }
-    return alertDocument
-
-
 def create_subscribed_chats_document(chatID, cep=None):
+    """ Serialize chat subscription for database insertion. """
+    # STUB
+
     if cep:
         subscribedChatsDocument = {'chatID': chatID, 'CEPs': [cep]}
     else:
@@ -102,7 +89,7 @@ def create_subscribed_chats_document(chatID, cep=None):
 
 class Alert():
     def __init__(self, alertXML=None, alertDict=None):
-        """ Carry information about an alert (reads from XML file). """
+        """ Carry information about an alert (reads from XML file or serialize json). """
 
         if alertXML:
             self.get_id_from_XML(alertXML)
@@ -133,7 +120,40 @@ class Alert():
             self.cities = None
         # self.graphURL = "http://www.inmet.gov.br/portal/alert-as/"
 
+    def __repr__(self):
+        """ String representation of alert. """
+
+        return f"Alert ID: {self.id}, Alert event: {self.event}"
+
+    def insert_alert(self):
+        """ Insert alert in the database if isn't in the database. """
+
+        queryAlert = alertsCollection.find_one({"alertID": self.id})
+        if not queryAlert:
+            alertDocument = self.serialize()
+            alertDocument["notifiedChats"] = []
+            alertsCollection.insert_one(alertDocument)
+            modelsLogger.info(f"Inserted new alert: {self}")
+        modelsLogger.info("Alert already exists; not inserted.")
+
+    def serialize(self):
+        """ Serialize alert for database insertion. """
+
+        alertDocument = {
+            "alertID": self.id,
+            "event": self.event,
+            "severity": self.severity,
+            "startDate": self.startDate.for_json(),
+            "endDate": self.endDate.for_json(),
+            "description": self.description,
+            "area": self.area,
+            "cities": self.cities,
+        }
+        return alertDocument
+
     def get_id_from_XML(self, alertXML):
+        """ Extract id string from XML. """
+
         alertID = alertXML.identifier.text.replace("urn:oid:", "")
         self.id = alertID
 

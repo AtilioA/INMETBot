@@ -7,9 +7,9 @@ import viacep
 from bot_config import updater
 import bot_utils
 
+
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
-
 
 def delete_past_alerts_routine():
     """ Delete past alerts published by INMET from the database. """
@@ -32,10 +32,10 @@ def parse_alerts_routine(ignoreModerate=False):
 
     alertsXML = parse_alerts.parse_alerts_xml(ignoreModerate)
     alerts = parse_alerts.instantiate_alerts_objects(alertsXML, ignoreModerate)
-    routinesLogger.debug(alerts)
+    routinesLogger.info(alerts)
     for alert in alerts:
-        models.insert_alert(alert)
-    routinesLogger.info("Finished parsed_alerts_routine routine.")
+        alert.insert_alert()
+    routinesLogger.info("Finished parse_alerts_routine routine.")
 
 
 def notify_chats_routine():
@@ -77,7 +77,7 @@ def notify_chats_routine():
 
 
 if __name__ == "__main__":
-    # parse_alerts_routine()
-    notify_chats_routine()
+    parse_alerts_routine()
+    # notify_chats_routine()
     # delete_past_alerts_routine()
     pass

@@ -28,25 +28,30 @@ send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
 send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 
-def is_group_or_channel(chat_id):
-    """ Check if chat_id represents a group or channel. """
+def is_group_or_channel(chat_type):
+    """ Check if chat_type is group or channel. """
 
-    if chat_id < 0:
-        return True
-    else:
-        return False
+    chatType = {
+        "private": False
+    }
+
+    chatType.get(chat_type, True)
 
 
 # MESSAGES
 def determine_severity_emoji(severity):
     """ Determine emoji for alert message and return it. """
 
-    if severity == "Perigo Potencial":
-        return "⚠️"  # Yellow alert
-    elif severity == "Perigo":
-        return "🔶"  # Orange alert
+    if isinstance(severity, str):
+        emojiDict = {
+            "Perigo Potencial": "⚠️",  # Yellow alert
+            "Perigo": "🔶",  # Orange alert
+            "Grande Perigo": "🚨"  # Red alert
+        }
+
+        return emojiDict.get(severity, None)
     else:
-        return "🚨"  # Red alert
+        logging.error(f"severity is not string: {severity}")
 
 
 def get_alert_message(alert, location=None):
@@ -81,14 +86,36 @@ def parse_n_images_input(update, context, text):
             Number of images if successful, None otherwise.
     """
 
+    def get_n_images_and_message(nImages=None):
+        """ Process nImages input and determine nImagesMessage for vpr_gif function """
+
+        if nImages:
+            if nImages > MAX_VPR_IMAGES:
+                nImagesMessage = f"❕O número máximo de imagens é {MAX_VPR_IMAGES} (12 horas de imagens)! Utilizarei-o no lugar de {nImages}."
+                nImages = MAX_VPR_IMAGES
+            elif nImages < MIN_VPR_IMAGES:
+                nImagesMessage = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
+                nImages = MIN_VPR_IMAGES
+            else:
+                print(nImages)
+                nImagesMessage = None
+            return (nImages, nImagesMessage)
+
+        nImagesMessage = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""  # noqa
+        nImages = DEFAULT_VPR_IMAGES
+
+        return (nImages, nImagesMessage)
+
     try:
         nImages = text.split(' ')[1]
-        if nImages.isnumeric():
+        print(nImages)
+        try:
+            nImages = int(float(nImages))
             nImages, nImagesMessage = get_n_images_and_message(nImages)
-        else:
+        except ValueError:
             context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id, parse_mode="markdown")
             return None
-    except IndexError:
+    except (IndexError, AttributeError):
         nImages, nImagesMessage = get_n_images_and_message(None)
         utilsLogger.warning(f"No input in parse_n_images_input. Message text: \"{text}\"")
 
@@ -98,29 +125,11 @@ def parse_n_images_input(update, context, text):
     return nImages
 
 
-def get_n_images_and_message(nImages=None):
-    if nImages:
-        nImages = int(nImages)
-        if nImages > MAX_VPR_IMAGES:
-            nImagesMessage = f"❕O número máximo de imagens é {MAX_VPR_IMAGES} (24 horas de imagens)! Utilizarei-o no lugar de {nImages}."
-            nImages = MAX_VPR_IMAGES
-        elif nImages < MIN_VPR_IMAGES:
-            nImagesMessage = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
-            nImages = MIN_VPR_IMAGES
-        else:
-            nImagesMessage = None
-    else:
-        nImagesMessage = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).
-Dica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""
-        nImages = DEFAULT_VPR_IMAGES
-
-    return (nImages, nImagesMessage)
-
-
 def get_subscribe_message(update, cep, textArgs):
+    # STUB
     # Check if chat is subscribed and cep was given
     if models.is_subscribed(update.effective_chat.id) and not cep:
-        if is_group_or_channel(update.effective_chat.id):
+        if is_group_or_channel(update.message.chat.type):
             subscribeMessage = f"❕O grupo já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever."
         else:
             subscribeMessage = f"❕Você já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever."
@@ -131,7 +140,7 @@ def get_subscribe_message(update, cep, textArgs):
         else:
             subscribeMessage = f"❕O CEP {cep} já está inscrito.\nDesinscreva CEPs: `{textArgs[0]} {cep}`.\nDesinscreva o grupo com /desinscrever."
     elif not models.is_subscribed(update.effective_chat.id) and cep:
-        if is_group_or_channel(update.effective_chat.id):
+        if is_group_or_channel(update.message.chat.type):
             utilsLogger.debug("Subscribing group")
             models.subscribe_chat(update.effective_chat.id, cep)
             subscribeMessage = f"🔔 Inscrevi o grupo e o CEP {cep}.\nDesinscreva o grupo com /desinscrever."
@@ -140,7 +149,7 @@ def get_subscribe_message(update, cep, textArgs):
             models.subscribe_chat(update.effective_chat.id, cep)
             subscribeMessage = f"🔔 Inscrevi você e o CEP {cep}.\nDesinscreva-se com /desinscrever."
     else:  # Chat not subscribed and cep not given
-        if is_group_or_channel(update.effective_chat.id):
+        if is_group_or_channel(update.message.chat.type):
             models.subscribe_chat(update.effective_chat.id, cep)
             subscribeMessage = f"🔔 Inscrevi o grupo.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever."
         else:
@@ -151,10 +160,11 @@ def get_subscribe_message(update, cep, textArgs):
 
 
 def get_unsubscribe_message(update, cep, textArgs):
+    # STUB
     # Check if chat is subscribed and cep was given
     if models.is_subscribed(update.effective_chat.id) and not cep:
         models.unsubscribe_chat(update.effective_chat.id, cep)
-        if is_group_or_channel(update.effective_chat.id):
+        if is_group_or_channel(update.message.chat.type):
             unsubscribed = models.unsubscribe_chat(update.effective_chat.id, cep)
             unsubscribeMessage = "🔕 O grupo foi desinscrito dos alertas.\nInscreva o grupo com /inscrever."
         else:
@@ -167,7 +177,7 @@ def get_unsubscribe_message(update, cep, textArgs):
         else:
             unsubscribeMessage = f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`"
     else:  # Chat not subscribed
-        if is_group_or_channel(update.effective_chat.id):
+        if is_group_or_channel(update.message.chat.type):
             unsubscribeMessage = "❌ O grupo não está inscrito nos alertas.\nInscreva-o com /inscrever."
         else:
             unsubscribeMessage = "❌ Você não está inscrito nos alertas.\nInscreva-se com /inscrever."
