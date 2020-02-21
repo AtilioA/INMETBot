@@ -35,7 +35,7 @@ def is_group_or_channel(chat_type):
         "private": False
     }
 
-    chatType.get(chat_type, True)
+    return chatType.get(chat_type, True)
 
 
 # MESSAGES
@@ -48,10 +48,10 @@ def determine_severity_emoji(severity):
             "Perigo": "🔶",  # Orange alert
             "Grande Perigo": "🚨"  # Red alert
         }
-
         return emojiDict.get(severity, None)
     else:
         logging.error(f"severity is not string: {severity}")
+        return None
 
 
 def get_alert_message(alert, location=None):
