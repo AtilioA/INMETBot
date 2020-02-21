@@ -11,7 +11,7 @@ scrapingLogger.setLevel(logging.DEBUG)
 
 MIN_VPR_IMAGES = 2
 DEFAULT_VPR_IMAGES = 9  # 2 hours of images
-MAX_VPR_IMAGES = 48  # 24 hours of images
+MAX_VPR_IMAGES = 48  # 12 hours of images
 
 INMET_DOMAIN = "http://www.inmet.gov.br/"
 

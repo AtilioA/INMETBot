@@ -38,6 +38,7 @@ def take_screenshot_alerts_map():
 
     return alertsMapPath
 
+
 def parse_alerts(ignoreModerate=True):
     """ Parse alerts published by INMET.
 
@@ -170,6 +171,4 @@ def get_alerts_xml(ignoreModerate=True):
 
 
 if __name__ == "__main__":
-    # parse_alerts()
     take_screenshot_alerts_map()
-    # alerts = parse_alerts(ignoreModerate=False)
