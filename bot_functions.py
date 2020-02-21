@@ -26,7 +26,7 @@ def send_instructions_message(update, context):
 def catch_all_if_private(update, context):
     """ Reply to any message not handled (if not sent to a group/channel). """
 
-    if update.message.chat.type == "private":
+    if not bot_utils.is_group_or_channel(update.message.chat.type):
         functionsLogger.debug(f"catch_all: {update.message.chat.type} to @{update.message.chat.username}")
         return send_instructions_message(update, context)
 
