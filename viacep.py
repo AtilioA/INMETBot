@@ -25,13 +25,13 @@ def cep_lookup(CEPString):
 def viacep_request(CEPString):
     """ Make a request to the viacep's API with given CEP. """
 
-    return f'http://www.viacep.com.br/ws/{cep}/json'
+    return f'http://www.viacep.com.br/ws/{CEPString}/json'
 
 
 def cepReplace(CEPString):
     """ Remove - and space from string. """
 
-    return str.replace("-", "").replace(" ", "")
+    return CEPString.replace("-", "").replace(" ", "")
 
 
 def matchCepRegex(CEPString):

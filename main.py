@@ -1,4 +1,5 @@
 # Webserver to prevent the bot from sleeping
+import web
 import webserver
 import logging
 import time
@@ -21,7 +22,7 @@ logging.basicConfig(format='%(asctime)s %(message)s',
 # Thread for the web server
 class WebServerThread(Thread):
     def run(self):
-        app = webserver.web.application(webserver.urls, globals())
+        app = web.application(webserver.urls, globals())
         app.run()
 
 
@@ -34,14 +35,14 @@ class RoutinesThread(Thread):
 
 
 # To guarantee a stable execution schedule
-def run_threaded(job_function):
-    jobThread = Thread(target=job_function)
-    jobThread.start()
+# def run_threaded(job_function):
+#     jobThread = Thread(target=job_function)
+#     jobThread.start()
 
 
-schedule.every(ROUTINES_INTERVAL).minutes.do(run_threaded, parse_alerts_routine)
-schedule.every(ROUTINES_INTERVAL).minutes.do(run_threaded, delete_past_alerts_routine)
-schedule.every(ROUTINES_INTERVAL).minutes.do(run_threaded, notify_chats_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
 
 
 def main():
