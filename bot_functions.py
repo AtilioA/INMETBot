@@ -130,29 +130,30 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
     """
 
     warned = False
-    if alerts:
-        alertMessage = ""
-        alertCounter = 1
-        for alert in alerts:
-            alertObj = models.Alert(alertDict=alert)
-            if not city:
-                warned = True
-                alertMessage += bot_utils.get_alert_message(alertObj)
-                if alertCounter >= 6:
-                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                    alertMessage = ""
-                    alertCounter = 1
-                alertCounter += 1
-            elif city in alertObj.cities:
-                warned = True
-                alertMessage += bot_utils.get_alert_message(alertObj, city)
-                if alertCounter >= 6:
-                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                    alertMessage = ""
-                    alertCounter = 1
-                alertCounter += 1
-        alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    alertMessage = ""
+    alertCounter = 1
+
+    for alert in alerts:
+        alertObj = models.Alert(alertDict=alert)
+        if not city:
+            warned = True
+            alertMessage += alertObj.get_alert_message()
+            if alertCounter >= 6:
+                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                alertMessage = ""
+                alertCounter = 1
+            alertCounter += 1
+        elif city in alertObj.cities:
+            warned = True
+            alertMessage += alertObj.get_alert_message(city)
+            if alertCounter >= 6:
+                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                alertMessage = ""
+                alertCounter = 1
+            alertCounter += 1
+    alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+
     return warned
 
 

@@ -57,31 +57,6 @@ def determine_severity_emoji(severity):
         return None
 
 
-def get_alert_message(alert, location=None):
-    """ Create alert message string from alert object and return it. """
-
-    severityEmoji = determine_severity_emoji(alert.severity)
-    area = ','.join(alert.area)
-    formattedStartDate = alert.startDate.strftime("%d/%m/%Y %H:%M")
-    formattedEndDate = alert.endDate.strftime("%d/%m/%Y %H:%M")
-
-    if isinstance(location, list):
-        header = f"{severityEmoji} *{alert.event[:-1]} para {', '.join(location)}.*"
-    elif location:
-        header = f"{severityEmoji} *{alert.event[:-1]} para {location}.*"
-    else:
-        header = f"{severityEmoji} *{alert.event}*"
-
-    messageString = f"""
-{header}
-
-        *Áreas afetadas*: {area}.
-        *Vigor*: De {formattedStartDate} a {formattedEndDate}.
-        {alert.description}
-"""
-    return messageString
-
-
 def parse_n_images_input(update, context, text):
     """ Parse input for VPR gifs. Input must exist and be numeric.
 

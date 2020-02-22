@@ -3,6 +3,7 @@ import os
 import arrow
 import re
 import pymongo
+from utils.bot_utils import determine_severity_emoji
 
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
@@ -278,6 +279,30 @@ class Alert():
             INMETBotDB.alertsCollection.insert_one(alertDocument)
             modelsLogger.info(f"Inserted new alert: {self}")
         modelsLogger.info("Alert already exists; not inserted.")
+
+    def get_alert_message(self, location=None):
+        """ Create alert message string from alert object and return it. """
+
+        severityEmoji = determine_severity_emoji(self.severity)
+        area = ','.join(self.area)
+        formattedStartDate = self.startDate.strftime("%d/%m/%Y %H:%M")
+        formattedEndDate = self.endDate.strftime("%d/%m/%Y %H:%M")
+
+        if isinstance(location, list):
+            header = f"{severityEmoji} *{self.event[:-1]} para {', '.join(location)}.*"
+        elif location:
+            header = f"{severityEmoji} *{self.event[:-1]} para {location}.*"
+        else:
+            header = f"{severityEmoji} *{self.event}*"
+
+        messageString = f"""
+{header}
+
+        *Áreas afetadas*: {area}.
+        *Vigor*: De {formattedStartDate} a {formattedEndDate}.
+        {self.description}
+"""
+        return messageString
 
     def serialize(self):
         """ Serialize alert for database insertion. """
