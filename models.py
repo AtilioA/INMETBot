@@ -3,6 +3,7 @@ import os
 import arrow
 import re
 import pymongo
+from abc import ABC, abstractmethod
 
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
@@ -11,6 +12,21 @@ MONGO_URI = os.environ.get("INMETBOT_MONGO_URI")
 
 
 class BotDatabase():
+    """
+    The BotDatabase object facilitates connection to the database.
+
+    Attributes:
+    ----------
+    client : MongoClient
+        A MongoClient instance.
+    db : Database
+        the INMETBot database.
+    alertsCollection : Collection
+        the Alerts collection.
+    subscribedChatsCollection : Collection
+        the SubscribedChats collection.
+    """
+
     def __init__(self):
         try:
             # throw ServerSelectionTimeoutError if serverTimeout is exceeded
@@ -29,7 +45,29 @@ class BotDatabase():
 INMETBotDB = BotDatabase()
 
 
-class Chat():
+class Chat(ABC):
+    """ The Chat class is an abstract class and serves as base class for GroupChat and PrivateChat.
+
+    Parameters
+    ----------
+    update : Update
+        A message's Update object.
+
+    Attributes
+    ----------
+    id : str
+        The id of the chat.
+    type : str
+        The type of the chat ("private" or "group").
+    title : str
+        The title of the chat (group's title or user's username).
+    CEPs : list : str
+        List of subscribed CEPs.
+    subscribed : bool
+        Whether the chat is subscribed to alerts or not.
+    """
+
+    @abstractmethod
     def __init__(self, update):
         self.id = update.effective_chat.id
         self.type = "chat"
@@ -154,12 +192,35 @@ class Chat():
 
 
 class PrivateChat(Chat):
+    """ The PrivateChat object can carry information about a private chat.
+
+    Parameters
+    ----------
+    update : Update
+        A message's Update object.
+
+    Attributes
+    ----------
+    id : str
+        The id of the chat.
+    type : str
+        The type of the chat "private".
+    title : str
+        The title of the chat (user's username).
+    CEPs : list : str
+        List of subscribed CEPs.
+    subscribed : bool
+        Whether the chat is subscribed to alerts or not.
+    """
+
     def __init__(self, update):
         super(PrivateChat, self).__init__(update)
         self.title = update.message.chat.username
         self.type = "private"
 
     def get_subscribe_message(self, subscribeResult, textArgs, cep=None):
+        """ Get subscribe message according to subscription result for a private chat. """
+
         subscribeMessageDict = {
             "CHAT_EXISTS_CEP_EXISTS": f"❕Você já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.",
             "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.",
@@ -172,6 +233,8 @@ class PrivateChat(Chat):
         return subscribeMessage
 
     def get_unsubscribe_message(self, unsubscribeResult, textArgs, cep=None):
+        """ Get unsubscribe message according to unsubscription result for a private chat. """
+
         unsubscribeMessageDict = {
             "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep}.",
             "CHAT_EXISTS_CEP_NOT_FOUND": f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`",
@@ -183,6 +246,8 @@ class PrivateChat(Chat):
         return unsubscribeMessage
 
     def get_subscription_status_message(self, subscriptionStatus):
+        """ Get subscription status message according to subscription status for a private chat. """
+
         subscriptionStatusDict = {
             "SUBSCRIBED": "Você está inscrito nos alertas.\n\n",
             "UNSUBSCRIBED": "Você não está inscrito nos alertas."
@@ -193,12 +258,35 @@ class PrivateChat(Chat):
 
 
 class GroupChat(Chat):
+    """ The GroupChat object can carry information about a group chat.
+
+    Parameters
+    ----------
+    update : Update
+        A message's Update object.
+
+    Attributes
+    ----------
+    id : str
+        The id of the chat.
+    type : str
+        The type of the chat "private".
+    title : str
+        The title of the chat (group's title).
+    CEPs : list : str
+        List of subscribed CEPs.
+    subscribed : bool
+        Whether the chat is subscribed to alerts or not.
+    """
+
     def __init__(self, update):
         super(GroupChat, self).__init__(update)
         self.title = update.message.chat.title
         self.type = "group"
 
     def get_subscribe_message(self, subscribeResult, textArgs, cep=None):
+        """ Get subscribe message according to subscription result for a group chat. """
+
         subscribeMessageDict = {
             "CHAT_EXISTS_CEP_EXISTS": f"❕O CEP {cep} já está inscrito.\nDesinscreva CEPs: `{textArgs[0]} {cep}`.\nDesinscreva o grupo com /desinscrever.",
             "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.",
@@ -211,6 +299,8 @@ class GroupChat(Chat):
         return subscribeMessage
 
     def get_unsubscribe_message(self, unsubscribeResult, textArgs, cep=None):
+        """ Get unsubscribe message according to unsubscription result for a group chat. """
+
         unsubscribeMessageDict = {
             "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep}.",
             "CHAT_EXISTS_CEP_NOT_FOUND": f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`",
@@ -222,6 +312,8 @@ class GroupChat(Chat):
         return unsubscribeMessage
 
     def get_subscription_status_message(self, subscriptionStatus):
+        """ Get subscription status message according to subscription status for a group chat. """
+
         subscriptionStatusDict = {
             "SUBSCRIBED": "O grupo está inscrito nos alertas.\n\n",
             "UNSUBSCRIBED": "O grupo não está inscrito nos alertas."
@@ -232,9 +324,36 @@ class GroupChat(Chat):
 
 
 class Alert():
-    def __init__(self, alertXML=None, alertDict=None):
-        """ Carry information about an alert (reads from XML file or serialize json). """
+    """ The Alert object can carry information about an alert (reads from XML file or json).
 
+    Parameters
+    ----------
+    alertXML : BeautifulSoup
+        A BS4-parsed XML file.
+    alertDict : dict
+        A dictionary containing the Alert's information.
+
+    Attributes
+    ----------
+    id : str
+        The Alert ID.
+    event : str
+        The Alert event/header.
+    severity : str
+        The Alert's severity ("Perigo Potencial", "Perigo", "Grande Perigo")
+    startDate : Arrow
+        The date on which the Alert begins.
+    endDate : Arrow
+        The date on which the Alert expires.
+    description : str
+        A description of the Alert.
+    area : list : str
+        List of regions warned by the Alert.
+    cities : list : str
+        List of cities warned by the Alert.
+    """
+
+    def __init__(self, alertXML=None, alertDict=None):
         if alertXML:
             self.get_id_from_XML(alertXML)
             self.get_event_from_XML(alertXML)
@@ -318,7 +437,7 @@ class Alert():
         return messageString
 
     def serialize(self):
-        """ Serialize alert for database insertion. """
+        """ Serialize Alert object for database insertion. """
 
         alertDocument = {
             "alertID": self.id,
@@ -375,7 +494,7 @@ class Alert():
             self.area = [region for region in areaMatch.group(1).split(",")]
 
     def get_cities_from_XML(self, alertXML):
-        """ Extract cities string from XML, process it and put it in a list """
+        """ Extract cities string from XML, process it and put it in a list. """
 
         parameters = alertXML.info.find_all("parameter")
         citiesParameter = None
