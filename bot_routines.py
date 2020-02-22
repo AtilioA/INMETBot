@@ -5,21 +5,20 @@ import models
 # import pycep_correios as pycep
 from utils import viacep
 from bot_config import updater
-from utils import bot_utils
-
 
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
 
+
 def delete_past_alerts_routine():
     """ Delete past alerts published by INMET from the database. """
 
-    alerts = list(models.alertsCollection.find({}))
+    alerts = list(models.INMETBotDB.alertsCollection.find({}))
     timeNow = arrow.utcnow().to("Brazil/East")
     for alert in alerts:
         if timeNow > arrow.get(alert["endDate"]):
             routinesLogger.info(f"alert {alert['alertID']} is past and will be deleted.")
-            models.alertsCollection.delete_one({"alertID": alert["alertID"]})
+            models.INMETBotDB.alertsCollection.delete_one({"alertID": alert["alertID"]})
     routinesLogger.info("Finished delete_past_alerts_routine routine.")
 
 
@@ -45,8 +44,8 @@ def notify_chats_routine():
     If there is, notify chat and mark chat as notified (so it won't get notified again for the same alert).
     """
 
-    subscribedChats = list(models.subscribedChatsCollection.find({}))
-    alerts = list(models.alertsCollection.find({}))
+    subscribedChats = list(models.INMETBotDB.subscribedChatsCollection.find({}))
+    alerts = list(models.INMETBotDB.alertsCollection.find({}))
 
     for chat in subscribedChats:
         routinesLogger.debug(f"Checking chat {chat['chatID']}")
@@ -71,7 +70,7 @@ def notify_chats_routine():
                     alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
 
                     updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                    models.alertsCollection.update_one({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
+                    models.INMETBotDB.alertsCollection.update_one({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
 
     routinesLogger.info("Finished notify_chats_routine routine.")
 

@@ -17,7 +17,7 @@ Exemplo: `/alertas_CEP 29075-910`
 /mapa exibe imagem do mapa de alertas disponível pelo Alert-AS.
 /acumulada exibe imagem de precipitação acumulada no intervalo de dias especificado (1, 3, 5, 10, 15, 30 ou 90) anteriores ao atual no Brasil.
 Exemplo: `/acumulada 3`
-/acumulada_previsao exibe imagem de precipitação acumulada prevista para as próximas 24 horas no Brasil.
+/acumulada\_previsao exibe imagem de precipitação acumulada prevista para as próximas 24 horas no Brasil.
 Para mais detalhes, clique em /help.
 
 —
