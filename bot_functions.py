@@ -164,7 +164,7 @@ def cmd_alerts_brasil(update, context):
     functionsLogger.debug("Getting alerts for Brazil...")
 
     # Ignore moderate alerts
-    alerts = models.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
+    alerts = models.INMETBotDB.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
     if not check_and_send_alerts_warning(update, context, alerts):
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
@@ -193,7 +193,7 @@ def cmd_alerts_CEP(update, context):
             city = viacep.get_cep_city(cep)
 
             # Include moderate alerts
-            alerts = models.alertsCollection.find({})
+            alerts = models.INMETBotDB.alertsCollection.find({})
             if alerts:
                 if check_and_send_alerts_warning(update, context, alerts, city):
                     return None
@@ -255,7 +255,7 @@ def alerts_location(update, context):
                 city = json["nearest"]["region"]
 
                 # Ignore moderate alerts
-                alerts = models.alertsCollection.find({})
+                alerts = models.INMETBotDB.alertsCollection.find({})
                 if alerts:
                     if check_and_send_alerts_warning(update, context, alerts, city):
                         return None
@@ -270,34 +270,6 @@ def alerts_location(update, context):
         else:
             functionsLogger.error("Failed GET request to reverse geocoding API.")
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
-
-
-@run_async
-@bot_utils.send_typing_action
-def cmd_subscribed_alerts(update, context):
-    statusMessage = ""
-    isGroupOrChannel = bot_utils.is_group_or_channel(update.message.chat.type)
-
-    if models.is_subscribed(update.effective_chat.id):
-        if isGroupOrChannel:
-            statusMessage += "O grupo está inscrito nos alertas.\n\n"
-        else:
-            statusMessage += "Você está inscrito nos alertas.\n\n"
-
-        CEPs = models.get_CEPs(update.effective_chat.id)
-        if CEPs:
-            statusMessage += "CEPs inscritos:\n"
-            for cep in CEPs:
-                statusMessage += f"{cep}\n"
-        else:
-            statusMessage += "Não há CEPs inscritos."
-    else:
-        if isGroupOrChannel:
-            statusMessage += "O grupo não está inscrito nos alertas."
-        else:
-            statusMessage += "Você não está inscrito nos alertas."
-
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=statusMessage, parse_mode="markdown")
 
 
 @bot_utils.send_typing_action
@@ -316,7 +288,10 @@ def cmd_subscribe_alerts(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{textArgs[0]} 29075-910`", parse_mode="markdown")
             return None
 
-    subscribeMessage = bot_utils.get_subscribe_message(update, cep, textArgs)
+    chat = models.create_chat_obj(update)
+    subscribeResult = chat.subscribe_chat(cep)
+    subscribeMessage = chat.get_subscribe_message(subscribeResult, textArgs, cep)
+
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscribeMessage, parse_mode="markdown")
 
 
@@ -336,8 +311,22 @@ def cmd_unsubscribe_alerts(update, context):
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`", parse_mode="markdown")
             return None
 
-    unsubscribeMessage = bot_utils.get_unsubscribe_message(update, cep, textArgs)
+    chat = models.create_chat_obj(update)
+    unsubscribeResult = chat.unsubscribe_chat(cep)
+    unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, textArgs, cep)
+
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
+
+
+@run_async
+@bot_utils.send_typing_action
+def cmd_subscription_status(update, context):
+    chat = models.create_chat_obj(update)
+
+    subscriptionStatus = chat.check_subscription_status()
+    subscriptionStatusMessage = chat.get_subscription_status_message(subscriptionStatus)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscriptionStatusMessage, parse_mode="markdown")
 
 
 @run_async

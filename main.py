@@ -34,12 +34,6 @@ class RoutinesThread(Thread):
             time.sleep(1)
 
 
-# To guarantee a stable execution schedule
-# def run_threaded(job_function):
-#     jobThread = Thread(target=job_function)
-#     jobThread.start()
-
-
 schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
