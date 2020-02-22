@@ -1,11 +1,11 @@
 import arrow
 import logging
-import parse_alerts
+from scraping import parse_alerts
 import models
 # import pycep_correios as pycep
-import viacep
+from utils import viacep
 from bot_config import updater
-import bot_utils
+from utils import bot_utils
 
 
 routinesLogger = logging.getLogger(__name__)
