@@ -82,7 +82,7 @@ def get_acumulada_last_image(interval):
         return None
 
 
-def get_acumulada_previsao_24hrs():
+def get_acumulada_previsao():
     """ Fetch the last accumulated precipitation for the next 24 hours satellite image.
 
     Return:

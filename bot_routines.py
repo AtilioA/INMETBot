@@ -67,7 +67,7 @@ def notify_chats_routine():
                     alertObj = models.Alert(alertDict=alert)
                     routinesLogger.info(f"-- Notifying chat {chat['chatID']} for alert {alert['alertID']}... --")
 
-                    alertMessage = bot_utils.get_alert_message(alertObj, warnedCities)
+                    alertMessage = alertObj.get_alert_message(warnedCities)
                     alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
 
                     updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)

@@ -1,3 +1,5 @@
+import sys
+sys.path.append(sys.path[0] + "/..")
 import os
 import re
 import logging
@@ -7,7 +9,7 @@ from bs4 import BeautifulSoup
 import uuid
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from models import Alert
+import models
 
 parsingLogger = logging.getLogger(__name__)
 parsingLogger.setLevel(logging.DEBUG)
@@ -55,7 +57,7 @@ def parse_alerts(ignoreModerate=True):
 
 
 def is_wanted_alert(alertXML, ignoreModerate=True):
-    """ Check if alert is wanted - an alert is wanted if endDate has not already passed and the alert isn't moderate if `ignoreModerate` is set to `True`.
+    """ Check if alert is wanted - an alert is wanted if it's not already present in the database, endDate has not already passed and the alert isn't moderate if `ignoreModerate` is set to `True`.
 
     Args:
         alert: the alert's XML parsed from BS4.
@@ -73,17 +75,31 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
         severity = severityMatch.group(1)
         if severity == "Perigo Potencial" and ignoreModerate:
             return False
+    else:
+        parsingLogger.error("No severity match.")
+
+    endDatePattern = r"Fim<\/th><td>(\d{4}-\d{2}-\d{2} \d\d:\d\d:\d\d\.\d)"
+    endDateMatch = re.search(endDatePattern, str(alertXML))
+    if endDateMatch:
+        endDate = arrow.get(endDateMatch.group(1))
+        if brazilTime > endDate:
+            return False
+    else:
+        parsingLogger.error("No date match.")
+
+    guidTag = alertXML.find("guid").text
+    guidPattern = r"(?<!\/\d\d\/)urn:oid:(.*?)\.xml"
+    guidMatch = re.search(guidPattern, str(guidTag))
+    if guidMatch:
+        alertID = guidMatch.group(1)
+        if models.INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
+            # parsingLogger.debug("Alert already in database.")
+            return False
         else:
-            endDatePattern = r"Fim<\/th><td>(\d{4}-\d{2}-\d{2} \d\d:\d\d:\d\d\.\d)"
-            endDateMatch = re.search(endDatePattern, str(alertXML))
-            if endDateMatch:
-                endDate = arrow.get(endDateMatch.group(1))
-                if brazilTime < endDate:
-                    return True
-                else:
-                    return False
-            else:
-                parsingLogger.error("No match.")
+            return True
+            # parsingLogger.debug("New alert.")
+    else:
+        parsingLogger.error("No guid match.")
 
 
 def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
@@ -93,7 +109,7 @@ def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
         ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
     """
 
-    return [Alert(alertXML) for alertXML in alertsXML]
+    return [models.Alert(alertXML) for alertXML in alertsXML]
 
 
 def parse_alerts_xml(ignoreModerate=True):

@@ -1,9 +1,9 @@
 import web
 
-urls = ('/', 'index')
+urls = ('/')
 
 
-class index:
+class index():
     def GET(self):
         web.input(name=None)
         return "200"
