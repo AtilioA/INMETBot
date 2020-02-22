@@ -1,6 +1,6 @@
 import web
 
-urls = ('/')
+urls = ('/', 'index')
 
 
 class index():
