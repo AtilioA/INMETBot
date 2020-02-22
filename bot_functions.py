@@ -122,6 +122,40 @@ def cmd_acumulada_previsao_24hrs(update, context):
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL, timeout=1000)
 
 
+def check_and_send_alerts_warning(update, context, alerts, city=None):
+    """ Check for alerts and send message to the user. Limits search to city if passed as input.
+
+    Return:
+        warned: True if any alert was sent, False otherwise.
+    """
+
+    warned = False
+    if alerts:
+        alertMessage = ""
+        alertCounter = 1
+        for alert in alerts:
+            alertObj = models.Alert(alertDict=alert)
+            if not city:
+                warned = True
+                alertMessage += bot_utils.get_alert_message(alertObj)
+                if alertCounter >= 6:
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    alertMessage = ""
+                    alertCounter = 1
+                alertCounter += 1
+            elif city in alertObj.cities:
+                warned = True
+                alertMessage += bot_utils.get_alert_message(alertObj, city)
+                if alertCounter >= 6:
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    alertMessage = ""
+                    alertCounter = 1
+                alertCounter += 1
+        alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    return warned
+
+
 @run_async
 @bot_utils.send_typing_action
 def cmd_alerts_brasil(update, context):
@@ -131,20 +165,9 @@ def cmd_alerts_brasil(update, context):
 
     # Ignore moderate alerts
     alerts = models.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
-    if alerts:
-        alertMessage = ""
-        for alert in alerts:
-            alertObj = models.Alert(alertDict=alert)
-            alertMessage += bot_utils.get_alert_message(alertObj)
-        alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
-    else:
+    if not check_and_send_alerts_warning(update, context, alerts):
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
-
-    try:
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-    except BadRequest:
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="Erro! Muitos alertas.\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/", parse_mode="markdown", disable_web_page_preview=True)
-
 
 
 @run_async
@@ -166,30 +189,24 @@ def cmd_alerts_CEP(update, context):
 
     try:
         if pycep.validar_cep(cep):
+            alertMessage = ""
             city = viacep.get_cep_city(cep)
-            cityWarned = False
 
             # Include moderate alerts
             alerts = models.alertsCollection.find({})
             if alerts:
-                alertMessage = ""
-                for alert in alerts:
-                    alertObj = models.Alert(alertDict=alert)
-                    if city in alertObj.cities:
-                        cityWarned = True
-                        alertMessage += bot_utils.get_alert_message(alertObj, city)
-
-                alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
-                if not cityWarned:
+                if not check_and_send_alerts_warning(update, context, alerts, city):
                     alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
+                else:
+                    return None
             else:
                 alertMessage = "✅ Não há alertas para o Brasil no momento."
-
+                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
         else:
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
-    except pycep.excecoes.ExcecaoPyCEPCorreios as zipError:  # Invalid zip code
-        functionsLogger.error(f"{zipError} on cmd_alerts_CEP. Message text: \"{text}\"")
+    except (pycep.excecoes.ExcecaoPyCEPCorreios, KeyError) as cepError:  # Invalid zip code
+        functionsLogger.error(f"{cepError} on cmd_alerts_CEP. Message text: \"{text}\"")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
         return None
 
@@ -229,35 +246,25 @@ def alerts_location(update, context):
         reverseGeocode = requests.get(f"https://api.3geonames.org/{latitude},{longitude}.json")
         if reverseGeocode.status_code == 200:
             functionsLogger.info("Successful GET request to reverse geocoding API!")
+
             json = reverseGeocode.json()
             functionsLogger.debug(f"reverseGeocode json: {json}")
             state = json["nearest"]["state"]
+
             if state == "BR":
                 city = json["nearest"]["region"]
-                cityWarned = False
 
                 # Ignore moderate alerts
-                alerts = models.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
+                alerts = models.alertsCollection.find({})
                 if alerts:
-                    alertMessage = ""
-                    for alert in alerts:
-                        alertObj = models.Alert(alertDict=alert)
-                        if city in alertObj.cities:
-                            cityWarned = True
-                            alertMessage += bot_utils.get_alert_message(alertObj, city)
-
-                    alertMessage += "\nVeja os gráficos em http://www.inmet.gov.br/portal/alert-as/"
-
-                    if not cityWarned:
+                    if not check_and_send_alerts_warning(update, context, alerts, city):
                         alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
                 else:
                     alertMessage = "✅ Não há alertas para o Brasil no momento."
 
                 context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-
             else:
                 context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ A localização indica uma região fora do Brasil.", parse_mode="markdown")
-
         else:
             functionsLogger.error("Failed GET request to reverse geocoding API.")
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
