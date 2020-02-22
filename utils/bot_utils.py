@@ -1,11 +1,10 @@
-import sys
-sys.path.append(sys.path[0] + "/..")
-import models
 import logging
 from functools import wraps
 import telegram
-import sys
 from scraping.scrap_satellites import MIN_VPR_IMAGES, DEFAULT_VPR_IMAGES, MAX_VPR_IMAGES
+
+import sys
+sys.path.append(sys.path[0] + "/..")
 
 utilsLogger = logging.getLogger(__name__)
 utilsLogger.setLevel(logging.DEBUG)
@@ -31,32 +30,7 @@ send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
 send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 
-def is_group_or_channel(chat_type):
-    """ Check if chat_type is group or channel. """
-
-    chatType = {
-        "private": False
-    }
-
-    return chatType.get(chat_type, True)
-
-
 # MESSAGES
-def determine_severity_emoji(severity):
-    """ Determine emoji for alert message and return it. """
-
-    if isinstance(severity, str):
-        emojiDict = {
-            "Perigo Potencial": "⚠️",  # Yellow alert
-            "Perigo": "🔶",  # Orange alert
-            "Grande Perigo": "🚨"  # Red alert
-        }
-        return emojiDict.get(severity, None)
-    else:
-        logging.error(f"severity is not string: {severity}")
-        return None
-
-
 def parse_n_images_input(update, context, text):
     """ Parse input for VPR gifs. Input must exist and be numeric.
 

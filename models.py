@@ -3,7 +3,6 @@ import os
 import arrow
 import re
 import pymongo
-from utils.bot_utils import determine_severity_emoji
 
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
@@ -280,10 +279,24 @@ class Alert():
             modelsLogger.info(f"Inserted new alert: {self}")
         modelsLogger.info("Alert already exists; not inserted.")
 
+    def determine_severity_emoji(self):
+        """ Determine emoji for alert message and return it. """
+
+        if isinstance(self.severity, str):
+            emojiDict = {
+                "Perigo Potencial": "⚠️",  # Yellow alert
+                "Perigo": "🔶",  # Orange alert
+                "Grande Perigo": "🚨"  # Red alert
+            }
+            return emojiDict.get(self.severity, None)
+        else:
+            logging.error(f"severity is not string: {self.severity}")
+            return None
+
     def get_alert_message(self, location=None):
         """ Create alert message string from alert object and return it. """
 
-        severityEmoji = determine_severity_emoji(self.severity)
+        severityEmoji = self.determine_severity_emoji()
         area = ','.join(self.area)
         formattedStartDate = self.startDate.strftime("%d/%m/%Y %H:%M")
         formattedEndDate = self.endDate.strftime("%d/%m/%Y %H:%M")
