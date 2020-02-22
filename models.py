@@ -13,15 +13,15 @@ MONGO_URI = os.environ.get("INMETBOT_MONGO_URI")
 class BotDatabase():
     def __init__(self):
         try:
-            maxSevSelDelay = 10000
-
-            self.client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=maxSevSelDelay)
+            # throw ServerSelectionTimeoutError if serverTimeout is exceeded
+            serverTimeout = 10000
+            self.client = pymongo.MongoClient(MONGO_URI, serverSelectionTimeoutMS=serverTimeout)
             self.client.server_info()
+            modelsLogger.info("Connected to the INMETBot database!")
+
             self.db = self.client.INMETBot
             self.alertsCollection = self.db.Alerts
             self.subscribedChatsCollection = self.db.SubscribedChats
-
-            modelsLogger.info("Connected to the INMETBot database!")
         except pymongo.errors.ServerSelectionTimeoutError as mongoClientErr:
             modelsLogger.error(f"Failed to connect to the INMETBot database: {mongoClientErr}")
 
@@ -39,7 +39,7 @@ class Chat():
         # self.subscribed = self.is_subscribed()
 
     def set_CEPs_and_subscribed_status(self):
-        """ Set chat's object CEPs list and subscribed status. """
+        """ Set chat's CEPs list and subscribed status. """
 
         queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
         if queryChat:
@@ -68,7 +68,7 @@ class Chat():
             return False
 
     def subscribe_chat(self, cep=None):
-        """ Subscribe chat and/or CEP from alerts.
+        """ Subscribe chat and/or CEP to alerts.
 
             Return:
                 String depicting what happened.
@@ -124,6 +124,7 @@ class Chat():
 
     def check_subscription_status(self):
         """ Check chat's subscription status.
+
             Return:
                 String with subscription status and subscribed CEPs.
         """
@@ -261,7 +262,6 @@ class Alert():
             self.description = None
             self.area = None
             self.cities = None
-        # self.graphURL = "http://www.inmet.gov.br/portal/alert-as/"
 
     def __repr__(self):
         """ String representation of alert. """

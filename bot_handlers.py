@@ -11,7 +11,7 @@ vpr_handler = CommandHandler(('vpr', 'vapor_de_agua', 'nuvem'), bot_functions.cm
 vpr_gif_handler = CommandHandler(('vpr_gif', 'nuvens'), bot_functions.cmd_vpr_gif)
 
 acumulada_handler = CommandHandler('acumulada', bot_functions.cmd_acumulada)
-acumulada_previsao_24hrs_handler = CommandHandler('acumulada_previsao_24hrs', bot_functions.cmd_acumulada_previsao_24hrs)
+acumulada_previsao_handler = CommandHandler(('acumulada_previsao_24hrs', 'acumulada_previsao'), bot_functions.cmd_acumulada_previsao)
 
 alerts_brazil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'), bot_functions.cmd_alerts_brasil)
 alerts_CEP_handler = CommandHandler('alertas_CEP', bot_functions.cmd_alerts_CEP)
@@ -34,7 +34,7 @@ dispatcher.add_handler(vpr_handler)
 dispatcher.add_handler(vpr_gif_handler)
 
 dispatcher.add_handler(acumulada_handler)
-dispatcher.add_handler(acumulada_previsao_24hrs_handler)
+dispatcher.add_handler(acumulada_previsao_handler)
 
 dispatcher.add_handler(alerts_brazil_handler)
 dispatcher.add_handler(alerts_CEP_handler)

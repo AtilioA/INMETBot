@@ -9,10 +9,11 @@ from utils import bot_messages
 from utils import bot_utils
 from scraping import parse_alerts
 from telegram.ext.dispatcher import run_async
-from telegram.error import BadRequest
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
+
+MAX_ALERTS_PER_MESSAGE = 6
 
 
 @bot_utils.send_typing_action
@@ -113,15 +114,32 @@ def cmd_acumulada(update, context):
 
 @run_async
 @bot_utils.send_upload_photo_action
-def cmd_acumulada_previsao_24hrs(update, context):
+def cmd_acumulada_previsao(update, context):
     """ Fetch and send accumulated precipitation satellite image forecast for the next 24 hours to the user. """
 
     functionsLogger.debug("Getting acumulada previsão images...")
 
-    acumuladaPrevisaoImageURL = scrap_satellites.get_acumulada_previsao_24hrs()
+    acumuladaPrevisaoImageURL = scrap_satellites.get_acumulada_previsao()
 
     context.bot.send_message(chat_id=update.effective_chat.id, text="Precipitação acumulada prevista para as próximas 24 horas:", parse_mode="markdown")
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL, timeout=1000)
+
+
+def parse_CEP(update, context, text):
+    """ Parse CEP from user's text message """
+
+    try:
+        cep = text.split(' ')[1].strip().replace("-", "")  # Get string after "/alertas_CEP"
+        return cep
+    except IndexError:  # No number after /command
+        functionsLogger.warning(f"No input in cmd_unsubscribe_alerts. Message text: \"{text}\"")
+        message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+    else:
+        if not pycep.validar_cep(cep):
+            message = "❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
+    return None
 
 
 def check_and_send_alerts_warning(update, context, alerts, city=None):
@@ -135,25 +153,30 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
     alertMessage = ""
     alertCounter = 1
 
-    for alert in alerts:
-        alertObj = models.Alert(alertDict=alert)
-        if not city:
+    if alerts:
+        for alert in alerts:
+            alertObj = models.Alert(alertDict=alert)
             warned = True
-            alertMessage += alertObj.get_alert_message()
-            if alertCounter >= 6:
-                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                alertMessage = ""
-                alertCounter = 1
-            alertCounter += 1
-        elif city in alertObj.cities:
-            warned = True
-            alertMessage += alertObj.get_alert_message(city)
-            if alertCounter >= 6:
-                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                alertMessage = ""
-                alertCounter = 1
-            alertCounter += 1
-    alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+            if not city:
+                alertMessage += alertObj.get_alert_message()
+                if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    alertMessage = ""
+                    alertCounter = 1
+                alertCounter += 1
+            else:
+                alertMessage += alertObj.get_alert_message(city)
+                if alertCounter >= 6:
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    alertMessage = ""
+                    alertCounter = 1
+                alertCounter += 1
+        alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+    elif not city:
+        alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+    else:
+        alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
+
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
     return warned
@@ -168,7 +191,10 @@ def cmd_alerts_brasil(update, context):
 
     # Ignore moderate alerts
     alerts = models.INMETBotDB.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
-    if not check_and_send_alerts_warning(update, context, alerts):
+    if alerts:
+        if check_and_send_alerts_warning(update, context, alerts):
+            return None
+    else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
@@ -179,58 +205,22 @@ def cmd_alerts_CEP(update, context):
     """ Fetch and send active high-risk alerts for given CEP (zip code). """
 
     functionsLogger.debug("Getting alerts by CEP (zip code)...")
-
     text = update.message.text
 
-    # Parse input
+    cep = parse_CEP(update, context, text)
     try:
-        cep = text.split(' ')[1].strip()  # Get string after "/alertas_CEP"
-    except IndexError:  # No number after /alertas_CEP
-        functionsLogger.error(f"No input in cmd_alerts_CEP. Message text: \"{text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP não informado!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
-        return None
-
-    try:
-        if pycep.validar_cep(cep):
-            alertMessage = ""
+        if cep:
             city = viacep.get_cep_city(cep)
 
             # Include moderate alerts
-            alerts = models.INMETBotDB.alertsCollection.find({})
-            if alerts:
-                if check_and_send_alerts_warning(update, context, alerts, city):
-                    return None
-                else:
-                    alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
-            else:
-                alertMessage = "✅ Não há alertas para o Brasil no momento."
-                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-        else:
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
+            alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
+            check_and_send_alerts_warning(update, context, alerts, city)
+            return None
     except (pycep.excecoes.ExcecaoPyCEPCorreios, KeyError) as cepError:  # Invalid zip code
-        functionsLogger.error(f"{cepError} on cmd_alerts_CEP. Message text: \"{text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`", parse_mode="markdown")
-        return None
+        functionsLogger.warning(f"{cepError} on cmd_alerts_CEP. Message text: \"{text}\"")
+    alertMessage = "❌ CEP inválido/não existe!\nExemplo:\n`/alertas_CEP 29075-910`"
 
-
-@bot_utils.send_typing_action
-def cmd_alerts_map(update, context):
-    """ Take screenshot of the alerts map and send to the user """
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
-
-    alertsMapPath = parse_alerts.take_screenshot_alerts_map()
-    send_alerts_map_screenshot(update, context, alertsMapPath)
-
-
-@run_async
-@bot_utils.send_upload_photo_action
-def send_alerts_map_screenshot(update, context, alertsMapPath):
-    context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/", reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=1000)
-
-    os.remove(alertsMapPath)
-    functionsLogger.info(f"Deleted {alertsMapPath}.")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @run_async
@@ -257,22 +247,36 @@ def alerts_location(update, context):
             if state == "BR":
                 city = json["nearest"]["region"]
 
-                # Ignore moderate alerts
-                alerts = models.INMETBotDB.alertsCollection.find({})
-                if alerts:
-                    if check_and_send_alerts_warning(update, context, alerts, city):
-                        return None
-                    else:
-                        alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
-                else:
-                    alertMessage = "✅ Não há alertas para o Brasil no momento."
-
-                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                # Include moderate alerts
+                alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
+                check_and_send_alerts_warning(update, context, alerts, city)
+                return None
             else:
-                context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ A localização indica uma região fora do Brasil.", parse_mode="markdown")
+                alertMessage = "❌ A localização indica uma região fora do Brasil."
         else:
             functionsLogger.error("Failed GET request to reverse geocoding API.")
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível verificar a região 😔", parse_mode="markdown")
+            alertMessage = "❌ Não foi possível verificar a região 😔."
+
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown")
+
+
+@bot_utils.send_typing_action
+def cmd_alerts_map(update, context):
+    """ Take screenshot of the alerts map and send to the user """
+
+    context.bot.send_message(chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
+
+    alertsMapPath = parse_alerts.take_screenshot_alerts_map()
+    send_alerts_map_screenshot(update, context, alertsMapPath)
+
+
+@run_async
+@bot_utils.send_upload_photo_action
+def send_alerts_map_screenshot(update, context, alertsMapPath):
+    context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/", reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=1000)
+
+    os.remove(alertsMapPath)
+    functionsLogger.info(f"Deleted {alertsMapPath}.")
 
 
 @bot_utils.send_typing_action
@@ -280,16 +284,7 @@ def cmd_subscribe_alerts(update, context):
     text = update.message.text
     textArgs = text.split(' ')
 
-    # Parse input
-    try:
-        cep = textArgs[1].strip().replace("-", "")  # Get string after "/alertas_CEP"
-    except IndexError:  # No string after /alertas_CEP
-        functionsLogger.warning(f"No input in cmd_subscribe_alerts. Message text: \"{text}\"")
-        cep = None
-    else:
-        if not pycep.validar_cep(cep):
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{textArgs[0]} 29075-910`", parse_mode="markdown")
-            return None
+    cep = parse_CEP(update, context, text)
 
     chat = models.create_chat_obj(update)
     subscribeResult = chat.subscribe_chat(cep)
@@ -303,16 +298,7 @@ def cmd_unsubscribe_alerts(update, context):
     text = update.message.text
     textArgs = text.split(' ')
 
-    # Parse input
-    try:
-        cep = text.split(' ')[1].strip().replace("-", "")  # Get string after "/alertas_CEP"
-    except IndexError:  # No number after /alertas_CEP
-        functionsLogger.warning(f"No input in cmd_unsubscribe_alerts. Message text: \"{text}\"")
-        cep = None
-    else:
-        if not pycep.validar_cep(cep):
-            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`", parse_mode="markdown")
-            return None
+    cep = parse_CEP(update, context, text)
 
     chat = models.create_chat_obj(update)
     unsubscribeResult = chat.unsubscribe_chat(cep)

@@ -10,7 +10,7 @@ def get_cep_city(CEPString):
     if lookup:
         return lookup["localidade"]
     else:
-        return None
+        raise KeyError
 
 
 def cep_lookup(CEPString):
