@@ -87,6 +87,28 @@ def create_subscribed_chats_document(chatID, cep=None):
     return subscribedChatsDocument
 
 
+def create_chat_obj(update):
+    if update.message.chat.type == "private":
+        return PrivateChat(update.effective_chat.id)
+    else:
+        return GroupChat(update.effective_chat.id)
+
+
+class Chat():
+    def __init__(self, chatID=None):
+        self.id = chatID
+
+
+class PrivateChat():
+    def __init__(self, chatID=None):
+        self.id = chatID
+
+
+class GroupChat():
+    def __init__(self, chatID=None):
+        self.id = chatID
+
+
 class Alert():
     def __init__(self, alertXML=None, alertDict=None):
         """ Carry information about an alert (reads from XML file or serialize json). """

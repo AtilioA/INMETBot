@@ -1,6 +1,6 @@
 # Webserver to prevent the bot from sleeping
 import web
-import webserver
+from utils import webserver
 import logging
 import time
 import schedule

@@ -2,12 +2,12 @@ import os
 import logging
 import requests
 import pycep_correios as pycep
-import viacep
+from utils import viacep
 import models
-import scrap_satelites
-import bot_messages
-import bot_utils
-import parse_alerts
+from scraping import scrap_satellites
+from utils import bot_messages
+from utils import bot_utils
+from scraping import parse_alerts
 from telegram.ext.dispatcher import run_async
 from telegram.error import BadRequest
 
@@ -56,7 +56,7 @@ def cmd_start(update, context):
 def cmd_vpr(update, context):
     """ Fetch and send latest VPR satellite image to the user """
 
-    vprImageURL = scrap_satelites.get_vpr_last_image()
+    vprImageURL = scrap_satellites.get_vpr_last_image()
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=1000)
 
 
@@ -80,7 +80,7 @@ def cmd_vpr_gif(update, context):
     if nImages:
         context.bot.send_message(chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
 
-        vprVideoPath = scrap_satelites.get_vpr_gif(nImages)
+        vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
 
         return send_vpr_video(update, context, vprVideoPath)
 
@@ -102,7 +102,7 @@ def cmd_acumulada(update, context):
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.acumuladaError, parse_mode="markdown")
         interval = 1  # Use 24 hours as default
 
-    acumuladaImageURL = scrap_satelites.get_acumulada_last_image(interval)
+    acumuladaImageURL = scrap_satellites.get_acumulada_last_image(interval)
     if acumuladaImageURL:
         context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaImageURL, timeout=1000)
     else:
@@ -116,7 +116,7 @@ def cmd_acumulada_previsao_24hrs(update, context):
 
     functionsLogger.debug("Getting acumulada previsão images...")
 
-    acumuladaPrevisaoImageURL = scrap_satelites.get_acumulada_previsao_24hrs()
+    acumuladaPrevisaoImageURL = scrap_satellites.get_acumulada_previsao_24hrs()
 
     context.bot.send_message(chat_id=update.effective_chat.id, text="Precipitação acumulada prevista para as próximas 24 horas:", parse_mode="markdown")
     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=acumuladaPrevisaoImageURL, timeout=1000)
@@ -195,10 +195,10 @@ def cmd_alerts_CEP(update, context):
             # Include moderate alerts
             alerts = models.alertsCollection.find({})
             if alerts:
-                if not check_and_send_alerts_warning(update, context, alerts, city):
-                    alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
-                else:
+                if check_and_send_alerts_warning(update, context, alerts, city):
                     return None
+                else:
+                    alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
             else:
                 alertMessage = "✅ Não há alertas para o Brasil no momento."
                 context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
@@ -257,7 +257,9 @@ def alerts_location(update, context):
                 # Ignore moderate alerts
                 alerts = models.alertsCollection.find({})
                 if alerts:
-                    if not check_and_send_alerts_warning(update, context, alerts, city):
+                    if check_and_send_alerts_warning(update, context, alerts, city):
+                        return None
+                    else:
                         alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
                 else:
                     alertMessage = "✅ Não há alertas para o Brasil no momento."

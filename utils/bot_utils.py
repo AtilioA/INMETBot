@@ -1,8 +1,11 @@
+import sys
+sys.path.append(sys.path[0] + "/..")
+import models
 import logging
 from functools import wraps
 import telegram
-import models
-from scrap_satelites import MIN_VPR_IMAGES, DEFAULT_VPR_IMAGES, MAX_VPR_IMAGES
+import sys
+from scraping.scrap_satellites import MIN_VPR_IMAGES, DEFAULT_VPR_IMAGES, MAX_VPR_IMAGES
 
 utilsLogger = logging.getLogger(__name__)
 utilsLogger.setLevel(logging.DEBUG)
@@ -125,8 +128,43 @@ def parse_n_images_input(update, context, text):
     return nImages
 
 
+# STUB
+# def send_subscribe_message(update, cep, textArgs):
+
+#     chat = models.create_chat_obj(update)
+
+#     # Check if chat is subscribed and cep was given
+#     if chat.is_subscribed():
+#         if cep:  # Subscribed & CEP
+#             subscribedCEP = models.subscribe_chat(update.effective_chat.id, cep)
+#             if subscribedCEP:  # CEP has been subscbribatedson
+#                 subscribeMessage = f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`."
+#             else:  # CEP has not been subscbribatedson
+#                 subscribeMessage = f"❕O CEP {cep} já está inscrito.\nDesinscreva CEPs: `{textArgs[0]} {cep}`.\nDesinscreva o grupo com /desinscrever."
+#         else:  # Subscribed & CEP
+#             chat.send_subscribe_message(textArgs)
+#             subscribeMessage = f"❕O grupo já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever."
+#             # subscribeMessage = f"❕Você já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever."
+#     else:
+#         if cep:  # Not subscribed & CEP
+#             utilsLogger.debug("Subscribing group...")
+#             models.subscribe_chat(update.effective_chat.id, cep)
+#             subscribeMessage = f"🔔 Inscrevi o grupo e o CEP {cep}.\nDesinscreva o grupo com /desinscrever."
+#             # utilsLogger.debug("Subscribing private")
+#             # models.subscribe_chat(update.effective_chat.id, cep)
+#             # subscribeMessage = f"🔔 Inscrevi você e o CEP {cep}.\nDesinscreva-se com /desinscrever."
+#         else:  # Not subscribed & not CEP
+#             models.subscribe_chat(update.effective_chat.id, cep)
+#             subscribeMessage = f"🔔 Inscrevi o grupo.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever."
+#             # models.subscribe_chat(update.effective_chat.id, cep)
+#             # subscribeMessage = f"🔔 Inscrevi você.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever."
+
+#     return None
+
+
 def get_subscribe_message(update, cep, textArgs):
     # STUB
+
     # Check if chat is subscribed and cep was given
     if models.is_subscribed(update.effective_chat.id) and not cep:
         if is_group_or_channel(update.message.chat.type):
@@ -161,6 +199,7 @@ def get_subscribe_message(update, cep, textArgs):
 
 def get_unsubscribe_message(update, cep, textArgs):
     # STUB
+    
     # Check if chat is subscribed and cep was given
     if models.is_subscribed(update.effective_chat.id) and not cep:
         models.unsubscribe_chat(update.effective_chat.id, cep)
