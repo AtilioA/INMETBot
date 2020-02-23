@@ -10,7 +10,7 @@ from bot_config import updater
 import bot_handlers  # noqa (ignore linter warning)
 from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine
 
-ROUTINES_INTERVAL = 30
+# ROUTINES_INTERVAL = 60
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s %(message)s',
@@ -19,10 +19,18 @@ logging.basicConfig(format='%(asctime)s %(message)s',
                     level=logging.DEBUG)
 
 
+urls = ('/', 'index')
+
+
+class index:
+    def GET(self):
+        return "Hello, world!"
+
+
 # Thread for the web server
 class WebServerThread(Thread):
     def run(self):
-        app = web.application(webserver.urls, globals())
+        app = web.application(urls, globals())
         app.run()
 
 
@@ -34,9 +42,9 @@ class RoutinesThread(Thread):
             time.sleep(1)
 
 
-schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
-schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
-schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
+schedule.every().hour.do(parse_alerts_routine)
+schedule.every().hour.do(delete_past_alerts_routine)
+schedule.every().hour.do(notify_chats_routine)
 
 
 def main():
