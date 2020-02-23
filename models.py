@@ -502,7 +502,7 @@ class Alert():
 
         parameters = alertXML.info.find_all("parameter")
         citiesParameter = None
-        for parameter in Parameters
+        for parameter in parameters:
             if "Municipio" in parameter.valueName.text:
                 citiesParameter = parameter
         rawCities = citiesParameter.value.text.split(',')

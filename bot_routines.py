@@ -83,4 +83,3 @@ if __name__ == "__main__":
     # parse_alerts_routine()
     notify_chats_routine()
     # delete_past_alerts_routine()
-    pass
