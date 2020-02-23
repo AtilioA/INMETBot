@@ -16,7 +16,7 @@ parsingLogger.setLevel(logging.DEBUG)
 
 
 def take_screenshot_alerts_map():
-    """ Take screenshot of the alerts map and store it in the tmp folder """
+    """Take screenshot of the alerts map and store it in the tmp folder."""
 
     chrome_options = Options()
     chrome_options.add_argument("--headless")
@@ -42,13 +42,17 @@ def take_screenshot_alerts_map():
 
 
 def parse_alerts(ignoreModerate=True):
-    """ Parse alerts published by INMET.
+    """Parse alerts published by INMET.
 
-    Args:
-        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+    Parameters
+    --------
+    ignoreModerate : bool
+        If set to True, will ignore alerts of moderate severity. Defaults to True.
 
-    Return:
-        list of alert objects.
+    Returns
+    --------
+    alerts : list : Alert
+        List of alert objects.
     """
 
     alertsXML = parse_alerts_xml(ignoreModerate)
@@ -57,13 +61,15 @@ def parse_alerts(ignoreModerate=True):
 
 
 def is_wanted_alert(alertXML, ignoreModerate=True):
-    """ Check if alert is wanted - an alert is wanted if it's not already present in the database, endDate has not already passed and the alert isn't moderate if `ignoreModerate` is set to `True`.
+    """Check if alert is wanted - an alert is wanted if it's not already present in the database, endDate has not already passed and the alert isn't moderate if `ignoreModerate` is set to `True`.
 
-    Args:
+    Parameters
+    --------
         alert: the alert's XML parsed from BS4.
         ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
 
-    Return:
+    Returns
+    --------
         True if alert is wanted, False otherwise.
     """
 
@@ -103,40 +109,48 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
 
 
 def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
-    """ Create and return `list` of `alert` objects from list of alert XMLs
+    """Create and return `list` of `alert` objects from list of alert XMLs
 
-    Args:
-        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+    Parameters
+    --------
+    ignoreModerate : bool
+        If set to True, will ignore alerts of moderate severity. Defaults to True.
     """
 
     return [models.Alert(alertXML) for alertXML in alertsXML]
 
 
 def parse_alerts_xml(ignoreModerate=True):
-    """ Parse XMLs from list of XML urls.
+    """Parse XMLs from list of XML urls.
 
-    Args:
-        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
+    Parameters
+    --------
+    ignoreModerate : bool
+        If set to True, will ignore alerts of moderate severity. Defaults to True.
 
-    Return:
-        xmls: list of parsed XMLs.
+    Returns
+    --------
+    xmls : list : BeautifulSoup
+        list of parsed XMLs.
     """
 
     xmlURLs = get_alerts_xml(ignoreModerate)
-
-    xmls = []
-    for xmlURL in xmlURLs:
-        xmls.append(parse_alert_xml(xmlURL))
+    xmls = [parse_alert_xml(xmlURL) for xmlURL in xmlURLs]
     parsingLogger.debug("Done parsing XMLs.")
     return xmls
 
 
 def parse_alert_xml(xmlURL):
-    """ Parse alerts XML URL from INMET with BeautifulSoup.
+    """Parse alerts XML URL from INMET with BeautifulSoup.
 
-    Args:
-        xmlURL: URL to the XML file.
-    Return:
+    Parameters
+    --------
+    xmlURL : str
+        URL to the XML file.
+
+    Returns
+    --------
+    parsedAlertXML : BeautifulSoup
         parsed XML or None if GET request to XML URL fails.
     """
 
@@ -148,19 +162,24 @@ def parse_alert_xml(xmlURL):
 
         # Retrieve the XML content
         content = req.content
-        alertXML = BeautifulSoup(content, 'xml')
-        return alertXML
+        parsedAlertXML = BeautifulSoup(content, 'xml')
+        return parsedAlertXML
     else:
         parsingLogger.error("Failed GET request to alert XML.")
         return None
 
 
 def get_alerts_xml(ignoreModerate=True):
-    """ Extract alerts XML URLs from INMET's RSS feed.
+    """Extract alerts XML URLs from INMET's RSS feed.
 
-    Args:
-        ignoreModerate: if set to True, will ignore alerts of moderate severity. Defaults to True.
-    Return:
+    Parameters
+    --------
+    ignoreModerate : bool
+        If set to True, will ignore alerts of moderate severity. Defaults to True.
+
+    Returns
+    --------
+    itemsXMLURL : list : str
         List of all available XML URLs for alerts.
     """
 
@@ -178,9 +197,9 @@ def get_alerts_xml(ignoreModerate=True):
 
         # Get alerts' XML URL from each item entry
         items = xml.channel.find_all("item")
-        itemsXMLURL = [item.guid.text for item in items if is_wanted_alert(item, ignoreModerate)]
+        itemsXMLURLs = [item.guid.text for item in items if is_wanted_alert(item, ignoreModerate)]
 
-        return itemsXMLURL
+        return itemsXMLURLs
     else:
         parsingLogger.error("Failed GET request to alerts RSS.")
         return None

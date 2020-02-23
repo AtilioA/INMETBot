@@ -46,7 +46,7 @@ INMETBotDB = BotDatabase()
 
 
 class Chat(ABC):
-    """ The Chat class is an abstract class and serves as base class for GroupChat and PrivateChat.
+    """The Chat class is an abstract class and serves as base class for GroupChat and PrivateChat.
 
     Parameters
     ----------
@@ -77,7 +77,7 @@ class Chat(ABC):
         # self.subscribed = self.is_subscribed()
 
     def set_CEPs_and_subscribed_status(self):
-        """ Set chat's CEPs list and subscribed status. """
+        """Set chat's CEPs list and subscribed status."""
 
         queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
         if queryChat:
@@ -88,7 +88,7 @@ class Chat(ABC):
             self.CEPs = []
 
     def get_chat_CEPs(self):
-        """ Get chat's subscribed CEPs. """
+        """Get chat's subscribed CEPs."""
 
         queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
         if queryChat:
@@ -97,7 +97,7 @@ class Chat(ABC):
             return None
 
     def is_subscribed(chatID):
-        """ Check if chat is subscribed to alerts. """
+        """Check if chat is subscribed to alerts."""
 
         queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": chatID})
         if queryChat:
@@ -106,10 +106,11 @@ class Chat(ABC):
             return False
 
     def subscribe_chat(self, cep=None):
-        """ Subscribe chat and/or CEP to alerts.
+        """Subscribe chat and/or CEP to alerts.
 
-            Return:
-                String depicting what happened.
+            Returns
+            --------
+                String to be used by a chat object depicting what happened.
         """
 
         if self.subscribed:
@@ -135,10 +136,11 @@ class Chat(ABC):
                 return "CHAT_SUBSCRIBED"
 
     def unsubscribe_chat(self, cep=None):
-        """ Unsubscribe chat and/or CEP from alerts.
+        """Unsubscribe chat and/or CEP from alerts.
 
-            Return:
-                True if chat or CEP has been unsubscribed, False otherwise.
+            Returns
+            --------
+                String to be used by a chat object depicting what happened.
         """
 
         if self.subscribed:
@@ -161,10 +163,12 @@ class Chat(ABC):
         return unsubscribeMessage
 
     def check_subscription_status(self):
-        """ Check chat's subscription status.
+        """Check chat's subscription status.
 
-            Return:
-                String with subscription status and subscribed CEPs.
+            Returns
+            --------
+            status : string
+                Subscription status and subscribed CEPs as single formatted string.
         """
 
         if self.subscribed:
@@ -182,7 +186,7 @@ class Chat(ABC):
         return status
 
     def serialize(self, cep=None):
-        """ Serialize chat subscription for database insertion. """
+        """Serialize chat subscription for database insertion."""
 
         if cep:
             subscribedChatsDocument = {'chatID': self.id, "title": self.title, 'CEPs': [cep]}
@@ -192,7 +196,7 @@ class Chat(ABC):
 
 
 class PrivateChat(Chat):
-    """ The PrivateChat object can carry information about a private chat.
+    """The PrivateChat object can carry information about a private chat.
 
     Parameters
     ----------
@@ -219,7 +223,7 @@ class PrivateChat(Chat):
         self.type = "private"
 
     def get_subscribe_message(self, subscribeResult, textArgs, cep=None):
-        """ Get subscribe message according to subscription result for a private chat. """
+        """Get subscribe message according to subscription result for a private chat."""
 
         subscribeMessageDict = {
             "CHAT_EXISTS_CEP_EXISTS": f"❕Você já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.",
@@ -233,7 +237,7 @@ class PrivateChat(Chat):
         return subscribeMessage
 
     def get_unsubscribe_message(self, unsubscribeResult, textArgs, cep=None):
-        """ Get unsubscribe message according to unsubscription result for a private chat. """
+        """Get unsubscribe message according to unsubscription result for a private chat."""
 
         unsubscribeMessageDict = {
             "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep}.",
@@ -246,7 +250,7 @@ class PrivateChat(Chat):
         return unsubscribeMessage
 
     def get_subscription_status_message(self, subscriptionStatus):
-        """ Get subscription status message according to subscription status for a private chat. """
+        """Get subscription status message according to subscription status for a private chat."""
 
         subscriptionStatusDict = {
             "SUBSCRIBED": "Você está inscrito nos alertas.\n\n",
@@ -258,7 +262,7 @@ class PrivateChat(Chat):
 
 
 class GroupChat(Chat):
-    """ The GroupChat object can carry information about a group chat.
+    """The GroupChat object can carry information about a group chat.
 
     Parameters
     ----------
@@ -285,7 +289,7 @@ class GroupChat(Chat):
         self.type = "group"
 
     def get_subscribe_message(self, subscribeResult, textArgs, cep=None):
-        """ Get subscribe message according to subscription result for a group chat. """
+        """Get subscribe message according to subscription result for a group chat."""
 
         subscribeMessageDict = {
             "CHAT_EXISTS_CEP_EXISTS": f"❕O CEP {cep} já está inscrito.\nDesinscreva CEPs: `{textArgs[0]} {cep}`.\nDesinscreva o grupo com /desinscrever.",
@@ -299,7 +303,7 @@ class GroupChat(Chat):
         return subscribeMessage
 
     def get_unsubscribe_message(self, unsubscribeResult, textArgs, cep=None):
-        """ Get unsubscribe message according to unsubscription result for a group chat. """
+        """Get unsubscribe message according to unsubscription result for a group chat."""
 
         unsubscribeMessageDict = {
             "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep}.",
@@ -312,7 +316,7 @@ class GroupChat(Chat):
         return unsubscribeMessage
 
     def get_subscription_status_message(self, subscriptionStatus):
-        """ Get subscription status message according to subscription status for a group chat. """
+        """Get subscription status message according to subscription status for a group chat."""
 
         subscriptionStatusDict = {
             "SUBSCRIBED": "O grupo está inscrito nos alertas.\n\n",
@@ -324,7 +328,7 @@ class GroupChat(Chat):
 
 
 class Alert():
-    """ The Alert object can carry information about an alert (reads from XML file or json).
+    """The Alert object can carry information about an alert (reads from XML file or json).
 
     Parameters
     ----------
@@ -383,12 +387,12 @@ class Alert():
             self.cities = None
 
     def __repr__(self):
-        """ String representation of alert. """
+        """String representation of alert."""
 
         return f"Alert ID: {self.id}, Alert event: {self.event}"
 
     def insert_alert(self):
-        """ Insert alert in the database if isn't in the database. """
+        """Insert alert in the database if isn't in the database."""
 
         queryAlert = INMETBotDB.alertsCollection.find_one({"alertID": self.id})
         if not queryAlert:
@@ -399,7 +403,7 @@ class Alert():
         modelsLogger.info("Alert already exists; not inserted.")
 
     def determine_severity_emoji(self):
-        """ Determine emoji for alert message and return it. """
+        """Determine emoji for alert message and return it."""
 
         if isinstance(self.severity, str):
             emojiDict = {
@@ -413,7 +417,7 @@ class Alert():
             return None
 
     def get_alert_message(self, location=None):
-        """ Create alert message string from alert object and return it. """
+        """Create alert message string from alert object and return it."""
 
         severityEmoji = self.determine_severity_emoji()
         area = ','.join(self.area)
@@ -437,7 +441,7 @@ class Alert():
         return messageString
 
     def serialize(self):
-        """ Serialize Alert object for database insertion. """
+        """Serialize Alert object for database insertion."""
 
         alertDocument = {
             "alertID": self.id,
@@ -452,13 +456,13 @@ class Alert():
         return alertDocument
 
     def get_id_from_XML(self, alertXML):
-        """ Extract id string from XML. """
+        """Extract id string from XML."""
 
         alertID = alertXML.identifier.text.replace("urn:oid:", "")
         self.id = alertID
 
     def get_event_from_XML(self, alertXML):
-        """ Extract event string from XML. """
+        """Extract event string from XML."""
 
         eventPattern = r"(.*?)(?= Severidade)"
         rawEvent = alertXML.info.headline.text
@@ -467,7 +471,7 @@ class Alert():
             self.event = eventMatch.group(1)
 
     def get_severity_from_XML(self, alertXML):
-        """ Extract severity string from XML. """
+        """Extract severity string from XML."""
 
         rawSeverity = alertXML.info.headline.text
         severityPattern = r"(?<=Severidade Grau: )(.*)"
@@ -476,7 +480,7 @@ class Alert():
             self.severity = severityMatch.group(1)
 
     def get_description_from_XML(self, alertXML):
-        """ Extract description string from XML. """
+        """Extract description string from XML."""
 
         rawDescription = alertXML.info.description.text
         descriptionPattern = r"INMET publica aviso iniciando em: .*?\. (.*)"
@@ -485,7 +489,7 @@ class Alert():
             self.description = descriptionMatch.group(1)
 
     def get_area_from_XML(self, alertXML):
-        """ Extract area string from XML, process it and put it in a list. """
+        """Extract area string from XML, process it and put it in a list."""
 
         rawArea = alertXML.info.area.areaDesc.text
         areaPattern = r"(?<=Aviso para as áreas: )(.*)"
@@ -494,11 +498,11 @@ class Alert():
             self.area = [region for region in areaMatch.group(1).split(",")]
 
     def get_cities_from_XML(self, alertXML):
-        """ Extract cities string from XML, process it and put it in a list. """
+        """Extract cities string from XML, process it and put it in a list."""
 
         parameters = alertXML.info.find_all("parameter")
         citiesParameter = None
-        for parameter in parameters:
+        for parameter in Parameters
             if "Municipio" in parameter.valueName.text:
                 citiesParameter = parameter
         rawCities = citiesParameter.value.text.split(',')
@@ -506,20 +510,20 @@ class Alert():
         self.cities = cities
 
     def get_startDate_from_XML(self, alertXML):
-        """ Extract startDate string from XML (convert to arrow Object). """
+        """Extract startDate string from XML (convert to arrow Object)."""
 
         startDate = arrow.get(str(alertXML.info.onset.text))
         self.startDate = startDate
 
     def get_endDate_from_XML(self, alertXML):
-        """ Extract endDate string from XML (convert to arrow Object). """
+        """Extract endDate string from XML (convert to arrow Object)."""
 
         endDate = arrow.get(str(alertXML.info.expires.text))
         self.endDate = endDate
 
 
 def create_chat_obj(update):
-    """ Creates Private or Group chat object according to chat type """
+    """Creates Private or Group chat object according to chat type."""
 
     if update.message.chat.type == "private":
         return PrivateChat(update)

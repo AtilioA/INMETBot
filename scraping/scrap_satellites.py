@@ -24,9 +24,11 @@ INMET_ACUMULADA_PREVISAO_24HRS_URL = "http://www.inmet.gov.br/projetos/cga/capre
 
 
 def get_vpr_last_image():
-    """ Fetch the last VPR satellite image.
+    """Fetch the last VPR satellite image.
 
-    Return:
+    Returns
+    --------
+    imageURL : str
         Image URL if successful, None otherwise.
     """
 
@@ -49,11 +51,16 @@ def get_vpr_last_image():
 
 
 def get_acumulada_last_image(interval):
-    """ Fetch the last accumulated precipitation (within given interval) satellite image.
+    """Fetch the last accumulated precipitation (within given interval) satellite image.
 
-    Args:
-        interval: numbers of days to consider in the accumulated precipitation measurement. Is used to fetch image.
-    Return:
+    Parameters
+    --------
+    interval : str
+        Numbers of days to consider in the accumulated precipitation measurement. Is used to fetch image.
+
+    Returns
+    --------
+    imageURL : str
         Image URL if successful, None otherwise.
     """
 
@@ -83,10 +90,12 @@ def get_acumulada_last_image(interval):
 
 
 def get_acumulada_previsao():
-    """ Fetch the last accumulated precipitation for the next 24 hours satellite image.
+    """Fetch the last accumulated precipitation for the next 24 hours satellite image.
 
-    Return:
-        Image URL if successful, `None` otherwise.
+    Returns
+    --------
+    imageURL : str
+        Image URL if successful, None otherwise.
     """
 
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
@@ -111,10 +120,12 @@ def get_acumulada_previsao():
 
 
 def get_vpr_gif(nImages=DEFAULT_VPR_IMAGES):
-    """ Fetch the last `nImages` VPR sattelite images and create a .mp4 file.
+    """Fetch the last `nImages` VPR sattelite images and create a .mp4 file.
 
-        Return:
-            mp4 filename if successful, None otherwise.
+    Returns
+    --------
+    gifFilename : str
+        mp4 filename if successful, None otherwise.
     """
 
     headers = {
