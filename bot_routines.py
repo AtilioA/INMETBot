@@ -23,7 +23,8 @@ def delete_past_alerts_routine():
 
 
 def parse_alerts_routine(ignoreModerate=False):
-    """Parse alerts published by INMET and insert them into database.
+    """
+    Parse alerts published by INMET and insert them into database.
 
     Parameters
     --------
@@ -33,14 +34,15 @@ def parse_alerts_routine(ignoreModerate=False):
 
     alertsXML = parse_alerts.parse_alerts_xml(ignoreModerate)
     alerts = parse_alerts.instantiate_alerts_objects(alertsXML, ignoreModerate)
-    routinesLogger.info(alerts)
+    routinesLogger.info(f"New alerts found: {alerts}")
     for alert in alerts:
         alert.insert_alert()
     routinesLogger.info("Finished parse_alerts_routine routine.")
 
 
 def notify_chats_routine():
-    """Check alerts from the database and notify chats.
+    """
+    Check alerts from the database and notify chats.
 
     For every alert and chat, check if chat has been notified for that alert; if it has not, check if there is any city (obtained by CEPs in the chat's CEP list) that is included in the alert.
     If there is, notify chat and mark chat as notified (so it won't get notified again for the same alert).
