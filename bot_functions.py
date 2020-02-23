@@ -87,7 +87,7 @@ def cmd_vpr_gif(update, context):
 
         vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
 
-        return send_vpr_video(update, context, vprVideoPath, waitMessage)
+        return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
 
 
 @run_async
