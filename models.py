@@ -15,7 +15,7 @@ class BotDatabase():
     """
     The BotDatabase object facilitates connection to the database.
 
-    Attributes:
+    Attributes
     ----------
     client : MongoClient
         A MongoClient instance.
@@ -46,7 +46,8 @@ INMETBotDB = BotDatabase()
 
 
 class Chat(ABC):
-    """The Chat class is an abstract class and serves as base class for GroupChat and PrivateChat.
+    """
+    The Chat class is an abstract class and serves as base class for GroupChat and PrivateChat.
 
     Parameters
     ----------
@@ -129,7 +130,7 @@ class Chat(ABC):
             chatDocument = self.serialize(cep)
             INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
             if cep:
-                modelsLogger.info(f"Chat {self.id} and CEP {cep} were subscribed.")
+                modelsLogger.info(f"Chat {self.id} and CEP {cep} have been subscribed.")
                 return "CHAT_AND_CEP_SUBSCRIBED"
             else:
                 modelsLogger.info(f"Chat {self.id} has been subscribed.")
@@ -394,13 +395,13 @@ class Alert():
     def insert_alert(self):
         """Insert alert in the database if isn't in the database."""
 
-        queryAlert = INMETBotDB.alertsCollection.find_one({"alertID": self.id})
-        if not queryAlert:
-            alertDocument = self.serialize()
-            alertDocument["notifiedChats"] = []
-            INMETBotDB.alertsCollection.insert_one(alertDocument)
-            modelsLogger.info(f"Inserted new alert: {self}")
-        modelsLogger.info("Alert already exists; not inserted.")
+        # queryAlert = INMETBotDB.alertsCollection.find_one({"alertID": self.id})
+        # if not queryAlert:
+        alertDocument = self.serialize()
+        alertDocument["notifiedChats"] = []
+        INMETBotDB.alertsCollection.insert_one(alertDocument)
+        modelsLogger.info(f"Inserted new alert: {self}")
+        # modelsLogger.info("Alert already exists; not inserted.")
 
     def determine_severity_emoji(self):
         """Determine emoji for alert message and return it."""
@@ -523,7 +524,7 @@ class Alert():
 
 
 def create_chat_obj(update):
-    """Creates Private or Group chat object according to chat type."""
+    """Create Private or Group chat object according to chat type."""
 
     if update.message.chat.type == "private":
         return PrivateChat(update)

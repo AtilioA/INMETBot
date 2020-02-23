@@ -1,5 +1,3 @@
-import sys
-sys.path.append(sys.path[0] + "/..")
 import os
 import re
 import logging
@@ -10,6 +8,8 @@ import uuid
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import models
+import sys
+sys.path.append(sys.path[0] + "/..")
 
 parsingLogger = logging.getLogger(__name__)
 parsingLogger.setLevel(logging.DEBUG)
@@ -99,11 +99,11 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
     if guidMatch:
         alertID = guidMatch.group(1)
         if models.INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
-            # parsingLogger.debug("Alert already in database.")
+            parsingLogger.debug("Alert already in database.")
             return False
         else:
+            parsingLogger.debug("New alert.")
             return True
-            # parsingLogger.debug("New alert.")
     else:
         parsingLogger.error("No guid match.")
 

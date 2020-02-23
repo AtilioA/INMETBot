@@ -30,7 +30,6 @@ send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
 send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 
-# MESSAGES
 def parse_n_images_input(update, context, text):
     """Parse input for VPR gifs. Input must exist and be numeric.
 
@@ -65,7 +64,6 @@ def parse_n_images_input(update, context, text):
 
     try:
         nImages = text.split(' ')[1]
-        print(nImages)
         try:
             nImages = int(float(nImages))
             nImages, nImagesMessage = get_n_images_and_message(nImages)
