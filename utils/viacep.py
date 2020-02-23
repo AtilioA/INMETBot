@@ -4,7 +4,7 @@ import requests
 
 
 def get_cep_city(CEPString):
-    """ Lookup CEP's city. """
+    """Lookup CEP's city."""
 
     lookup = cep_lookup(CEPString)
     if lookup:
@@ -14,7 +14,7 @@ def get_cep_city(CEPString):
 
 
 def cep_lookup(CEPString):
-    """ CEP lookup with viacep's API. """
+    """CEP lookup with viacep's API."""
 
     if matchCepRegex(CEPString):
         return json.loads(requests.get(viacep_request(CEPString)).content)
@@ -23,18 +23,18 @@ def cep_lookup(CEPString):
 
 
 def viacep_request(CEPString):
-    """ Make a request to the viacep's API with given CEP. """
+    """Make a request to the viacep's API with given CEP."""
 
     return f'http://www.viacep.com.br/ws/{CEPString}/json'
 
 
 def cepReplace(CEPString):
-    """ Remove - and space from string. """
+    """Remove - and space from string."""
 
     return CEPString.replace("-", "").replace(" ", "")
 
 
 def matchCepRegex(CEPString):
-    """ Try to match regex pattern to string. """
+    """Try to match regex pattern to string."""
 
     return re.match('[0-9]{8}', cepReplace(CEPString))

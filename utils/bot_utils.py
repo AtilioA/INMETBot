@@ -32,14 +32,20 @@ send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 # MESSAGES
 def parse_n_images_input(update, context, text):
-    """ Parse input for VPR gifs. Input must exist and be numeric.
+    """Parse input for VPR gifs. Input must exist and be numeric.
 
-        Return:
-            Number of images if successful, None otherwise.
+    Returns
+    --------
+    (nImages, nImagesMessage)
+
+    nImages : int
+        Number of images to be fetched.
+    nImagesMessage : str
+        Message to be sent by the bot.
     """
 
     def get_n_images_and_message(nImages=None):
-        """ Process nImages input and determine nImagesMessage for vpr_gif function """
+        """Process nImages input and determine nImagesMessage for vpr_gif function."""
 
         if nImages:
             if nImages > MAX_VPR_IMAGES:
@@ -49,7 +55,6 @@ def parse_n_images_input(update, context, text):
                 nImagesMessage = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
                 nImages = MIN_VPR_IMAGES
             else:
-                print(nImages)
                 nImagesMessage = None
             return (nImages, nImagesMessage)
 
