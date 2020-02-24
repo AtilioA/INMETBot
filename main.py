@@ -1,10 +1,11 @@
-# Webserver to prevent the bot from sleeping
-import web
+import os
 from utils import webserver
 import logging
 import time
 import schedule
 from threading import Thread
+# Webserver to prevent the bot from sleeping
+from bottle import route, run
 
 from bot_config import updater
 import bot_handlers  # noqa (ignore linter warning)
@@ -19,19 +20,9 @@ logging.basicConfig(format='%(asctime)s %(message)s',
                     level=logging.DEBUG)
 
 
-urls = ('/', 'index')
-
-
-class index:
-    def GET(self):
-        return "Hello, world!"
-
-
-# Thread for the web server
-class WebServerThread(Thread):
-    def run(self):
-        app = web.application(urls, globals())
-        app.run()
+@route('/')
+def index():
+    return '200'
 
 
 # Thread for running routines periodically
@@ -55,9 +46,8 @@ def main():
     fCheckAlert.daemon = True
     fCheckAlert.start()
 
-    fWebServer = WebServerThread()
-    fWebServer.daemon = True
-    fWebServer.start()
+    port = os.environ.get('PORT', 2832)
+    run(host='0.0.0.0', port=int(port))
 
     # Run the bot until Ctrl-C is pressed
     updater.idle()
