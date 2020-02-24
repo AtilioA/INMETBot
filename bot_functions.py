@@ -47,7 +47,7 @@ def cmd_help(update, context):
 @run_async
 @bot_utils.send_typing_action
 def cmd_start(update, context):
-    """Send the help message to the user."""
+    """Send the start message to the user."""
 
     functionsLogger.debug(f"{update.message.chat.type} to @{update.message.chat.username}")
 

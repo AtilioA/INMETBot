@@ -37,6 +37,7 @@ pymongo = "*"
 dnspython = "*"
 selenium = "*"
 pytest = "*"
+bottle = "*"
 
 [requires]
 python_version = "3.7"
