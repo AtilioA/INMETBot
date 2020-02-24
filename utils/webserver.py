@@ -1,9 +1,17 @@
-import web
-
-urls = ('/', 'index')
+from bottle import route, run, get, static_file
 
 
-class index():
-    def GET(self):
-        web.input(name=None)
-        return "200"
+@get('/:path#.+#')
+def server_static(path):
+    return static_file(path, root=".")
+
+
+# Serve favicon to avoid 404 logs
+@get('/favicon.ico')
+def get_favicon():
+    return server_static('favicon.ico')
+
+
+@route('/')
+def index():
+    return '200'
