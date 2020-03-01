@@ -14,4 +14,4 @@ def get_favicon():
 
 @route('/')
 def index():
-    return '200'
+    return 'Bot is online.'

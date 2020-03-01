@@ -14,8 +14,8 @@ ROUTINES_INTERVAL = 30
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p',
-                    filename='requests.log',
+                    datefmt='%d/%m/%Y %H:%M:%S',
+                    filename='bot.log',
                     level=logging.DEBUG)
 
 
@@ -24,7 +24,7 @@ class RoutinesThread(Thread):
     def run(self):
         while True:
             schedule.run_pending()
-            time.sleep(1)
+            time.sleep(60)
 
 
 schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
@@ -35,11 +35,12 @@ schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
 def main():
     updater.start_polling()
 
-    # Start threads
+    # Start routines thread
     fCheckAlert = RoutinesThread()
     fCheckAlert.daemon = True
     fCheckAlert.start()
 
+    # Start web server
     port = os.environ.get('PORT', 2832)
     webserver.run(host='0.0.0.0', port=int(port))
 
