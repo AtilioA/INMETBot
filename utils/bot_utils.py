@@ -30,7 +30,7 @@ send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
 send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 
-def parse_n_images_input(update, context, text):
+def parse_n_images_input(update, context):
     """Parse input for VPR gifs. Input must exist and be numeric.
 
     Returns
@@ -62,19 +62,21 @@ def parse_n_images_input(update, context, text):
 
         return (nImages, nImagesMessage)
 
+    text = update.message.text
+
     try:
-        nImages = text.split(' ')[1]
+        nImages = context.args[0]
         try:
             nImages = int(float(nImages))
             nImages, nImagesMessage = get_n_images_and_message(nImages)
         except ValueError:
-            context.bot.send_message(chat_id=update.effective_chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+            context.bot.send_message(chat_id=update.message.chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id, parse_mode="markdown")
             return None
     except (IndexError, AttributeError):
         nImages, nImagesMessage = get_n_images_and_message(None)
         utilsLogger.warning(f"No input in parse_n_images_input. Message text: \"{text}\"")
 
     if nImagesMessage:
-        context.bot.send_message(chat_id=update.effective_chat.id, text=nImagesMessage, reply_to_message_id=update.message.message_id, parse_mode="markdown")
+        context.bot.send_message(chat_id=update.message.chat.id, text=nImagesMessage, reply_to_message_id=update.message.message_id, parse_mode="markdown")
 
     return nImages

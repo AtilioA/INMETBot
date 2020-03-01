@@ -2,9 +2,9 @@ import arrow
 import logging
 from scraping import parse_alerts
 import models
-# import pycep_correios as pycep
 from utils import viacep
 from bot_config import updater
+from bot_functions import MAX_ALERTS_PER_MESSAGE
 
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
@@ -50,6 +50,7 @@ def notify_chats_routine():
 
     subscribedChats = list(models.INMETBotDB.subscribedChatsCollection.find({}))
     alertMessage = ""
+    alertCounter = 1
 
     for chat in subscribedChats:
         routinesLogger.debug(f"- Checking chat {chat['chatID']}")
@@ -61,27 +62,34 @@ def notify_chats_routine():
                 routinesLogger.warning(f"Viacep error: {error}")
                 continue
 
+            # Get alerts, by city, that weren't notified to this chat
             alerts = list(models.INMETBotDB.alertsCollection.find(
                 {"$and": [
                     {"cities": city}, {"notifiedChats": {"$ne": chat["chatID"]}}
                 ]}
             ))
             if alerts:
-                routinesLogger.info(f"-- Warning about {city}. --")
+                # Any alert here is to be sent to the chat,
+                # since they affect a zipcode and the chat hasn't been notified yet
+                routinesLogger.info(f"-- Existing alert for {city}. --")
                 for alert in alerts:
+                    if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+                        updater.bot.send_message(chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                        alertMessage = ""
+                        alertCounter = 1
                     alertObj = models.Alert(alertDict=alert)
                     alertMessage += alertObj.get_alert_message(city)
-                    routinesLogger.info(f"-- Notifying chat {chat['chatID']} for alert {alert['alertID']}... --")
+                    routinesLogger.info(f"-- Notifying chat {chat['chatID']} about alert {alert['alertID']}... --")
 
                     models.INMETBotDB.alertsCollection.update_one({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
+                    alertCounter += 1
 
+                # "Footer" message after all alerts
                 alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
-                updater.bot.send_message(chat_id=chat["chatID"], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
+                updater.bot.send_message(chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
     routinesLogger.info("Finished notify_chats_routine routine.")
 
 
 if __name__ == "__main__":
-    # parse_alerts_routine()
-    notify_chats_routine()
-    # delete_past_alerts_routine()
+    pass

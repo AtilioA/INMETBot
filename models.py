@@ -70,7 +70,7 @@ class Chat(ABC):
 
     @abstractmethod
     def __init__(self, update):
-        self.id = update.effective_chat.id
+        self.id = update.message.chat.id
         self.type = "chat"
         self.title = "Abstract chat"
         self.set_CEPs_and_subscribed_status()
@@ -237,7 +237,7 @@ class PrivateChat(Chat):
         subscribeMessage = subscribeMessageDict.get(subscribeResult, None)
         return subscribeMessage
 
-    def get_unsubscribe_message(self, unsubscribeResult, textArgs, cep=None):
+    def get_unsubscribe_message(self, unsubscribeResult, cep=None):
         """Get unsubscribe message according to unsubscription result for a private chat."""
 
         unsubscribeMessageDict = {
@@ -255,7 +255,7 @@ class PrivateChat(Chat):
 
         subscriptionStatusDict = {
             "SUBSCRIBED": "Você está inscrito nos alertas.\n\n",
-            "UNSUBSCRIBED": "Você não está inscrito nos alertas."
+            "NOT_SUBSCRIBED": "Você não está inscrito nos alertas."
         }
 
         subscriptionStatusMessage = subscriptionStatusDict.get(subscriptionStatus[0]) + subscriptionStatus[1]
