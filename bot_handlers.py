@@ -4,27 +4,27 @@ from bot_config import dispatcher
 import bot_functions
 
 # Initialize handlers
-start_handler = CommandHandler('start', bot_functions.cmd_start)
-help_handler = CommandHandler(('help', 'ajuda'), bot_functions.cmd_help)
+start_handler = CommandHandler('start', bot_functions.cmd_start, filters=~Filters.update.edited_message)
+help_handler = CommandHandler(('help', 'ajuda'), bot_functions.cmd_help, filters=~Filters.update.edited_message)
 
-vpr_handler = CommandHandler(('vpr', 'vapor_de_agua', 'nuvem'), bot_functions.cmd_vpr)
-vpr_gif_handler = CommandHandler(('vpr_gif', 'nuvens'), bot_functions.cmd_vpr_gif)
+vpr_handler = CommandHandler(('vpr', 'vapor_de_agua', 'nuvem'), bot_functions.cmd_vpr, filters=~Filters.update.edited_message)
+vpr_gif_handler = CommandHandler(('vpr_gif', 'nuvens'), bot_functions.cmd_vpr_gif, filters=~Filters.update.edited_message)
 
-acumulada_handler = CommandHandler('acumulada', bot_functions.cmd_acumulada)
-acumulada_previsao_handler = CommandHandler(('acumulada_previsao_24hrs', 'acumulada_previsao'), bot_functions.cmd_acumulada_previsao)
+acumulada_handler = CommandHandler('acumulada', bot_functions.cmd_acumulada, filters=~Filters.update.edited_message)
+acumulada_previsao_handler = CommandHandler(('acumulada_previsao_24hrs', 'acumulada_previsao'), bot_functions.cmd_acumulada_previsao, filters=~Filters.update.edited_message)
 
-alerts_brazil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'), bot_functions.cmd_alerts_brasil)
-alerts_CEP_handler = CommandHandler('alertas_CEP', bot_functions.cmd_alerts_CEP)
-alerts_location_handler = MessageHandler(Filters.location, bot_functions.alerts_location)
-alerts_map_handler = CommandHandler(('mapa', 'alertas_mapa', 'mapa_alertas', 'mapa_avisos'), bot_functions.cmd_alerts_map)
-subscribe_alerts_handler = CommandHandler(('inscrever_alertas', 'alertas_inscrever', 'inscrever'), bot_functions.cmd_subscribe_alerts)
-unsubscribe_alerts_handler = CommandHandler(('desinscrever_alertas', 'alertas_desinscrever', 'desinscrever'), bot_functions.cmd_unsubscribe_alerts)
-cmd_subscription_status_handler = CommandHandler(('inscrito', 'status'), bot_functions.cmd_subscription_status)
+alerts_brazil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'), bot_functions.cmd_alerts_brasil, filters=~Filters.update.edited_message)
+alerts_CEP_handler = CommandHandler('alertas_CEP', bot_functions.cmd_alerts_CEP, filters=~Filters.update.edited_message)
+alerts_location_handler = MessageHandler(Filters.location & ~Filters.update.edited_message, bot_functions.alerts_location)
+alerts_map_handler = CommandHandler(('mapa', 'alertas_mapa', 'mapa_alertas', 'mapa_avisos'), bot_functions.cmd_alerts_map, filters=~Filters.update.edited_message)
+subscribe_alerts_handler = CommandHandler(('inscrever_alertas', 'alertas_inscrever', 'inscrever'), bot_functions.cmd_subscribe_alerts, filters=~Filters.update.edited_message)
+unsubscribe_alerts_handler = CommandHandler(('desinscrever_alertas', 'alertas_desinscrever', 'desinscrever'), bot_functions.cmd_unsubscribe_alerts, filters=~Filters.update.edited_message)
+cmd_subscription_status_handler = CommandHandler(('inscrito', 'status'), bot_functions.cmd_subscription_status, filters=~Filters.update.edited_message)
 
-sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), bot_functions.cmd_sorrizoronaldo)
-sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), bot_functions.cmd_sorrizoronaldo_will_rock_you)
+sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), bot_functions.cmd_sorrizoronaldo, filters=~Filters.update.edited_message)
+sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), bot_functions.cmd_sorrizoronaldo_will_rock_you, filters=~Filters.update.edited_message)
 
-catch_all_if_private_handler = MessageHandler(Filters.text, bot_functions.catch_all_if_private)
+catch_all_if_private_handler = MessageHandler(Filters.text & ~Filters.update.edited_message, bot_functions.catch_all_if_private)
 
 # Add handlers to dispatcher
 dispatcher.add_handler(start_handler)
