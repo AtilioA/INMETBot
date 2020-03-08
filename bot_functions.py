@@ -136,7 +136,7 @@ def parse_CEP(update, context, cepRequired=True):
         cep = context.args[0].strip().replace("-", "")  # Get string after "/alertas_CEP"
         return cep
     except IndexError:  # No number after /command
-        functionsLogger.warning(f"No input in cmd_unsubscribe_alerts. Message text: \"{text}\"")
+        functionsLogger.warning(f"No input in parse_CEP. Message text: \"{text}\"")
         message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
     else:
         if not pycep.validar_cep(cep):
@@ -288,7 +288,7 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
 
 
 @bot_utils.send_typing_action
-def cmd_subscribe_alerts(update, context):
+def cmd_chat_subscribe_alerts(update, context):
     """Subscribe chat and/or CEP."""
 
     textArgs = update.message.text.split(' ')
@@ -302,21 +302,21 @@ def cmd_subscribe_alerts(update, context):
 
 
 @bot_utils.send_typing_action
-def cmd_unsubscribe_alerts(update, context):
+def cmd_chat_unsubscribe_alerts(update, context):
     """Unsubscribe chat and/or CEP."""
 
     cep = parse_CEP(update, context, cepRequired=False)
 
     chat = models.create_chat_obj(update)
     unsubscribeResult = chat.unsubscribe_chat(cep)
-    unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, cep)
+    unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, cep=cep)
 
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
 
 
 @run_async
 @bot_utils.send_typing_action
-def cmd_subscription_status(update, context):
+def cmd_chat_subscription_status(update, context):
     """Send chat's subscription status."""
 
     chat = models.create_chat_obj(update=update)
@@ -325,6 +325,39 @@ def cmd_subscription_status(update, context):
     subscriptionStatusMessage = chat.get_subscription_status_message(subscriptionStatus)
 
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscriptionStatusMessage, parse_mode="markdown")
+
+
+@run_async
+@bot_utils.send_typing_action
+def cmd_chat_deactivate(update, context):
+    """ Set chat's activated status to False. """
+
+    chat = models.create_chat_obj(update=update)
+    deactivateMessage = chat.activate_callback(chat.deactivate)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=deactivateMessage, parse_mode="markdown")
+
+
+@run_async
+@bot_utils.send_typing_action
+def cmd_chat_activate(update, context):
+    """ Set chat's activated status to True. """
+
+    chat = models.create_chat_obj(update=update)
+    activateMessage = chat.activate_callback(chat.activate)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=activateMessage, parse_mode="markdown")
+
+
+@run_async
+@bot_utils.send_typing_action
+def cmd_chat_toggle_activated(update, context):
+    """ Toggle chat's activated status """
+
+    chat = models.create_chat_obj(update=update)
+    toggleMessage = chat.activate_callback(chat.toggle_activated)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=toggleMessage, parse_mode="markdown")
 
 
 @run_async
