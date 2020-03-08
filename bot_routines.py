@@ -65,7 +65,7 @@ def notify_chats_routine():
             # Get alerts, by city, that weren't notified to this chat
             alerts = list(models.INMETBotDB.alertsCollection.find(
                 {"$and": [
-                    {"cities": city}, {"notifiedChats": {"$ne": chat["chatID"]}}
+                    {"cities": city}, {"notifiedChats": {"$and": {{"$ne": chat["chatID"]}, {chat["activated"]}}}}
                 ]}
             ))
             if alerts:
