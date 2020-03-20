@@ -17,8 +17,10 @@ def delete_past_alerts_routine():
     timeNow = arrow.utcnow().to("Brazil/East")
     for alert in alerts:
         if timeNow > arrow.get(alert["endDate"]):
-            routinesLogger.info(f"alert {alert['alertID']} is past and will be deleted.")
-            models.INMETBotDB.alertsCollection.delete_one({"alertID": alert["alertID"]})
+            routinesLogger.info(
+                f"alert {alert['alertID']} is past and will be deleted.")
+            models.INMETBotDB.alertsCollection.delete_one(
+                {"alertID": alert["alertID"]})
     routinesLogger.info("Finished delete_past_alerts_routine routine.")
 
 
@@ -48,7 +50,8 @@ def notify_chats_routine():
     If there is, notify chat and mark chat as notified (so it won't get notified again for the same alert).
     """
 
-    subscribedChats = list(models.INMETBotDB.subscribedChatsCollection.find({}))
+    subscribedChats = list(
+        models.INMETBotDB.subscribedChatsCollection.find({}))
     alertMessage = ""
     alertCounter = 1
 
@@ -63,31 +66,37 @@ def notify_chats_routine():
                 continue
 
             # Get alerts, by city, that weren't notified to this chat
-            alerts = list(models.INMETBotDB.alertsCollection.find(
-                {"$and": [
-                    {"cities": city}, {"notifiedChats": {"$and": {{"$ne": chat["chatID"]}, {chat["activated"]}}}}
-                ]}
-            ))
-            if alerts:
-                # Any alert here is to be sent to the chat,
-                # since they affect a zipcode and the chat hasn't been notified yet
-                routinesLogger.info(f"-- Existing alert for {city}. --")
-                for alert in alerts:
-                    if alertCounter >= MAX_ALERTS_PER_MESSAGE:
-                        updater.bot.send_message(chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
-                        alertMessage = ""
-                        alertCounter = 1
-                    alertObj = models.Alert(alertDict=alert)
-                    alertMessage += alertObj.get_alert_message(city)
-                    routinesLogger.info(f"-- Notifying chat {chat['chatID']} about alert {alert['alertID']}... --")
+            if chat["activated"]:
+                alerts = list(models.INMETBotDB.alertsCollection.find(
+                    {"$and": [
+                        {"cities": city}, {"notifiedChats": {
+                            "$ne": chat["chatID"]}}
+                    ]}
+                ))
+                if alerts:
+                    # Any alert here is to be sent to the chat,
+                    # since they affect a zipcode and the chat hasn't been notified yet
+                    routinesLogger.info(f"-- Existing alert for {city}. --")
+                    for alert in alerts:
+                        if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+                            updater.bot.send_message(
+                                chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                            alertMessage = ""
+                            alertCounter = 1
+                        alertObj = models.Alert(alertDict=alert)
+                        alertMessage += alertObj.get_alert_message(city)
+                        routinesLogger.info(
+                            f"-- Notifying chat {chat['chatID']} about alert {alert['alertID']}... --")
 
-                    models.INMETBotDB.alertsCollection.update_one({"alertID": alert["alertID"]}, {"$addToSet": {"notifiedChats": chat['chatID']}})
-                    alertCounter += 1
+                        models.INMETBotDB.alertsCollection.update_one({"alertID": alert["alertID"]}, {
+                            "$addToSet": {"notifiedChats": chat['chatID']}})
+                        alertCounter += 1
 
-                # "Footer" message after all alerts
-                alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+                    # "Footer" message after all alerts
+                    alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
 
-                updater.bot.send_message(chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    updater.bot.send_message(
+                        chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
     routinesLogger.info("Finished notify_chats_routine routine.")
 
 
