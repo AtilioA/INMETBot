@@ -56,17 +56,17 @@ def notify_chats_routine():
     alertCounter = 1
 
     for chat in subscribedChats:
-        routinesLogger.debug(f"- Checking chat {chat['chatID']}")
-        for cep in chat["CEPs"]:
-            try:
-                city = viacep.get_cep_city(cep)
-                routinesLogger.debug(f"Checking {city}...")
-            except Exception as error:
-                routinesLogger.warning(f"Viacep error: {error}")
-                continue
+        if chat["activated"]:
+            routinesLogger.debug(f"- Checking chat {chat['chatID']}")
+            for cep in chat["CEPs"]:
+                try:
+                    city = viacep.get_cep_city(cep)
+                    routinesLogger.debug(f"Checking {city}...")
+                except Exception as error:
+                    routinesLogger.warning(f"Viacep error: {error}")
+                    continue
 
-            # Get alerts, by city, that weren't notified to this chat
-            if chat["activated"]:
+                # Get alerts, by city, that weren't notified to this chat
                 alerts = list(models.INMETBotDB.alertsCollection.find(
                     {"$and": [
                         {"cities": city}, {"notifiedChats": {
@@ -76,7 +76,9 @@ def notify_chats_routine():
                 if alerts:
                     # Any alert here is to be sent to the chat,
                     # since they affect a zipcode and the chat hasn't been notified yet
-                    routinesLogger.info(f"-- Existing alert for {city}. --")
+                    alertMessage = ""
+                    routinesLogger.info(
+                        f"-- Existing alert for {city}. --")
                     for alert in alerts:
                         if alertCounter >= MAX_ALERTS_PER_MESSAGE:
                             updater.bot.send_message(
