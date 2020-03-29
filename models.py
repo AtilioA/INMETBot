@@ -40,6 +40,7 @@ class BotDatabase():
             self.db = self.client.INMETBot
             self.alertsCollection = self.db.Alerts
             self.subscribedChatsCollection = self.db.SubscribedChats
+            self.boletinsCollection = self.db.boletinsCollection
         except pymongo.errors.ServerSelectionTimeoutError as mongoClientErr:
             modelsLogger.error(
                 f"Failed to connect to the INMETBot database: {mongoClientErr}")

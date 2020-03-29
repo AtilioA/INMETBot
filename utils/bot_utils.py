@@ -1,3 +1,4 @@
+import arrow
 import logging
 from functools import wraps
 import telegram
@@ -80,3 +81,27 @@ def parse_n_images_input(update, context):
         context.bot.send_message(chat_id=update.message.chat.id, text=nImagesMessage, reply_to_message_id=update.message.message_id, parse_mode="markdown")
 
     return nImages
+
+
+def constroi_mensagem_boletim(boletim):
+    utc = arrow.utcnow()
+    local = utc.to('US/Pacific')
+    data = local.format("DD/MM/YYYY")
+
+    casosConfirmados = boletim.totalGeral["casosConfirmados"]
+    casosConfirmados = casosConfirmados.replace("*", "\*")
+    adendo = ""
+    if "\*" in casosConfirmados:
+        adendo = "\n\*Caso do Rio de Janeiro identificado em Vitória.\n"
+
+    stringBoletim = f"""*Boletim nº {boletim.n}* | {data}
+
+Casos confirmados: {casosConfirmados}
+Casos descartados: {boletim.totalGeral["casosDescartados"]}
+Casos suspeitos: {boletim.totalGeral["casosSuspeitos"]}
+*Total de casos*: {boletim.totalGeral["totalCasos"]}
+{adendo}
+Mais informações na [página do boletim]({boletim.url}).
+"""
+
+    return stringBoletim

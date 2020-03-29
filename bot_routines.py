@@ -2,9 +2,10 @@ import arrow
 import logging
 from scraping import parse_alerts
 import models
-from utils import viacep
+from utils import viacep, bot_utils
 from bot_config import updater
 from bot_functions import MAX_ALERTS_PER_MESSAGE
+from COVID19_ES_Py import ScraperBoletim
 
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
@@ -102,5 +103,25 @@ def notify_chats_routine():
     routinesLogger.info("Finished notify_chats_routine routine.")
 
 
+def verifica_novo_boletim():
+    scraper = ScraperBoletim()
+    ultimoBoletim = scraper.carrega_ultimo_boletim()
+    queryBoletim = models.INMETBotDB.boletinsCollection.find_one({"n": ultimoBoletim.n})
+    print(queryBoletim)
+    if queryBoletim:
+        return None
+    else:
+        stringBoletim = bot_utils.constroi_mensagem_boletim(ultimoBoletim)
+
+        models.INMETBotDB.boletinsCollection.insert_one({
+            "n": ultimoBoletim.n,
+            "postado": True
+        })
+
+        updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=stringBoletim, parse_mode="markdown", disable_web_page_preview=True)
+
+    routinesLogger.info("Finished verifica_novo_boletim routine.")
+
+
 if __name__ == "__main__":
-    pass
+    verifica_novo_boletim()

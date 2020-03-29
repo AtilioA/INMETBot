@@ -1,6 +1,8 @@
 # [INMETBot](https://t.me/INMETBot)
 [@INMETBot](https://t.me/INMETBot) - Bot no Telegram para solicitar imagens de satélites e alertas recentes (não filiado ao INMET)
 
+Esta branch contém o que seria o BoletimCOVID19ESBot, que foi integrado ao INMETBot a fim de aproveitar o tempo de computação gratuito disponível no Heroku.
+
 ## About
 This is a bot that scrapes INMET's website and makes information available through [Telegram](http://telegram.org/). It runs on Python 3 and uses MongoDB. You can [try it here](https://telegram.me/INMETBot).
 

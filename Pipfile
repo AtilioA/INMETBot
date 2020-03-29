@@ -36,6 +36,7 @@ pymongo = "*"
 dnspython = "*"
 selenium = "*"
 bottle = "*"
+covid19-es-py = "*"
 
 [requires]
 python_version = "3.7"

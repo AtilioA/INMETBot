@@ -28,6 +28,8 @@ toggle_activated_handler = CommandHandler(('alternar', 'toggle'), bot_functions.
 sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), bot_functions.cmd_sorrizoronaldo, filters=~Filters.update.edited_message)
 sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), bot_functions.cmd_sorrizoronaldo_will_rock_you, filters=~Filters.update.edited_message)
 
+envia_boletim_handler = CommandHandler(('boletim', 'ultimo_boletim'), bot_functions.cmd_envia_boletim, filters=~Filters.update.edited_message)
+
 catch_all_if_private_handler = MessageHandler(Filters.text & ~Filters.update.edited_message, bot_functions.catch_all_if_private)
 
 # Add handlers to dispatcher
@@ -54,6 +56,8 @@ dispatcher.add_handler(toggle_activated_handler)
 
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
+
+dispatcher.add_handler(envia_boletim_handler)
 
 dispatcher.add_handler(alerts_location_handler)
 

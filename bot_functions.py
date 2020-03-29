@@ -2,13 +2,12 @@ import os
 import logging
 import requests
 import pycep_correios as pycep
-from utils import viacep
+from utils import viacep, bot_messages, bot_utils
 import models
 from scraping import scrap_satellites
-from utils import bot_messages
-from utils import bot_utils
 from scraping import parse_alerts
 from telegram.ext.dispatcher import run_async
+from COVID19_ES_Py import ScraperBoletim
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
@@ -377,6 +376,21 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
+
+# FUNCTIONS FOR BoletimCOVID19ESBot
+# To take the most out of dyno hours from Heroku,
+# I'll host what would be the BoletimCOVID19ESBot here on INMETBot.
+@run_async
+def cmd_envia_boletim(update, context):
+    """Send message with latest boletim information."""
+
+    scraper = ScraperBoletim()
+    ultimoBoletim = scraper.carrega_ultimo_boletim()
+    stringBoletim = bot_utils.constroi_mensagem_boletim(ultimoBoletim)
+
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=stringBoletim, parse_mode="markdown", disable_web_page_preview=True)
+
+    pass
 
 @run_async
 def error(update, context):
