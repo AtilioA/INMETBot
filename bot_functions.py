@@ -381,6 +381,7 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 # To take the most out of dyno hours from Heroku,
 # I'll host what would be the BoletimCOVID19ESBot here on INMETBot.
 @run_async
+@bot_utils.send_typing_action
 def cmd_envia_boletim(update, context):
     """Send message with latest boletim information."""
 
@@ -390,7 +391,6 @@ def cmd_envia_boletim(update, context):
 
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=stringBoletim, parse_mode="markdown", disable_web_page_preview=True)
 
-    pass
 
 @run_async
 def error(update, context):
