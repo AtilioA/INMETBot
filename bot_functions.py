@@ -165,14 +165,14 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
             alertObj = models.Alert(alertDict=alert)
             warned = True
             if not city:
-                alertMessage += alertObj.get_alert_message()
+                alertMessage += alertObj.get_alert_message(brazil=True)
                 if alertCounter >= MAX_ALERTS_PER_MESSAGE:
                     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
                     alertMessage = ""
                     alertCounter = 1
                 alertCounter += 1
             else:
-                alertMessage += alertObj.get_alert_message(city)
+                alertMessage += alertObj.get_alert_message(location=city)
                 if alertCounter >= 6:
                     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
                     alertMessage = ""

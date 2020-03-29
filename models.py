@@ -488,11 +488,15 @@ class Alert():
             logging.error(f"severity is not string: {self.severity}")
             return None
 
-    def get_alert_message(self, location=None):
+    def get_alert_message(self, location=None, brazil=False):
         """Create alert message string from alert object and return it."""
 
         severityEmoji = self.determine_severity_emoji()
-        area = ','.join(self.area)
+        if brazil:
+            area = ','.join(self.area)
+            area = f"\n*Áreas afetadas*: {area}."
+        else:  # Omit "áreas afetadas" for region-specific alerts
+            area = ""
         formattedStartDate = self.startDate.strftime("%d/%m/%Y %H:%M")
         formattedEndDate = self.endDate.strftime("%d/%m/%Y %H:%M")
 
@@ -505,8 +509,7 @@ class Alert():
 
         messageString = f"""
 {header}
-
-        *Áreas afetadas*: {area}.
+        {area}
         *Vigor*: De {formattedStartDate} a {formattedEndDate}.
         {self.description}
 """
