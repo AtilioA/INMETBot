@@ -129,11 +129,10 @@
         },
         "covid19-es-py": {
             "hashes": [
-                "sha256:29ec321ffeecb0fff2c05418cf9091d89da6d0a77e08cb0df64774f4d3552bc2",
-                "sha256:e5003e8b8734e725e870f2c0ede45a974c6976675ce62910da4ec855af19b41c"
+                "sha256:cbaa1824f0372cf55479d7e0a96cde767e1f2610e47a29f95178b509d67031d5"
             ],
             "index": "pypi",
-            "version": "==1.0.4"
+            "version": "==1.1.0"
         },
         "cryptography": {
             "hashes": [

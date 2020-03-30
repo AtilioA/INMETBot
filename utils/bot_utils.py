@@ -84,9 +84,7 @@ def parse_n_images_input(update, context):
 
 
 def constroi_mensagem_boletim(boletim):
-    utc = arrow.utcnow()
-    local = utc.to('US/Pacific')
-    data = local.format("DD/MM/YYYY")
+    data = boletim.pega_dataPublicacao_formatada()
 
     casosConfirmados = boletim.totalGeral["casosConfirmados"]
     casosConfirmados = casosConfirmados.replace("*", "\*")
@@ -94,12 +92,17 @@ def constroi_mensagem_boletim(boletim):
     if "\*" in casosConfirmados:
         adendo = "\n\*Caso do Rio de Janeiro identificado em Vitória.\n"
 
-    stringBoletim = f"""*Boletim nº {boletim.n}* | {data}
+    stringBoletim = f"""*{boletim.titulo}*
+{data}
+
+{boletim.corpo}
 
 Casos confirmados: {casosConfirmados}
 Casos descartados: {boletim.totalGeral["casosDescartados"]}
 Casos suspeitos: {boletim.totalGeral["casosSuspeitos"]}
 *Total de casos*: {boletim.totalGeral["totalCasos"]}
+{boletim.nMunicipiosComCasos} municípios com casos.
+{boletim.nMunicipiosInfectados} municípios com casos *confirmados*.
 {adendo}
 Mais informações na [página do boletim]({boletim.url}).
 """
