@@ -97,12 +97,13 @@ def constroi_mensagem_boletim(boletim):
 
 {boletim.corpo}
 
-Casos confirmados: {casosConfirmados}
-Casos descartados: {boletim.totalGeral["casosDescartados"]}
-Casos suspeitos: {boletim.totalGeral["casosSuspeitos"]}
-*Total de casos*: {boletim.totalGeral["totalCasos"]}
+*Casos confirmados: {casosConfirmados}*.
+*Óbitos: {boletim.totalGeral["obitos"]}*.
+Casos descartados: {boletim.totalGeral["casosDescartados"]}.
+Casos suspeitos: {boletim.totalGeral["casosSuspeitos"]}.
+Total de casos: {boletim.totalGeral["totalCasos"]}.
 {boletim.nMunicipiosComCasos} municípios com casos.
-{boletim.nMunicipiosInfectados} municípios com casos *confirmados*.
+*{boletim.nMunicipiosInfectados} municípios com casos confirmados*.
 {adendo}
 Mais informações na [página do boletim]({boletim.url}).
 """
