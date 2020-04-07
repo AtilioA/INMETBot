@@ -26,7 +26,7 @@ activate_handler = CommandHandler(('ativar'), bot_functions.cmd_chat_activate)
 toggle_activated_handler = CommandHandler(('alternar', 'toggle'), bot_functions.cmd_chat_toggle_activated)
 
 sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'), bot_functions.cmd_sorrizoronaldo, filters=~Filters.update.edited_message)
-sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase'), bot_functions.cmd_sorrizoronaldo_will_rock_you, filters=~Filters.update.edited_message)
+sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen', 'queenfodase', 'sorriz'), bot_functions.cmd_sorrizoronaldo_will_rock_you, filters=~Filters.update.edited_message)
 
 envia_boletim_handler = CommandHandler(('boletim', 'ultimo_boletim'), bot_functions.cmd_envia_boletim, filters=~Filters.update.edited_message)
 
