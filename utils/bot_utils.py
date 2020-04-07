@@ -93,12 +93,11 @@ def constroi_mensagem_boletim(boletim):
         adendo = "\n\*Caso do Rio de Janeiro identificado em Vitória.\n"
 
     stringBoletim = f"""*{boletim.titulo}*
-{data}
-
+_{data}_
 {boletim.corpo}
 
 *Casos confirmados: {casosConfirmados}*.
-*Óbitos: {boletim.totalGeral["obitos"]}*.
+*Óbitos: {boletim.totalGeral["totalObitos"]}*.
 Casos descartados: {boletim.totalGeral["casosDescartados"]}.
 Casos suspeitos: {boletim.totalGeral["casosSuspeitos"]}.
 Total de casos: {boletim.totalGeral["totalCasos"]}.
