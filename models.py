@@ -136,8 +136,8 @@ class Chat(ABC):
                     modelsLogger.info(f"CEP {cep} has been subscribed.")
                     return "CHAT_EXISTS_CEP_SUBSCRIBED"
             else:  # Chat is already subscribed, no CEP
-                return "CHAT_EXISTS_NO_CEP"
                 modelsLogger.info(f"Chat {self.id} is already subscribed.")
+                return "CHAT_EXISTS_NO_CEP"
         else:  # Chat is not subscribed, CEP is optional
             chatDocument = self.serialize(cep)
             INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
