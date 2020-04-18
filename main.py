@@ -8,9 +8,9 @@ from threading import Thread
 
 from bot_config import updater
 import bot_handlers  # noqa (ignore linter warning)
-from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine, verifica_novo_boletim
+from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine, envia_novo_relatorio
 
-ROUTINES_INTERVAL = 15
+ROUTINES_INTERVAL = 10
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s %(message)s',
@@ -30,7 +30,7 @@ class RoutinesThread(Thread):
 schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
-schedule.every(ROUTINES_INTERVAL).minutes.do(verifica_novo_boletim)
+schedule.every().day.at("18:00").do(envia_novo_relatorio)
 
 
 def main():

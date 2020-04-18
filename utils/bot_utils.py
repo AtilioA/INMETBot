@@ -83,28 +83,16 @@ def parse_n_images_input(update, context):
     return nImages
 
 
-def constroi_mensagem_boletim(boletim):
-    data = boletim.pega_dataPublicacao_formatada()
+def constroi_mensagem_relatorio(relatorio):
+    data = arrow.now("America/Sao_Paulo").format("DD/MM/YYYY HH:MM")
 
-    casosConfirmados = boletim.totalGeral["casosConfirmados"]
-    casosConfirmados = casosConfirmados.replace("*", "\*")
-    adendo = ""
-    if "\*" in casosConfirmados:
-        adendo = "\n\*Caso do Rio de Janeiro identificado em Vitória.\n"
+    stringRelatorio = f"""*RELATÓRIO DE {data}*
 
-    stringBoletim = f"""*{boletim.titulo}*
-_{data}_
-{boletim.corpo}
+*Casos confirmados*: {relatorio.totalGeral["casosConfirmados"]}.
+*Óbitos*: {relatorio.totalGeral["obitos"]}.
+{relatorio.nMunicipiosInfectados} *municípios com casos confirmados*.
 
-*Casos confirmados: {casosConfirmados}*.
-*Óbitos: {boletim.totalGeral["totalObitos"]}*.
-Casos descartados: {boletim.totalGeral["casosDescartados"]}.
-Casos suspeitos: {boletim.totalGeral["casosSuspeitos"]}.
-Total de casos: {boletim.totalGeral["totalCasos"]}.
-{boletim.nMunicipiosComCasos} municípios com casos.
-*{boletim.nMunicipiosInfectados} municípios com casos confirmados*.
-{adendo}
-Mais informações na [página do boletim]({boletim.url}).
+Mais informações no [painel sobre COVID-19](https://coronavirus.es.gov.br/painel-covid-19-es).
 """
 
-    return stringBoletim
+    return stringRelatorio

@@ -7,7 +7,7 @@ import models
 from scraping import scrap_satellites
 from scraping import parse_alerts
 from telegram.ext.dispatcher import run_async
-from COVID19_ES_Py import ScraperBoletim
+from COVID19_ES_Py.parse_relatorio_powerbi import Relatorio
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
@@ -377,19 +377,19 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
     context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
 
-# FUNCTIONS FOR BoletimCOVID19ESBot
+# FUNCTIONS FOR RelatorioCOVID19ESBot
 # To take the most out of dyno hours from Heroku,
-# I'll host what would be the BoletimCOVID19ESBot here on INMETBot.
+# I'll host what would be the RelatorioCOVID19ESBot here on INMETBot.
 @run_async
 @bot_utils.send_typing_action
-def cmd_envia_boletim(update, context):
-    """Send message with latest boletim information."""
+def cmd_envia_relatorio(update, context):
+    """Send message with latest relatorio information."""
 
-    scraper = ScraperBoletim()
-    ultimoBoletim = scraper.carrega_ultimo_boletim()
-    stringBoletim = bot_utils.constroi_mensagem_boletim(ultimoBoletim)
+    ultimoRelatorio = Relatorio()
+    ultimoRelatorio.popula_relatorio()
+    stringRelatorio = bot_utils.constroi_mensagem_relatorio(ultimoRelatorio)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=stringBoletim, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=stringRelatorio, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @run_async

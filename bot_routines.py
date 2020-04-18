@@ -5,7 +5,8 @@ import models
 from utils import viacep, bot_utils
 from bot_config import updater
 from bot_functions import MAX_ALERTS_PER_MESSAGE
-from COVID19_ES_Py import ScraperBoletim
+from COVID19_ES_Py.parse_relatorio_powerbi import Relatorio
+
 
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
@@ -103,25 +104,16 @@ def notify_chats_routine():
     routinesLogger.info("Finished notify_chats_routine routine.")
 
 
-def verifica_novo_boletim():
-    scraper = ScraperBoletim()
-    ultimoBoletim = scraper.carrega_ultimo_boletim()
-    queryBoletim = models.INMETBotDB.boletinsCollection.find_one({"n": ultimoBoletim.n})
-    print(queryBoletim)
-    if queryBoletim:
-        return None
-    else:
-        stringBoletim = bot_utils.constroi_mensagem_boletim(ultimoBoletim)
+def envia_novo_relatorio():
+    ultimoRelatorio = Relatorio()
+    ultimoRelatorio.popula_relatorio()
+    stringRelatorio = bot_utils.constroi_mensagem_relatorio(ultimoRelatorio)
 
-        models.INMETBotDB.boletinsCollection.insert_one({
-            "n": ultimoBoletim.n,
-            "postado": True
-        })
+    updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=stringRelatorio,
+                             parse_mode="markdown", disable_web_page_preview=True)
 
-        updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=stringBoletim, parse_mode="markdown", disable_web_page_preview=True)
-
-    routinesLogger.info("Finished verifica_novo_boletim routine.")
+    routinesLogger.info("Finished envia_novo_relatorio routine")
 
 
 if __name__ == "__main__":
-    verifica_novo_boletim()
+    envia_novo_relatorio()

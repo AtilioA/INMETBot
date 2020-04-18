@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 flake8 = "*"
+autopep8 = "*"
 
 [packages]
 beautifulsoup4 = "==4.8.2"
@@ -36,7 +37,8 @@ pymongo = "*"
 dnspython = "*"
 selenium = "*"
 bottle = "*"
-covid19-es-py = "*"
+rows = {file = "https://github.com/turicas/rows/archive/develop.zip"}
+covid19-es-py = {file = "https://github.com/atilioa/covid19-es-py/archive/5d51872b28c93ebacc5338572fcfc45af660f237.zip"}
 
 [requires]
 python_version = "3.7"

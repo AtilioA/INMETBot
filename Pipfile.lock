@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c1804fd2f52cd2cd140ee978714876112401f7a774a23eab0b3afa0e13abfaca"
+            "sha256": "3f52c2097d17ec7b742a432a2a9b3bcd32a3c448a136c493291a476899c8c0b9"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -128,12 +128,7 @@
             "version": "==8.3.0"
         },
         "covid19-es-py": {
-            "hashes": [
-                "sha256:dba75b63ab21381ef6db08422beb8b0140b47a2c5cbf35e679bf4749ba1d25f6",
-                "sha256:f8932dd8755f4ead73f901e35f19d127ffee4a6c1874c14c19b3568a2fa4fb4d"
-            ],
-            "index": "pypi",
-            "version": "==1.3.1"
+            "file": "https://github.com/atilioa/covid19-es-py/archive/5d51872b28c93ebacc5338572fcfc45af660f237.zip"
         },
         "cryptography": {
             "hashes": [
@@ -453,6 +448,9 @@
             ],
             "version": "==0.9.1"
         },
+        "rows": {
+            "file": "https://github.com/turicas/rows/archive/develop.zip"
+        },
         "schedule": {
             "hashes": [
                 "sha256:3f895a1036799a25ab9c335de917073e63cf8256920917e932777382f101f08f",
@@ -521,6 +519,13 @@
         }
     },
     "develop": {
+        "autopep8": {
+            "hashes": [
+                "sha256:cc6be1dfd46f2c7fa00e84a357f1a269683985b09eaffb47654ed551194399eb"
+            ],
+            "index": "pypi",
+            "version": "==1.5.1"
+        },
         "entrypoints": {
             "hashes": [
                 "sha256:589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19",
