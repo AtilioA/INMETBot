@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "57a0fec805777430c3e32d3a104c2e6bdf892efa76a7ffedb0152742b95f781b"
+            "sha256": "e08a87d8a3e9ab9b3bb4f9eaf9a01f803c93ffc383b1c2ce319453833f919215"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -128,7 +128,7 @@
             "version": "==8.3.0"
         },
         "covid19-es-py": {
-            "file": "https://github.com/atilioa/covid19-es-py/archive/5d51872b28c93ebacc5338572fcfc45af660f237.zip"
+            "file": "https://github.com/atilioa/covid19-es-py/archive/1a5301744981f44f0af4b902a1f7ca81acfe8de8.zip"
         },
         "cryptography": {
             "hashes": [

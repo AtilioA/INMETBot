@@ -30,7 +30,7 @@ class RoutinesThread(Thread):
 schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
-schedule.every().day.at("18:00").do(envia_novo_relatorio)
+schedule.every().day.at("19:00").do(envia_novo_relatorio)
 
 
 def main():

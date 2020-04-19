@@ -7,7 +7,7 @@ import models
 from scraping import scrap_satellites
 from scraping import parse_alerts
 from telegram.ext.dispatcher import run_async
-from COVID19_ES_Py.parse_relatorio_powerbi import Relatorio
+from COVID19_ES_Py.relatorio import LeitorRelatorio
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
@@ -19,7 +19,8 @@ MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" error
 def send_instructions_message(update, context):
     """Reply to the last message with the instructions message."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.instructions)
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=bot_messages.instructions)
 
 
 @run_async
@@ -29,7 +30,8 @@ def catch_all_if_private(update, context):
     chat = models.create_chat_obj(update)
 
     if chat.type == "private":
-        functionsLogger.debug(f"catch_all: {update.message.chat.type} to @{update.message.chat.username}")
+        functionsLogger.debug(
+            f"catch_all: {update.message.chat.type} to @{update.message.chat.username}")
         return send_instructions_message(update, context)
 
 
@@ -40,7 +42,8 @@ def cmd_help(update, context):
 
     functionsLogger.debug(f"{update.message.chat.type} to @{update.message.chat.username}")
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @run_async
@@ -50,7 +53,8 @@ def cmd_start(update, context):
 
     functionsLogger.debug(f"{update.message.chat.type} to @{update.message.chat.username}")
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.welcomeMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.welcomeMessage, parse_mode="markdown")
 
 
 @run_async
@@ -59,7 +63,8 @@ def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
     vprImageURL = scrap_satellites.get_vpr_last_image()
-    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=10000)
+    context.bot.send_photo(chat_id=update.effective_chat.id,
+                           reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=10000)
 
 
 @bot_utils.send_upload_video_action
@@ -67,7 +72,8 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
     """Send the .mp4 file to the user and delete it."""
 
     caption = f"Últimas {nImages} imagens"
-    context.bot.send_animation(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, caption=caption, animation=open(vprVideoPath, 'rb'), timeout=10000)
+    context.bot.send_animation(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                               caption=caption, animation=open(vprVideoPath, 'rb'), timeout=10000)
     context.bot.delete_message(chat_id=waitMessage.chat.id, message_id=waitMessage.message_id)
     os.remove(vprVideoPath)
     functionsLogger.info(f"Deleted {vprVideoPath}.")
@@ -81,7 +87,8 @@ def cmd_vpr_gif(update, context):
     nImages = bot_utils.parse_n_images_input(update, context)
     if nImages:
         # Save the message so it can be deleted afterwards
-        waitMessage = context.bot.send_message(chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
+        waitMessage = context.bot.send_message(
+            chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
 
         vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
 
@@ -99,8 +106,10 @@ def cmd_acumulada(update, context):
     try:
         interval = context.args[0]
     except IndexError:
-        functionsLogger.warning(f"No input in cmd_acumulada. Message text: \"{update.message.text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.acumuladaError, parse_mode="markdown")
+        functionsLogger.warning(
+            f"No input in cmd_acumulada. Message text: \"{update.message.text}\"")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                 text=bot_messages.acumuladaError, parse_mode="markdown")
         interval = 1  # Use 24 hours as default
 
     acumuladaImageURL = scrap_satellites.get_acumulada_last_image(interval)
@@ -109,9 +118,11 @@ def cmd_acumulada(update, context):
             caption = "Precipitação acumulada nas últimas 24 horas"
         else:
             caption = f"Precipitação acumulada nos últimos {interval} dias"
-        context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, caption=caption, photo=acumuladaImageURL, timeout=10000)
+        context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                               caption=caption, photo=acumuladaImageURL, timeout=10000)
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                 text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
 
 
 @run_async
@@ -123,7 +134,8 @@ def cmd_acumulada_previsao(update, context):
 
     acumuladaPrevisaoImageURL = scrap_satellites.get_acumulada_previsao()
 
-    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, caption="Precipitação acumulada prevista para as próximas 24 horas", photo=acumuladaPrevisaoImageURL, timeout=10000)
+    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                           caption="Precipitação acumulada prevista para as próximas 24 horas", photo=acumuladaPrevisaoImageURL, timeout=10000)
 
 
 def parse_CEP(update, context, cepRequired=True):
@@ -142,7 +154,8 @@ def parse_CEP(update, context, cepRequired=True):
             message = f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
 
     if cepRequired:
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
         return None
 
 
@@ -166,14 +179,16 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
             if not city:
                 alertMessage += alertObj.get_alert_message(brazil=True)
                 if alertCounter >= MAX_ALERTS_PER_MESSAGE:
-                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                             text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
                     alertMessage = ""
                     alertCounter = 1
                 alertCounter += 1
             else:
                 alertMessage += alertObj.get_alert_message(location=city)
                 if alertCounter >= 6:
-                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                             text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
                     alertMessage = ""
                     alertCounter = 1
                 alertCounter += 1
@@ -184,7 +199,8 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
     else:
         alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
     return warned
 
@@ -203,7 +219,8 @@ def cmd_alerts_brasil(update, context):
             return None
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                 text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @run_async
@@ -222,7 +239,8 @@ def cmd_alerts_CEP(update, context):
             alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
             check_and_send_alerts_warning(update, context, alerts, city)
     except (pycep.excecoes.ExcecaoPyCEPCorreios, KeyError) as cepError:  # Invalid zip code
-        functionsLogger.warning(f"{cepError} on cmd_alerts_CEP. Message text: \"{update.message.text}\"")
+        functionsLogger.warning(
+            f"{cepError} on cmd_alerts_CEP. Message text: \"{update.message.text}\"")
 
 
 @run_async
@@ -259,7 +277,8 @@ def alerts_location(update, context):
             functionsLogger.error("Failed GET request to reverse geocoding API.")
             alertMessage = "❌ Não foi possível verificar a região 😔."
 
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown")
 
 
 @bot_utils.send_typing_action
@@ -267,7 +286,8 @@ def cmd_alerts_map(update, context):
     """Take screenshot of the alerts map with Selenium and send to the user."""
 
     # Save the message so it can be deleted afterwards
-    waitMessage = context.bot.send_message(chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
+    waitMessage = context.bot.send_message(
+        chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
 
     alertsMapPath = parse_alerts.take_screenshot_alerts_map()
     send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage)
@@ -278,7 +298,8 @@ def cmd_alerts_map(update, context):
 def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
     """Send the alerts map screenshot."""
 
-    context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/", reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=10000)
+    context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/",
+                           reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=10000)
 
     context.bot.delete_message(chat_id=waitMessage.chat.id, message_id=waitMessage.message_id)
 
@@ -297,7 +318,8 @@ def cmd_chat_subscribe_alerts(update, context):
     subscribeResult = chat.subscribe_chat(cep)
     subscribeMessage = chat.get_subscribe_message(subscribeResult, textArgs, cep)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscribeMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=subscribeMessage, parse_mode="markdown")
 
 
 @bot_utils.send_typing_action
@@ -310,7 +332,8 @@ def cmd_chat_unsubscribe_alerts(update, context):
     unsubscribeResult = chat.unsubscribe_chat(cep)
     unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, cep=cep)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
 
 
 @run_async
@@ -323,7 +346,8 @@ def cmd_chat_subscription_status(update, context):
     subscriptionStatus = chat.check_subscription_status()
     subscriptionStatusMessage = chat.get_subscription_status_message(subscriptionStatus)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscriptionStatusMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=subscriptionStatusMessage, parse_mode="markdown")
 
 
 @run_async
@@ -334,7 +358,8 @@ def cmd_chat_deactivate(update, context):
     chat = models.create_chat_obj(update=update)
     deactivateMessage = chat.activate_callback(chat.deactivate)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=deactivateMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=deactivateMessage, parse_mode="markdown")
 
 
 @run_async
@@ -345,7 +370,8 @@ def cmd_chat_activate(update, context):
     chat = models.create_chat_obj(update=update)
     activateMessage = chat.activate_callback(chat.activate)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=activateMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=activateMessage, parse_mode="markdown")
 
 
 @run_async
@@ -356,7 +382,8 @@ def cmd_chat_toggle_activated(update, context):
     chat = models.create_chat_obj(update=update)
     toggleMessage = chat.activate_callback(chat.toggle_activated)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=toggleMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=toggleMessage, parse_mode="markdown")
 
 
 @run_async
@@ -364,8 +391,10 @@ def cmd_chat_toggle_activated(update, context):
 def cmd_sorrizoronaldo(update, context):
     """Send default Sorrizo Ronaldo video."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.sorrizoChegou, parse_mode="markdown")
+    context.bot.send_video(chat_id=update.effective_chat.id,
+                           video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
 
 
 @run_async
@@ -373,8 +402,10 @@ def cmd_sorrizoronaldo(update, context):
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """Send "We Will Rock You" Sorrizo Ronaldo video variation."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.sorrizoQueen, parse_mode="markdown")
+    context.bot.send_video(chat_id=update.effective_chat.id,
+                           video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
 
 # FUNCTIONS FOR RelatorioCOVID19ESBot
@@ -385,11 +416,11 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 def cmd_envia_relatorio(update, context):
     """Send message with latest relatorio information."""
 
-    ultimoRelatorio = Relatorio()
-    ultimoRelatorio.popula_relatorio()
+    ultimoRelatorio = LeitorRelatorio().carrega_ultimo_relatorio()
     stringRelatorio = bot_utils.constroi_mensagem_relatorio(ultimoRelatorio)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=stringRelatorio, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=stringRelatorio, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @run_async

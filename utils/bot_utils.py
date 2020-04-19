@@ -84,7 +84,7 @@ def parse_n_images_input(update, context):
 
 
 def constroi_mensagem_relatorio(relatorio):
-    data = arrow.now("America/Sao_Paulo").format("DD/MM/YYYY HH:MM")
+    data = arrow.now("America/Sao_Paulo").format("DD/MM/YYYY")
 
     stringRelatorio = f"""*RELATÓRIO DE {data}*
 

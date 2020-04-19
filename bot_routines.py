@@ -5,7 +5,7 @@ import models
 from utils import viacep, bot_utils
 from bot_config import updater
 from bot_functions import MAX_ALERTS_PER_MESSAGE
-from COVID19_ES_Py.parse_relatorio_powerbi import Relatorio
+from COVID19_ES_Py.relatorio import LeitorRelatorio
 
 
 routinesLogger = logging.getLogger(__name__)
@@ -105,8 +105,7 @@ def notify_chats_routine():
 
 
 def envia_novo_relatorio():
-    ultimoRelatorio = Relatorio()
-    ultimoRelatorio.popula_relatorio()
+    ultimoRelatorio = LeitorRelatorio().carrega_ultimo_relatorio()
     stringRelatorio = bot_utils.constroi_mensagem_relatorio(ultimoRelatorio)
 
     updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=stringRelatorio,
