@@ -381,5 +381,4 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 @run_async
 def error(update, context):
     """Log errors caused by Updates."""
-
-    functionsLogger.warning('Update "%s" caused error "%s"', update, context.error)
+    functionsLogger.error('Update "%s" caused error "%s"', update, context.error)
