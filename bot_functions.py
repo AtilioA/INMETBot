@@ -426,5 +426,4 @@ def cmd_envia_relatorio(update, context):
 @run_async
 def error(update, context):
     """Log errors caused by Updates."""
-
-    functionsLogger.warning('Update "%s" caused error "%s"', update, context.error)
+    functionsLogger.error('Update "%s" caused error "%s"', update, context.error)
