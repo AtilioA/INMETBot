@@ -67,7 +67,7 @@ ratelim==0.1.6
 requests==2.23.0
 requests-toolbelt==0.9.1
 reverse-geocoder==1.5.1
-rows==https://github.com/turicas/rows/archive/develop.zip
+git+https://github.com/turicas/rows.git@develop#egg=rows
 schedule==0.6.0
 scipy==1.4.1
 selenium==3.141.0
