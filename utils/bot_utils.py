@@ -71,25 +71,30 @@ def parse_n_images_input(update, context):
             nImages = int(float(nImages))
             nImages, nImagesMessage = get_n_images_and_message(nImages)
         except ValueError:
-            context.bot.send_message(chat_id=update.message.chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+            context.bot.send_message(chat_id=update.message.chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`",
+                                     reply_to_message_id=update.message.message_id, parse_mode="markdown")
             return None
     except (IndexError, AttributeError):
         nImages, nImagesMessage = get_n_images_and_message(None)
         utilsLogger.warning(f"No input in parse_n_images_input. Message text: \"{text}\"")
 
     if nImagesMessage:
-        context.bot.send_message(chat_id=update.message.chat.id, text=nImagesMessage, reply_to_message_id=update.message.message_id, parse_mode="markdown")
+        context.bot.send_message(chat_id=update.message.chat.id, text=nImagesMessage,
+                                 reply_to_message_id=update.message.message_id, parse_mode="markdown")
 
     return nImages
 
 
-def constroi_mensagem_relatorio(relatorio):
+def constroi_mensagem_relatorio(relatorio, pastConfirmed, pastDeaths):
     data = arrow.now("America/Sao_Paulo").format("DD/MM/YYYY")
+
+    diffConfirmed = relatorio.totalGeral['casosConfirmados'] - pastConfirmed
+    diffDeaths = relatorio.totalGeral['obitos'] - pastDeaths
 
     stringRelatorio = f"""*RELATÓRIO DE {data}*
 
-*Casos confirmados*: {relatorio.totalGeral["casosConfirmados"]}.
-*Óbitos*: {relatorio.totalGeral["obitos"]}.
+*Casos confirmados*: {relatorio.totalGeral["casosConfirmados"]} (*+{diffConfirmed}*).
+*Óbitos*: {relatorio.totalGeral["obitos"]} (*+{diffDeaths}*).
 {relatorio.nMunicipiosInfectados} *municípios com casos confirmados*.
 
 Mais informações no [painel sobre COVID-19](https://coronavirus.es.gov.br/painel-covid-19-es).

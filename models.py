@@ -40,7 +40,7 @@ class BotDatabase():
             self.db = self.client.INMETBot
             self.alertsCollection = self.db.Alerts
             self.subscribedChatsCollection = self.db.SubscribedChats
-            self.boletinsCollection = self.db.boletinsCollection
+            self.BoletinsCollection = self.db.BoletinsCollection
         except pymongo.errors.ServerSelectionTimeoutError as mongoClientErr:
             modelsLogger.error(
                 f"Failed to connect to the INMETBot database: {mongoClientErr}")
@@ -141,7 +141,7 @@ class Chat(ABC):
                 return "CHAT_EXISTS_NO_CEP"
         else:  # Chat is not subscribed, CEP is optional
             chatDocument = self.serialize(cep)
-            INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
+            INMETBotDB.subscribedChatsCollection.insert_one({chatDocument})
             if cep:
                 modelsLogger.info(
                     f"Chat {self.id} and CEP {cep} have been subscribed.")

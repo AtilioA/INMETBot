@@ -1,4 +1,5 @@
 import os
+import arrow
 import logging
 import requests
 import pycep_correios as pycep
@@ -416,8 +417,23 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 def cmd_envia_relatorio(update, context):
     """Send message with latest relatorio information."""
 
-    ultimoRelatorio = LeitorRelatorio().carrega_ultimo_relatorio()
-    stringRelatorio = bot_utils.constroi_mensagem_relatorio(ultimoRelatorio)
+    lastRelatorioPowerBI = LeitorRelatorio().carrega_ultimo_relatorio()
+    lastRelatorioDB = list(models.INMETBotDB.BoletinsCollection.find({}).limit(1))[0]
+
+    timeNow = arrow.utcnow().to("Brazil/East")
+    dateNewRelatorio = timeNow.replace(hour=17, minute=30)
+    if timeNow >= dateNewRelatorio:
+        queryRelatorio = models.INMETBotDB.BoletinsCollection.find_one(
+            {"confirmados": lastRelatorioPowerBI.totalGeral['casosConfirmados'], "obitos": lastRelatorioPowerBI.totalGeral['obitos']})
+        if not queryRelatorio:
+            models.INMETBotDB.BoletinsCollection.insert_one(
+                {"confirmados": int(lastRelatorioPowerBI.totalGeral['casosConfirmados']), "obitos": int(lastRelatorioPowerBI.totalGeral['obitos']), "data": timeNow})
+
+    pastConfirmed = int(lastRelatorioDB["casosConfirmados"])
+    pastDeaths = int(lastRelatorioDB["obitos"])
+
+    stringRelatorio = bot_utils.constroi_mensagem_relatorio(
+        lastRelatorioPowerBI, pastConfirmed, pastDeaths)
 
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                              text=stringRelatorio, parse_mode="markdown", disable_web_page_preview=True)
