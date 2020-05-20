@@ -418,16 +418,17 @@ def cmd_envia_relatorio(update, context):
     """Send message with latest relatorio information."""
 
     lastRelatorioPowerBI = LeitorRelatorio().carrega_ultimo_relatorio()
-    lastRelatorioDB = list(models.INMETBotDB.BoletinsCollection.find({}).limit(1))[0]
+    lastRelatorioDB = list(models.INMETBotDB.BoletinsCollection.find(
+        {}).sort("_id", -1).limit(1))[0]
 
     timeNow = arrow.utcnow().to("Brazil/East")
     dateNewRelatorio = timeNow.replace(hour=17, minute=30)
     if timeNow >= dateNewRelatorio:
         queryRelatorio = models.INMETBotDB.BoletinsCollection.find_one(
-            {"confirmados": lastRelatorioPowerBI.totalGeral['casosConfirmados'], "obitos": lastRelatorioPowerBI.totalGeral['obitos']})
+            {"casosConfirmados": lastRelatorioPowerBI.totalGeral['casosConfirmados'], "obitos": lastRelatorioPowerBI.totalGeral['obitos']})
         if not queryRelatorio:
             models.INMETBotDB.BoletinsCollection.insert_one(
-                {"confirmados": int(lastRelatorioPowerBI.totalGeral['casosConfirmados']), "obitos": int(lastRelatorioPowerBI.totalGeral['obitos']), "data": timeNow})
+                {"casosConfirmados": int(lastRelatorioPowerBI.totalGeral['casosConfirmados']), "obitos": int(lastRelatorioPowerBI.totalGeral['obitos']), "data": timeNow.format("DD-MM-YYYY")})
 
     pastConfirmed = int(lastRelatorioDB["casosConfirmados"])
     pastDeaths = int(lastRelatorioDB["obitos"])
