@@ -414,18 +414,19 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 # I'll host what would be the RelatorioCOVID19ESBot here on INMETBot.
 @run_async
 @bot_utils.send_typing_action
-def cmd_envia_relatorio(update, context):
+def cmd_send_relatorio(update, context):
     """Send message with latest relatorio information."""
 
-    lastRelatorioPowerBI = LeitorRelatorio().carrega_ultimo_relatorio()
-    lastRelatorioDB = list(models.INMETBotDB.BoletinsCollection.find(
-        {}).sort("_id", -1).limit(1))[0]
-
     timeNow = arrow.utcnow().to("Brazil/East")
+    lastRelatorioPowerBI = LeitorRelatorio().carrega_ultimo_relatorio()
+    lastRelatorioDB = models.INMETBotDB.BoletinsCollection.find_one(
+        {"data": timeNow.shift(days=-1).format("DD-MM-YYYY")}
+    )
+
     dateNewRelatorio = timeNow.replace(hour=17, minute=30)
     if timeNow >= dateNewRelatorio:
         queryRelatorio = models.INMETBotDB.BoletinsCollection.find_one(
-            {"casosConfirmados": lastRelatorioPowerBI.totalGeral['casosConfirmados'], "obitos": lastRelatorioPowerBI.totalGeral['obitos']})
+            {"data": timeNow.format("DD-MM-YYYY")})
         if not queryRelatorio:
             models.INMETBotDB.BoletinsCollection.insert_one(
                 {"casosConfirmados": int(lastRelatorioPowerBI.totalGeral['casosConfirmados']), "obitos": int(lastRelatorioPowerBI.totalGeral['obitos']), "data": timeNow.format("DD-MM-YYYY")})

@@ -8,7 +8,7 @@ from threading import Thread
 
 from bot_config import updater
 import bot_handlers  # noqa (ignore linter warning)
-from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine, envia_novo_relatorio
+from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine, send_new_relatorio
 
 ROUTINES_INTERVAL = 10
 
@@ -30,7 +30,7 @@ class RoutinesThread(Thread):
 schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
-schedule.every().day.at("21:00").do(envia_novo_relatorio)
+schedule.every().day.at("21:00").do(send_new_relatorio)
 
 
 def main():

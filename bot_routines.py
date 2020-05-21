@@ -111,14 +111,14 @@ def notify_chats_routine():
     routinesLogger.info("Finished notify_chats_routine routine.")
 
 
-def envia_novo_relatorio():
-    ultimoRelatorio = LeitorRelatorio().carrega_ultimo_relatorio()
-    stringRelatorio = bot_utils.constroi_mensagem_relatorio(ultimoRelatorio)
+def send_new_relatorio():
+    lastRelatorio = LeitorRelatorio().carrega_ultimo_relatorio()
+    relatorioString = bot_utils.constroi_mensagem_relatorio(lastRelatorio)
 
-    updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=stringRelatorio,
+    updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=relatorioString,
                              parse_mode="markdown", disable_web_page_preview=True)
 
-    routinesLogger.info("Finished envia_novo_relatorio routine")
+    routinesLogger.info("Finished send_new_relatorio routine")
 
 
 if __name__ == "__main__":

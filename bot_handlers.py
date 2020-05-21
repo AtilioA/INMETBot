@@ -45,8 +45,8 @@ sorrizoronaldo_handler = CommandHandler(('sorrizo', 'sorrizoronaldo', 'fodase'),
 sorrizoronaldo_will_rock_you_handler = CommandHandler(('sorrizoronaldo_will_rock_you', 'sorrizorock', 'sorrizoqueen',
                                                        'queenfodase', 'sorriz'), bot_functions.cmd_sorrizoronaldo_will_rock_you, filters=~Filters.update.edited_message)
 
-envia_boletim_handler = CommandHandler(
-    ('boletim', 'ultimo_boletim'), bot_functions.cmd_envia_relatorio, filters=~Filters.update.edited_message)
+send_boletim_handler = CommandHandler(
+    ('boletim', 'ultimo_boletim'), bot_functions.cmd_send_relatorio, filters=~Filters.update.edited_message)
 
 catch_all_if_private_handler = MessageHandler(
     Filters.text & ~Filters.update.edited_message, bot_functions.catch_all_if_private)
@@ -76,7 +76,7 @@ dispatcher.add_handler(toggle_activated_handler)
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
 
-dispatcher.add_handler(envia_boletim_handler)
+dispatcher.add_handler(send_boletim_handler)
 
 dispatcher.add_handler(alerts_location_handler)
 
