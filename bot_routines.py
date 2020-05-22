@@ -112,8 +112,17 @@ def notify_chats_routine():
 
 
 def send_new_relatorio():
-    lastRelatorio = LeitorRelatorio().carrega_ultimo_relatorio()
-    relatorioString = bot_utils.constroi_mensagem_relatorio(lastRelatorio)
+    lastRelatorioPowerBI = LeitorRelatorio().carrega_ultimo_relatorio()
+    timeNow = arrow.utcnow().to("Brazil/East")
+    lastRelatorioPowerBI = LeitorRelatorio().carrega_ultimo_relatorio()
+    lastRelatorioDB = models.INMETBotDB.BoletinsCollection.find_one(
+        {"data": timeNow.shift(days=-1).format("DD-MM-YYYY")}
+    )
+
+    pastConfirmed = int(lastRelatorioDB["casosConfirmados"])
+    pastDeaths = int(lastRelatorioDB["obitos"])
+
+    relatorioString = bot_utils.constroi_mensagem_relatorio(lastRelatorioPowerBI, pastConfirmed, pastDeaths)
 
     updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=relatorioString,
                              parse_mode="markdown", disable_web_page_preview=True)
