@@ -442,6 +442,8 @@ def cmd_send_relatorio(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                              text=stringRelatorio, parse_mode="markdown", disable_web_page_preview=True)
 
+    send_microdados(update, context)
+
 
 @bot_utils.send_upload_document_action
 def send_microdados(update, context):

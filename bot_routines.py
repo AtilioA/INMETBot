@@ -114,7 +114,7 @@ def notify_chats_routine():
     routinesLogger.info("Finished notify_chats_routine routine.")
 
 
-def send_new_relatorio():
+def send_new_relatorio_routine():
     timeNow = arrow.utcnow().to("Brazil/East")
     lastRelatorioPowerBI = LeitorRelatorio().carrega_ultimo_relatorio()
     lastRelatorioDB = models.INMETBotDB.BoletinsCollection.find_one(
@@ -146,8 +146,8 @@ def send_new_relatorio():
 
     os.remove(MICRODADOS_PATH)
 
-    routinesLogger.info("Finished send_new_relatorio routine.")
+    routinesLogger.info("Finished send_new_relatorio_routine routine.")
 
 
 if __name__ == "__main__":
-    notify_chats_routine()
+    send_new_relatorio_routine()
