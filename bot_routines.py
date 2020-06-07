@@ -1,4 +1,7 @@
+import os
 import arrow
+from pathlib import Path
+import urllib.request
 import logging
 from scraping import parse_alerts
 import models
@@ -121,7 +124,8 @@ def send_new_relatorio():
     pastConfirmed = int(lastRelatorioDB["casosConfirmados"])
     pastDeaths = int(lastRelatorioDB["obitos"])
 
-    relatorioString = bot_utils.constroi_mensagem_relatorio(lastRelatorioPowerBI, pastConfirmed, pastDeaths)
+    relatorioString = bot_utils.constroi_mensagem_relatorio(
+        lastRelatorioPowerBI, pastConfirmed, pastDeaths)
 
     updater.bot.send_message(chat_id="@BoletimCOVID19ES", text=relatorioString,
                              parse_mode="markdown", disable_web_page_preview=True)
@@ -132,7 +136,17 @@ def send_new_relatorio():
         models.INMETBotDB.BoletinsCollection.insert_one(
             {"casosConfirmados": int(lastRelatorioPowerBI.totalGeral['casosConfirmados']), "obitos": int(lastRelatorioPowerBI.totalGeral['obitos']), "data": timeNow.format("DD-MM-YYYY")})
 
-    routinesLogger.info("Finished send_new_relatorio routine")
+    # Send MICRODADOS.csv for the current day
+    MICRODADOS_PATH = Path("tmp/MICRODADOS.csv")
+
+    urllib.request.urlretrieve(
+        'https://bi.static.es.gov.br/covid19/MICRODADOS.csv', MICRODADOS_PATH)
+
+    updater.bot.send_document(chat_id='467672701', document=open(MICRODADOS_PATH, 'rb'))
+
+    os.remove(MICRODADOS_PATH)
+
+    routinesLogger.info("Finished send_new_relatorio routine.")
 
 
 if __name__ == "__main__":

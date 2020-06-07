@@ -1,3 +1,5 @@
+from pathlib import Path
+import urllib.request
 import os
 import arrow
 import logging
@@ -439,6 +441,20 @@ def cmd_send_relatorio(update, context):
 
     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                              text=stringRelatorio, parse_mode="markdown", disable_web_page_preview=True)
+
+
+@bot_utils.send_upload_document_action
+def send_microdados(update, context):
+    # Send MICRODADOS.csv for the current day
+    MICRODADOS_PATH = Path("tmp/MICRODADOS.csv")
+
+    urllib.request.urlretrieve(
+        'https://bi.static.es.gov.br/covid19/MICRODADOS.csv', MICRODADOS_PATH)
+
+    context.bot.send_document(chat_id=update.effective_chat.id,
+                              document=open(MICRODADOS_PATH, 'rb'))
+
+    os.remove(MICRODADOS_PATH)
 
 
 @run_async
