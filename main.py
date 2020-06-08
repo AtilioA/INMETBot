@@ -3,6 +3,7 @@ from utils import webserver
 import os
 import logging
 import time
+import arrow
 import schedule
 from threading import Thread
 
@@ -10,7 +11,11 @@ from bot_config import updater
 import bot_handlers  # noqa (ignore linter warning)
 from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine, send_new_relatorio_routine
 
+# Execute some routines every 10 minutes
 ROUTINES_INTERVAL = 10
+# 17:00 GMT-3
+RELATORIO_TIME = arrow.utcnow().to(
+    'America/Sao_Paulo').replace(hour=17, minute=00, second=00).format("HH:mm")
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s %(message)s',
@@ -30,7 +35,7 @@ class RoutinesThread(Thread):
 schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
 schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
-schedule.every().day.at("21:00").do(send_new_relatorio_routine)
+schedule.every().day.at(RELATORIO_TIME.format("HH:mm")).do(send_new_relatorio_routine)
 
 
 def main():
