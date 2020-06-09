@@ -14,8 +14,7 @@ from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notif
 # Execute some routines every 10 minutes
 ROUTINES_INTERVAL = 10
 # 17:00 GMT-3
-RELATORIO_TIME = arrow.utcnow().to(
-    'America/Sao_Paulo').replace(hour=17, minute=00, second=00).format("HH:mm")
+RELATORIO_TIME = arrow.now('America/Sao_Paulo').replace(hour=17, minute=00, second=00).to('utc')
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s %(message)s',
