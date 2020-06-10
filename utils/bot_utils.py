@@ -95,7 +95,7 @@ def constroi_mensagem_relatorio(relatorio, pastConfirmed, pastDeaths):
 
 *Casos confirmados*: {relatorio.totalGeral["casosConfirmados"]} (*+{diffConfirmed}*).
 *Óbitos*: {relatorio.totalGeral["obitos"]} (*+{diffDeaths}*).
-{relatorio.nMunicipiosInfectados} *municípios com casos confirmados*.
+*Todos os municípios* ({relatorio.nMunicipiosInfectados}) possuem casos confirmados.
 
 Mais informações no [painel sobre COVID-19](https://coronavirus.es.gov.br/painel-covid-19-es).
 """
