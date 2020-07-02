@@ -14,7 +14,7 @@ cheroot==8.3.0
 Click==7.0
 colorama==0.4.3
 coverage==5.1
-COVID19-ES-Py==3.0.0
+git+https://github.com/turicas/rows.git@develop#egg=rows
 cryptography==2.8
 dataclasses==0.6
 decorator==4.4.1
@@ -61,7 +61,7 @@ ratelim==0.1.6
 requests==2.23.0
 requests-toolbelt==0.9.1
 reverse-geocoder==1.5.1
-git+https://github.com/turicas/rows.git@develop#egg=rows
+-e git+https://github.com/atilioa/covid19-es-py.git@master#egg=covid19-es-py
 schedule==0.6.0
 selenium==3.141.0
 six==1.14.0

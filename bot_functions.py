@@ -414,7 +414,6 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 # FUNCTIONS FOR RelatorioCOVID19ESBot
 # To take the most out of dyno hours from Heroku,
 # I'll host what would be the RelatorioCOVID19ESBot here on INMETBot.
-@run_async
 @bot_utils.send_typing_action
 def cmd_send_relatorio(update, context):
     """Send message with latest relatorio information."""
@@ -425,7 +424,7 @@ def cmd_send_relatorio(update, context):
         {"data": timeNow.shift(days=-1).format("DD-MM-YYYY")}
     )
 
-    dateNewRelatorio = timeNow.replace(hour=17, minute=30)
+    dateNewRelatorio = timeNow.replace(hour=17, minute=00)
     if timeNow >= dateNewRelatorio:
         queryRelatorio = models.INMETBotDB.BoletinsCollection.find_one(
             {"data": timeNow.format("DD-MM-YYYY")})
