@@ -1,7 +1,7 @@
 [[source]]
 name = "pypi"
 url = "https://pypi.org/simple"
-verify_ssl = true
+verify_ssl = false
 
 [dev-packages]
 flake8 = "*"
@@ -36,6 +36,9 @@ pymongo = "*"
 dnspython = "*"
 selenium = "*"
 bottle = "*"
+fgrequests = "*"
+python-dotenv = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.7"
