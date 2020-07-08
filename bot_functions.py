@@ -1,6 +1,12 @@
+import arrow
 import os
 import logging
 import requests
+import fgrequests
+import json
+from PIL import Image
+from io import BytesIO
+import base64
 import pycep_correios as pycep
 from utils import viacep
 import models
@@ -59,10 +65,36 @@ def cmd_start(update, context):
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
-    # vprImageURL = scrap_satellites.get_vpr_last_image()
-    # context.bot.send_photo(chat_id=update.effective_chat.id,
-    #                        reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=10000)
+    # "Guess" image from INMET's API
+    utcNow = arrow.utcnow()
+    dayNow = utcNow.format("YYYY-MM-DD")
+    minutesNow = utcNow.format('mm')
+    floorMinutes = int(minutesNow) // 10 * 10
+    floorDate = utcNow.replace(minute=floorMinutes)
+
+    # We do this because retrieving hours from the API takes several seconds, so it is faster to guess endpoints (only three are possible)
+    requestURLS = []
+    for i in range(1, 4):
+        tryDate = floorDate.shift(minutes=-i*10)
+        requestURLS.append(f"https://apisat.inmet.gov.br/GOES/BR/VP/{dayNow}/{tryDate.format('HH:mm')}")
+
+    # Get the most recent request that was successful
+    response = list(filter(lambda x: x.status_code == 200, fgrequests.build(requestURLS)))
+    data = response[0].json()
+
+    # Decode Base64 image
+    base64data = data['base64'][21:]
+    vprIMAGE = Image.open(BytesIO(base64.b64decode(base64data)))
+
+    # Save image to memory
+    bytesIOImage = BytesIO()
+    bytesIOImage.name = 'image.jpeg'
+    vprIMAGE.save(bytesIOImage, 'JPEG')
+    bytesIOImage.seek(0)
+
+    # Send image from memory
+    context.bot.send_photo(chat_id=update.effective_chat.id,
+                           reply_to_message_id=update.message.message_id, photo=bytesIOImage, timeout=10000)
 
 
 @bot_utils.send_upload_video_action
