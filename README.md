@@ -20,7 +20,7 @@ Telegram bot that scrapes INMET's website and makes information available throug
 
 ## 📖 Examples (in pt-BR)
 
-- Creating GIF made of the _10_ last images from the enhanced water vapor satellite:
+- Creating GIF made of the last _10_ images from the enhanced water vapor satellite:
 
   ![Telegram bot](.github/vpr.png)
 
