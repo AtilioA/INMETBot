@@ -1,3 +1,6 @@
+from PIL import Image
+from io import BytesIO
+import base64
 import logging
 from functools import wraps
 import telegram
@@ -28,6 +31,20 @@ send_typing_action = send_action(telegram.ChatAction.TYPING)
 send_upload_photo_action = send_action(telegram.ChatAction.UPLOAD_PHOTO)
 send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
 send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
+
+
+def loadB64ImageToMemory(base64String):
+    # Decode Base64 image
+    base64data = base64String[21:]  # Remove string header
+    image = Image.open(BytesIO(base64.b64decode(base64data)))
+
+    # Save image to memory
+    bytesIOImage = BytesIO()
+    bytesIOImage.name = 'image.jpeg'
+    image.save(bytesIOImage, 'JPEG')
+    bytesIOImage.seek(0)
+
+    return bytesIOImage
 
 
 def parse_n_images_input(update, context):
