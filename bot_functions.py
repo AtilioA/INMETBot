@@ -59,8 +59,10 @@ def cmd_start(update, context):
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
-    vprImageURL = scrap_satellites.get_vpr_last_image()
-    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=10000)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
+    # vprImageURL = scrap_satellites.get_vpr_last_image()
+    # context.bot.send_photo(chat_id=update.effective_chat.id,
+    #                        reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=10000)
 
 
 @bot_utils.send_upload_video_action
@@ -79,14 +81,15 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
 def cmd_vpr_gif(update, context):
     """Create and send GIF made of recent VPR satellite images to the user."""
 
-    nImages = bot_utils.parse_n_images_input(update, context)
-    if nImages:
-        # Save the message so it can be deleted afterwards
-        waitMessage = context.bot.send_message(chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
+    # nImages = bot_utils.parse_n_images_input(update, context)
+    # if nImages:
+    #     # Save the message so it can be deleted afterwards
+    #     waitMessage = context.bot.send_message(
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
 
-        vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
+        # vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
 
-        return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
+        # return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
 
 
 @run_async
@@ -94,25 +97,30 @@ def cmd_vpr_gif(update, context):
 def cmd_acumulada(update, context):
     """Fetch and send accumulated precipitation within given interval satellite image to the user."""
 
-    functionsLogger.debug("Getting acumulada images...")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
+    # functionsLogger.debug("Getting acumulada images...")
 
-    # Parse input
-    try:
-        interval = context.args[0]
-    except IndexError:
-        functionsLogger.warning(f"No input in cmd_acumulada. Message text: \"{update.message.text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.acumuladaError, parse_mode="markdown")
-        interval = 1  # Use 24 hours as default
+    # # Parse input
+    # try:
+    #     interval = context.args[0]
+    # except IndexError:
+    #     functionsLogger.warning(
+    #         f"No input in cmd_acumulada. Message text: \"{update.message.text}\"")
+    #     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+    #                              text=bot_messages.acumuladaError, parse_mode="markdown")
+    #     interval = 1  # Use 24 hours as default
 
-    acumuladaImageURL = scrap_satellites.get_acumulada_last_image(interval)
-    if acumuladaImageURL:
-        if interval == 1:
-            caption = "Precipitação acumulada nas últimas 24 horas"
-        else:
-            caption = f"Precipitação acumulada nos últimos {interval} dias"
-        context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, caption=caption, photo=acumuladaImageURL, timeout=10000)
-    else:
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
+    # acumuladaImageURL = scrap_satellites.get_acumulada_last_image(interval)
+    # if acumuladaImageURL:
+    #     if interval == 1:
+    #         caption = "Precipitação acumulada nas últimas 24 horas"
+    #     else:
+    #         caption = f"Precipitação acumulada nos últimos {interval} dias"
+    #     context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+    #                            caption=caption, photo=acumuladaImageURL, timeout=10000)
+    # else:
+    #     context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+    #                              text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
 
 
 @run_async
