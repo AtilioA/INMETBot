@@ -9,7 +9,7 @@ from utils import viacep
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
 
-MONGO_URI = os.environ.get("INMETBOT_MONGO_URI")
+MONGO_URI = os.getenv("INMETBOT_MONGO_URI")
 
 
 class BotDatabase():

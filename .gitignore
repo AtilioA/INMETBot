@@ -109,3 +109,4 @@ tmp/
 ignore/
 *.exe
 .env
+!.env.example

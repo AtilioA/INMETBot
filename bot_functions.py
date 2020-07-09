@@ -3,12 +3,16 @@ import urllib.request
 import os
 import arrow
 import logging
+import json
+
+import arrow
 import requests
+import fgrequests
 import pycep_correios as pycep
-from utils import viacep, bot_messages, bot_utils
+
 import models
-from scraping import scrap_satellites
-from scraping import parse_alerts
+from scraping import parse_alerts, scrap_satellites
+from utils import viacep, bot_messages, bot_utils
 from telegram.ext.dispatcher import run_async
 from COVID19_ES_Py.relatorio import LeitorRelatorio
 
@@ -65,9 +69,32 @@ def cmd_start(update, context):
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
-    vprImageURL = scrap_satellites.get_vpr_last_image()
+    # "Guess" image from INMET's API
+    APIBaseURL = "https://apisat.inmet.gov.br/"
+    regiao = "BR"
+
+    utcNow = arrow.utcnow()
+    dayNow = utcNow.format("YYYY-MM-DD")
+    minutesNow = utcNow.format('mm')
+    floorMinutes = int(minutesNow) // 10 * 10
+    floorDate = utcNow.replace(minute=floorMinutes)
+
+
+    # We do this because retrieving hours from the API takes several seconds, so it is faster to guess endpoints (only three are possible)
+    requestURLS = []
+    for i in range(1, 4):
+        tryDate = floorDate.shift(minutes=-i*10)
+        requestURLS.append(f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}/{tryDate.format('HH:mm')}")
+
+    # Get the most recent request that was successful
+    response = list(filter(lambda x: x.status_code == 200, fgrequests.build(requestURLS)))
+    data = response[0].json()
+
+    vprImage = bot_utils.loadB64ImageToMemory(data['base64'])
+
+    # Send image from memory
     context.bot.send_photo(chat_id=update.effective_chat.id,
-                           reply_to_message_id=update.message.message_id, photo=vprImageURL, timeout=10000)
+                           reply_to_message_id=update.message.message_id, photo=vprImage, timeout=10000)
 
 
 @bot_utils.send_upload_video_action
@@ -87,15 +114,15 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
 def cmd_vpr_gif(update, context):
     """Create and send GIF made of recent VPR satellite images to the user."""
 
-    nImages = bot_utils.parse_n_images_input(update, context)
-    if nImages:
-        # Save the message so it can be deleted afterwards
-        waitMessage = context.bot.send_message(
-            chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
+    # nImages = bot_utils.parse_n_images_input(update, context)
+    # if nImages:
+    #     # Save the message so it can be deleted afterwards
+    #     waitMessage = context.bot.send_message(
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
 
-        vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
+        # vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
 
-        return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
+        # return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
 
 
 @run_async
@@ -107,22 +134,37 @@ def cmd_acumulada(update, context):
 
     # Parse input
     try:
-        interval = context.args[0]
+        interval = int(context.args[0])
     except IndexError:
         functionsLogger.warning(
             f"No input in cmd_acumulada. Message text: \"{update.message.text}\"")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                                  text=bot_messages.acumuladaError, parse_mode="markdown")
-        interval = 1  # Use 24 hours as default
+        interval = 1  # Use 1 day as default
 
-    acumuladaImageURL = scrap_satellites.get_acumulada_last_image(interval)
-    if acumuladaImageURL:
-        if interval == 1:
-            caption = "Precipitação acumulada nas últimas 24 horas"
-        else:
+    # Request image from INMET's API
+    utcNow = arrow.utcnow().shift(days=-1)
+    dayNow = utcNow.format("YYYY-MM-DD")
+    APIBaseURL = "https://apiprec.inmet.gov.br/"
+
+    response = requests.get(f"{APIBaseURL}{dayNow}")
+    data = response.json()
+
+    if response.status_code == 200:
+        intervals = [1, 3, 5, 10, 15, 30, 90]
+        if interval in intervals:
             caption = f"Precipitação acumulada nos últimos {interval} dias"
-        context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
-                               caption=caption, photo=acumuladaImageURL, timeout=10000)
+        else:
+            interval = 1
+            caption = "Precipitação acumulada nas últimas 24 horas"
+
+        data = data[intervals.index(interval)]
+
+        acumuladaImage = bot_utils.loadB64ImageToMemory(data['base64'])
+
+        # Send image from memory
+        context.bot.send_photo(chat_id=update.effective_chat.id,
+                            reply_to_message_id=update.message.message_id, photo=acumuladaImage, caption=caption, timeout=10000)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                                  text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
@@ -133,12 +175,13 @@ def cmd_acumulada(update, context):
 def cmd_acumulada_previsao(update, context):
     """Fetch and send accumulated precipitation satellite image forecast for the next 24 hours to the user."""
 
-    functionsLogger.debug("Getting acumulada previsão images...")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
 
-    acumuladaPrevisaoImageURL = scrap_satellites.get_acumulada_previsao()
+    # functionsLogger.debug("Getting acumulada previsão images...")
 
-    context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
-                           caption="Precipitação acumulada prevista para as próximas 24 horas", photo=acumuladaPrevisaoImageURL, timeout=10000)
+    # acumuladaPrevisaoImageURL = scrap_satellites.get_acumulada_previsao()
+
+    # context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, caption="Precipitação acumulada prevista para as próximas 24 horas", photo=acumuladaPrevisaoImageURL, timeout=10000)
 
 
 def parse_CEP(update, context, cepRequired=True):
