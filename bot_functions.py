@@ -125,18 +125,29 @@ def cmd_vpr_gif(update, context):
         dayNow = utcNow.format("YYYY-MM-DD")
 
         # Get the most recent request that was successful
-        response = requests.get(f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}")
-        data = response.json()
+        headers = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+        }
+        response = requests.get(f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}",
+                                headers=headers, allow_redirects=False)
+        if response.status_code == 200:
+            functionsLogger.info('Successful GET request to VPR page!')
+            data = response.json()
 
-        # Only get images from the current day (to avoid slow API calls)
-        nImagesForToday = len(data)
-        # if nImages > nImagesForToday:
-        #     nImagesForYesterday = nImages - nImagesForToday
-        realNImages = nImages if nImages < nImagesForToday else nImagesForToday
+            # Only get images from the current day (to avoid slow API calls)
+            nImagesForToday = len(data)
+            # if nImages > nImagesForToday:
+            #     nImagesForYesterday = nImages - nImagesForToday
+            realNImages = nImages if nImages < nImagesForToday else nImagesForToday
 
-        gifFilename = bot_utils.get_vpr_gif(data, nImages)
+            gifFilename = bot_utils.get_vpr_gif(data, nImages)
 
-        return send_vpr_video(update, context, gifFilename, realNImages, waitMessage)
+            return send_vpr_video(update, context, gifFilename, realNImages, waitMessage)
+        else:
+            functionsLogger.error("Failed GET request to VPR page.")
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                     text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
+            return None
 
 
 @run_async
@@ -163,10 +174,14 @@ def cmd_acumulada(update, context):
     dayNow = brazilNow.format("YYYY-MM-DD")
     APIBaseURL = "https://apiprec.inmet.gov.br/"
 
-    response = requests.get(f"{APIBaseURL}{dayNow}")
-    data = response.json()
-
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+    }
+    response = requests.get(f"{APIBaseURL}{dayNow}", headers=headers, allow_redirects=False)
     if response.status_code == 200:
+        functionsLogger.info('Successful GET request to VPR page!')
+        data = response.json()
+
         intervals = [3, 5, 10, 15, 30, 90]
         if interval in intervals:
             caption = f"Precipitação acumulada nos últimos {interval} dias"
@@ -182,6 +197,7 @@ def cmd_acumulada(update, context):
         context.bot.send_photo(chat_id=update.effective_chat.id,
                                reply_to_message_id=update.message.message_id, photo=acumuladaImage, caption=caption, timeout=10000)
     else:
+        functionsLogger.error("Failed GET request to VPR page.")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                                  text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
 
@@ -319,29 +335,32 @@ def alerts_location(update, context):
         latitude = location['location']['latitude']
         longitude = location['location']['longitude']
 
-        response = requests.get(f"https://api.3geonames.org/{latitude},{longitude}.json")
-        if response.status_code == 200:
-            functionsLogger.info("Successful GET request to reverse geocoding API!")
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+    }
+   response = requests.get(f"https://api.3geonames.org/{latitude},{longitude}.json", headers=headers, allow_redirects=False)
+   if response.status_code == 200:
+        functionsLogger.info("Successful GET request to reverse geocoding API!")
 
-            responseData = response.json()
-            functionsLogger.debug(f"reverseGeocode json: {responseData}")
-            state = responseData["nearest"]["state"]
+        responseData = response.json()
+        functionsLogger.debug(f"reverseGeocode json: {responseData}")
+        state = responseData["nearest"]["state"]
 
-            if state == "BR":
-                city = responseData["nearest"]["region"]
+        if state == "BR":
+            city = responseData["nearest"]["region"]
 
-                # Include moderate alerts
-                alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
-                check_and_send_alerts_warning(update, context, alerts, city)
-                return None
-            else:
-                alertMessage = "❌ A localização indica uma região fora do Brasil."
+            # Include moderate alerts
+            alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
+            check_and_send_alerts_warning(update, context, alerts, city)
+            return None
         else:
-            functionsLogger.error("Failed GET request to reverse geocoding API.")
-            alertMessage = "❌ Não foi possível verificar a região 😔."
+            alertMessage = "❌ A localização indica uma região fora do Brasil."
+    else:
+        functionsLogger.error("Failed GET request to reverse geocoding API.")
+        alertMessage = "❌ Não foi possível verificar a região 😔."
 
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown")
 
 
 @bot_utils.send_typing_action
