@@ -35,7 +35,7 @@ Para utilizar o bot, envie alguns destes comandos:
 /start exibe a mensagem de boas-vindas.
 /help ou /ajuda exibe esta mensagem de ajuda.
 ⚠️ -
-/alertas ou /alertas\_brasil exibe alertas *graves* (laranjas e vermelhos) em vigor no Brasil.
+/alertas ou /alertas\_brasil exibe alertas *graves* (apenas laranjas e vermelhos) em vigor para o Brasil.
 `/alertas_CEP` exibe alertas *graves e moderados* (todos) em vigor para o CEP fornecido.
 Exemplo: `/alertas_CEP 29075-910` exibe alertas *graves e moderados* para o CEP 29075-910.
 \* Você também pode simplesmente enviar sua localização para checar alertas em sua cidade a qualquer momento.
@@ -49,8 +49,8 @@ Exemplo: `/alertas_CEP 29075-910` exibe alertas *graves e moderados* para o CEP 
 /nuvens ou /vpr\_gif exibe GIF feito do número de imagens fornecido.
 Exemplo: `/nuvens 5` exibe um GIF com as últimas 5 imagens do satélite de vapor de água realçado.
 /acumulada exibe imagem de precipitação acumulada no intervalo de dias especificado (1, 3, 5, 10, 15, 30 ou 90) anteriores ao atual no Brasil.
-Exemplo: `/acumulada 3` exibe o mapa de precipitação acumulada nas últimas 72h.
-/acumulada\_previsao exibe imagem de precipitação acumulada prevista para as próximas 24 horas no Brasil.
+Exemplo: `/acumulada 3` exibe o mapa de precipitação acumulada nas últimas 72h (3 dias).
+/acumulada\_previsao exibe imagem da precipitação acumulada prevista para as próximas 24 horas no Brasil.
 
 📖 *Bot open-source*:
 https://github.com/AtilioA/INMETBot
@@ -61,7 +61,7 @@ Criado por @AtilioA
 """
 
 instructions = "Instruções de uso: clique em /help ou /ajuda."
-acumuladaError = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei 1 como valor.\nOs intervalos de dias permitidos são 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
+acumuladaError = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *1* como valor.\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
 alertsMapMessage = "⏳ Buscando imagem do mapa de alertas..."
 sorrizoChegou = "É O *SORRIZO RONALDO* 😁 QUE CHEGOU..."
 sorrizoQueen = "👊👊👏 *SORRIZ*.."

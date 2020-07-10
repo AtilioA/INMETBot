@@ -1,8 +1,8 @@
 import arrow
 import logging
-from scraping import parse_alerts
 import models
-from utils import viacep
+from telegram.error import TelegramError
+from utils import viacep, parse_alerts
 from bot_config import updater
 from bot_functions import MAX_ALERTS_PER_MESSAGE
 
@@ -97,8 +97,14 @@ def notify_chats_routine():
                     # "Footer" message after all alerts
                     alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
 
-                    updater.bot.send_message(
-                        chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    try:
+                        updater.bot.send_message(
+                            chat_id=chat['chatID'], text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    except TelegramError:
+                        routinesLogger.error(
+                            f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']}). Removendo chat do BD...")
+                        models.INMETBotDB.subscribedChatsCollection.delete_one(
+                            {'chatID': chat['chatID']})
     routinesLogger.info("Finished notify_chats_routine routine.")
 
 

@@ -1,13 +1,24 @@
+import os
 import logging
+from io import BytesIO
+import uuid
+import base64
 from functools import wraps
+import imageio
 import telegram
-from scraping.scrap_satellites import MIN_VPR_IMAGES, DEFAULT_VPR_IMAGES, MAX_VPR_IMAGES
+from PIL import Image
+import arrow
+import fgrequests
 
 import sys
 sys.path.append(sys.path[0] + "/..")
 
 utilsLogger = logging.getLogger(__name__)
 utilsLogger.setLevel(logging.DEBUG)
+
+MIN_VPR_IMAGES = 2
+DEFAULT_VPR_IMAGES = 9  # 2 hours of images
+MAX_VPR_IMAGES = 48  # 12 hours of images
 
 
 # Decorators to simulate user feedback
@@ -28,6 +39,54 @@ send_typing_action = send_action(telegram.ChatAction.TYPING)
 send_upload_photo_action = send_action(telegram.ChatAction.UPLOAD_PHOTO)
 send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
 send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
+
+
+def loadB64ImageToMemory(base64String):
+    # Decode Base64 image
+    base64data = base64String[21:]  # Remove string header
+    image = Image.open(BytesIO(base64.b64decode(base64data)))
+
+    # Save image to memory
+    bytesIOImage = BytesIO()
+    bytesIOImage.name = 'image.jpeg'
+    image.save(bytesIOImage, 'JPEG')
+    bytesIOImage.seek(0)
+
+    return bytesIOImage
+
+
+def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
+    regiao = "BR"
+    APIBaseURL = "https://apisat.inmet.gov.br"
+
+    URLsToBeRequested = []
+
+    for hourToday in data[:nImages]:
+        URLsToBeRequested.append(
+            f"{APIBaseURL}/GOES/{regiao}/VP/{dayNow}/{hourToday['sigla']}")
+
+    if dataYesterday:
+        nImages = nImages + nImagesForYesterday
+
+        for hour in dataYesterday[:nImagesForYesterday]:
+            URLsToBeRequested.append(
+                f"{APIBaseURL}/GOES/{regiao}/VP/{arrow.utcnow().shift(days=-1).format('YYYY-MM-DD')}/{hour['sigla']}")
+
+    responses = list(filter(lambda x: x.status_code == 200, fgrequests.build(URLsToBeRequested)))
+    data = [entry.json() for entry in responses]
+
+    readImages = []
+    for entry in reversed(data[:nImages]):
+        loadedImg = loadB64ImageToMemory(entry['base64'])
+        readImages.append(imageio.imread(loadedImg))
+
+    uniqueID = uuid.uuid4().hex
+    gifFilename = os.path.join("tmp", f"VPR_{uniqueID}.mp4")
+
+    kargs = {'fps': 10, 'macro_block_size': None}
+    imageio.mimsave(f'{gifFilename}', readImages, 'MP4', **kargs)
+
+    return gifFilename
 
 
 def parse_n_images_input(update, context):
@@ -70,13 +129,15 @@ def parse_n_images_input(update, context):
             nImages = int(float(nImages))
             nImages, nImagesMessage = get_n_images_and_message(nImages)
         except ValueError:
-            context.bot.send_message(chat_id=update.message.chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`", reply_to_message_id=update.message.message_id, parse_mode="markdown")
+            context.bot.send_message(chat_id=update.message.chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`",
+                                     reply_to_message_id=update.message.message_id, parse_mode="markdown")
             return None
     except (IndexError, AttributeError):
         nImages, nImagesMessage = get_n_images_and_message(None)
         utilsLogger.warning(f"No input in parse_n_images_input. Message text: \"{text}\"")
 
     if nImagesMessage:
-        context.bot.send_message(chat_id=update.message.chat.id, text=nImagesMessage, reply_to_message_id=update.message.message_id, parse_mode="markdown")
+        context.bot.send_message(chat_id=update.message.chat.id, text=nImagesMessage,
+                                 reply_to_message_id=update.message.message_id, parse_mode="markdown")
 
     return nImages

@@ -9,7 +9,7 @@ from utils import viacep
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
 
-MONGO_URI = os.environ.get("INMETBOT_MONGO_URI")
+MONGO_URI = os.getenv("INMETBOT_MONGO_URI")
 
 
 class BotDatabase():
@@ -136,8 +136,8 @@ class Chat(ABC):
                     modelsLogger.info(f"CEP {cep} has been subscribed.")
                     return "CHAT_EXISTS_CEP_SUBSCRIBED"
             else:  # Chat is already subscribed, no CEP
-                return "CHAT_EXISTS_NO_CEP"
                 modelsLogger.info(f"Chat {self.id} is already subscribed.")
+                return "CHAT_EXISTS_NO_CEP"
         else:  # Chat is not subscribed, CEP is optional
             chatDocument = self.serialize(cep)
             INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
@@ -488,11 +488,15 @@ class Alert():
             logging.error(f"severity is not string: {self.severity}")
             return None
 
-    def get_alert_message(self, location=None):
+    def get_alert_message(self, location=None, brazil=False):
         """Create alert message string from alert object and return it."""
 
         severityEmoji = self.determine_severity_emoji()
-        area = ','.join(self.area)
+        if brazil:
+            area = ','.join(self.area)
+            area = f"\n*Áreas afetadas*: {area}."
+        else:  # Omit "áreas afetadas" for region-specific alerts
+            area = ""
         formattedStartDate = self.startDate.strftime("%d/%m/%Y %H:%M")
         formattedEndDate = self.endDate.strftime("%d/%m/%Y %H:%M")
 
@@ -505,8 +509,7 @@ class Alert():
 
         messageString = f"""
 {header}
-
-        *Áreas afetadas*: {area}.
+        {area}
         *Vigor*: De {formattedStartDate} a {formattedEndDate}.
         {self.description}
 """
