@@ -127,21 +127,25 @@ def cmd_vpr_gif(update, context):
         headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
         }
-        response = requests.get(f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}",
+        response = requests.get(f"{APIBaseURL}/horas/GOES/{regiao}/VP/{dayNow}",
                                 headers=headers, allow_redirects=False)
         if response.status_code == 200:
             functionsLogger.info('Successful GET request to VPR page!')
             data = response.json()
 
-            # Only get images from the current day (to avoid slow API calls)
             nImagesForToday = len(data)
-            # if nImages > nImagesForToday:
-            #     nImagesForYesterday = nImages - nImagesForToday
-            realNImages = nImages if nImages < nImagesForToday else nImagesForToday
+            dataYesterday = None
+            nImagesForYesterday = None
+            if nImages > nImagesForToday:
+                nImagesForYesterday = nImages - nImagesForToday
+                responseYesterday = requests.get(
+                    f"{APIBaseURL}/horas/GOES/{regiao}/VP/{utcNow.shift(days=-1).format('YYYY-MM-DD')}", headers=headers, allow_redirects=False)
+                dataYesterday = responseYesterday.json()[:nImagesForYesterday]
 
-            gifFilename = bot_utils.get_vpr_gif(data, nImages)
+            gifFilename = bot_utils.get_vpr_gif(
+                data, nImages, dayNow, nImagesForYesterday, dataYesterday)
 
-            return send_vpr_video(update, context, gifFilename, realNImages, waitMessage)
+            return send_vpr_video(update, context, gifFilename, nImages, waitMessage)
         else:
             functionsLogger.error("Failed GET request to VPR page.")
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
@@ -337,8 +341,9 @@ def alerts_location(update, context):
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
     }
-   response = requests.get(f"https://api.3geonames.org/{latitude},{longitude}.json", headers=headers, allow_redirects=False)
-   if response.status_code == 200:
+    response = requests.get(
+        f"https://api.3geonames.org/{latitude},{longitude}.json", headers=headers, allow_redirects=False)
+    if response.status_code == 200:
         functionsLogger.info("Successful GET request to reverse geocoding API!")
 
         responseData = response.json()

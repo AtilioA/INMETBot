@@ -7,6 +7,8 @@ from functools import wraps
 import imageio
 import telegram
 from PIL import Image
+import arrow
+import fgrequests
 
 import sys
 sys.path.append(sys.path[0] + "/..")
@@ -53,7 +55,26 @@ def loadB64ImageToMemory(base64String):
     return bytesIOImage
 
 
-def get_vpr_gif(data, nImages):
+def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
+    regiao = "BR"
+    APIBaseURL = "https://apisat.inmet.gov.br"
+
+    URLsToBeRequested = []
+
+    for hourToday in data[:nImages]:
+        URLsToBeRequested.append(
+            f"{APIBaseURL}/GOES/{regiao}/VP/{dayNow}/{hourToday['sigla']}")
+
+    if dataYesterday:
+        nImages = nImages + nImagesForYesterday
+
+        for hour in dataYesterday[:nImagesForYesterday]:
+            URLsToBeRequested.append(
+                f"{APIBaseURL}/GOES/{regiao}/VP/{arrow.utcnow().shift(days=-1).format('YYYY-MM-DD')}/{hour['sigla']}")
+
+    responses = list(filter(lambda x: x.status_code == 200, fgrequests.build(URLsToBeRequested)))
+    data = [entry.json() for entry in responses]
+
     readImages = []
     for entry in reversed(data[:nImages]):
         loadedImg = loadB64ImageToMemory(entry['base64'])
@@ -64,6 +85,8 @@ def get_vpr_gif(data, nImages):
 
     kargs = {'fps': 10, 'macro_block_size': None}
     imageio.mimsave(f'{gifFilename}', readImages, 'MP4', **kargs)
+
+    return gifFilename
 
 
 def parse_n_images_input(update, context):
