@@ -2,6 +2,7 @@ import os
 import logging
 import json
 
+import telegram
 import arrow
 import requests
 import fgrequests
@@ -22,7 +23,8 @@ MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" error
 def send_instructions_message(update, context):
     """Reply to the last message with the instructions message."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.instructions)
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=bot_messages.instructions)
 
 
 @run_async
@@ -32,7 +34,8 @@ def catch_all_if_private(update, context):
     chat = models.create_chat_obj(update)
 
     if chat.type == "private":
-        functionsLogger.debug(f"catch_all: {update.message.chat.type} to @{update.message.chat.username}")
+        functionsLogger.debug(
+            f"catch_all: {update.message.chat.type} to @{update.message.chat.username}")
         return send_instructions_message(update, context)
 
 
@@ -43,7 +46,8 @@ def cmd_help(update, context):
 
     functionsLogger.debug(f"{update.message.chat.type} to @{update.message.chat.username}")
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.helpMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @run_async
@@ -53,11 +57,11 @@ def cmd_start(update, context):
 
     functionsLogger.debug(f"{update.message.chat.type} to @{update.message.chat.username}")
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.welcomeMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.welcomeMessage, parse_mode="markdown")
 
 
 @run_async
-@bot_utils.send_upload_photo_action
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
@@ -71,7 +75,6 @@ def cmd_vpr(update, context):
     floorMinutes = int(minutesNow) // 10 * 10
     floorDate = utcNow.replace(minute=floorMinutes)
 
-
     # We do this because retrieving hours from the API takes several seconds, so it is faster to guess endpoints (only three are possible)
     requestURLS = []
     for i in range(1, 4):
@@ -81,6 +84,9 @@ def cmd_vpr(update, context):
     # Get the most recent request that was successful
     response = list(filter(lambda x: x.status_code == 200, fgrequests.build(requestURLS)))
     data = response[0].json()
+
+    context.bot.send_chat_action(chat_id=update.effective_message.chat_id,
+                                 action=telegram.ChatAction.UPLOAD_PHOTO)
 
     vprImage = bot_utils.loadB64ImageToMemory(data['base64'])
 
@@ -94,7 +100,8 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
     """Send the .mp4 file to the user and delete it."""
 
     caption = f"Últimas {nImages} imagens"
-    context.bot.send_animation(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, caption=caption, animation=open(vprVideoPath, 'rb'), timeout=10000)
+    context.bot.send_animation(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                               caption=caption, animation=open(vprVideoPath, 'rb'), timeout=10000)
     context.bot.delete_message(chat_id=waitMessage.chat.id, message_id=waitMessage.message_id)
     os.remove(vprVideoPath)
     functionsLogger.info(f"Deleted {vprVideoPath}.")
@@ -109,11 +116,12 @@ def cmd_vpr_gif(update, context):
     # if nImages:
     #     # Save the message so it can be deleted afterwards
     #     waitMessage = context.bot.send_message(
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
 
-        # vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
+    # vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
 
-        # return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
+    # return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
 
 
 @run_async
@@ -133,16 +141,18 @@ def cmd_acumulada(update, context):
                                  text=bot_messages.acumuladaError, parse_mode="markdown")
         interval = 1  # Use 1 day as default
 
+    context.bot.send_chat_action(chat_id=update.effective_message.chat_id,
+                                 action=telegram.ChatAction.UPLOAD_PHOTO)
     # Request image from INMET's API
-    utcNow = arrow.utcnow().shift(days=-1)
-    dayNow = utcNow.format("YYYY-MM-DD")
+    brazilNow = arrow.utcnow().to('Brazil/East').shift(days=-1)
+    dayNow = brazilNow.format("YYYY-MM-DD")
     APIBaseURL = "https://apiprec.inmet.gov.br/"
 
     response = requests.get(f"{APIBaseURL}{dayNow}")
     data = response.json()
 
     if response.status_code == 200:
-        intervals = [1, 3, 5, 10, 15, 30, 90]
+        intervals = [3, 5, 10, 15, 30, 90]
         if interval in intervals:
             caption = f"Precipitação acumulada nos últimos {interval} dias"
         else:
@@ -155,7 +165,7 @@ def cmd_acumulada(update, context):
 
         # Send image from memory
         context.bot.send_photo(chat_id=update.effective_chat.id,
-                            reply_to_message_id=update.message.message_id, photo=acumuladaImage, caption=caption, timeout=10000)
+                               reply_to_message_id=update.message.message_id, photo=acumuladaImage, caption=caption, timeout=10000)
     else:
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                                  text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
@@ -166,7 +176,8 @@ def cmd_acumulada(update, context):
 def cmd_acumulada_previsao(update, context):
     """Fetch and send accumulated precipitation satellite image forecast for the next 24 hours to the user."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
 
     # functionsLogger.debug("Getting acumulada previsão images...")
 
@@ -191,7 +202,8 @@ def parse_CEP(update, context, cepRequired=True):
             message = f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
 
     if cepRequired:
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
         return None
 
 
@@ -215,14 +227,16 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
             if not city:
                 alertMessage += alertObj.get_alert_message(brazil=True)
                 if alertCounter >= MAX_ALERTS_PER_MESSAGE:
-                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                             text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
                     alertMessage = ""
                     alertCounter = 1
                 alertCounter += 1
             else:
                 alertMessage += alertObj.get_alert_message(location=city)
                 if alertCounter >= 6:
-                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+                    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                             text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
                     alertMessage = ""
                     alertCounter = 1
                 alertCounter += 1
@@ -233,26 +247,28 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
     else:
         alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
     return warned
 
 
 @run_async
 @bot_utils.send_typing_action
-def cmd_alerts_brasil(update, context):
+def cmd_alerts_brazil(update, context):
     """Fetch and send active high-risk alerts for Brazil."""
 
     functionsLogger.debug("Getting alerts for Brazil...")
 
     # Ignore moderate alerts
     alerts = models.INMETBotDB.alertsCollection.find({"severity": {"$ne": "Perigo Potencial"}})
-    if alerts:
+    if list(alerts):
         if check_and_send_alerts_warning(update, context, alerts):
             return None
     else:
         alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                 text=alertMessage, parse_mode="markdown", disable_web_page_preview=True)
 
 
 @run_async
@@ -271,7 +287,8 @@ def cmd_alerts_CEP(update, context):
             alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
             check_and_send_alerts_warning(update, context, alerts, city)
     except (pycep.excecoes.ExcecaoPyCEPCorreios, KeyError) as cepError:  # Invalid zip code
-        functionsLogger.warning(f"{cepError} on cmd_alerts_CEP. Message text: \"{update.message.text}\"")
+        functionsLogger.warning(
+            f"{cepError} on cmd_alerts_CEP. Message text: \"{update.message.text}\"")
 
 
 @run_async
@@ -308,7 +325,8 @@ def alerts_location(update, context):
             functionsLogger.error("Failed GET request to reverse geocoding API.")
             alertMessage = "❌ Não foi possível verificar a região 😔."
 
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown")
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 reply_to_message_id=update.message.message_id, text=alertMessage, parse_mode="markdown")
 
 
 @bot_utils.send_typing_action
@@ -316,7 +334,8 @@ def cmd_alerts_map(update, context):
     """Take screenshot of the alerts map with Selenium and send to the user."""
 
     # Save the message so it can be deleted afterwards
-    waitMessage = context.bot.send_message(chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
+    waitMessage = context.bot.send_message(
+        chat_id=update.effective_chat.id, text=bot_messages.alertsMapMessage, parse_mode="markdown", disable_web_page_preview=True)
 
     alertsMapPath = parse_alerts.take_screenshot_alerts_map()
     send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage)
@@ -327,7 +346,8 @@ def cmd_alerts_map(update, context):
 def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
     """Send the alerts map screenshot."""
 
-    context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/", reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=10000)
+    context.bot.send_photo(chat_id=update.effective_chat.id, caption="Fonte: http://www.inmet.gov.br/portal/alert-as/",
+                           reply_to_message_id=update.message.message_id, photo=open(alertsMapPath, 'rb'), timeout=10000)
 
     context.bot.delete_message(chat_id=waitMessage.chat.id, message_id=waitMessage.message_id)
 
@@ -346,7 +366,8 @@ def cmd_chat_subscribe_alerts(update, context):
     subscribeResult = chat.subscribe_chat(cep)
     subscribeMessage = chat.get_subscribe_message(subscribeResult, textArgs, cep)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscribeMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=subscribeMessage, parse_mode="markdown")
 
 
 @bot_utils.send_typing_action
@@ -359,7 +380,8 @@ def cmd_chat_unsubscribe_alerts(update, context):
     unsubscribeResult = chat.unsubscribe_chat(cep)
     unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, cep=cep)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=unsubscribeMessage, parse_mode="markdown")
 
 
 @run_async
@@ -372,7 +394,8 @@ def cmd_chat_subscription_status(update, context):
     subscriptionStatus = chat.check_subscription_status()
     subscriptionStatusMessage = chat.get_subscription_status_message(subscriptionStatus)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=subscriptionStatusMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=subscriptionStatusMessage, parse_mode="markdown")
 
 
 @run_async
@@ -383,7 +406,8 @@ def cmd_chat_deactivate(update, context):
     chat = models.create_chat_obj(update=update)
     deactivateMessage = chat.activate_callback(chat.deactivate)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=deactivateMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=deactivateMessage, parse_mode="markdown")
 
 
 @run_async
@@ -394,7 +418,8 @@ def cmd_chat_activate(update, context):
     chat = models.create_chat_obj(update=update)
     activateMessage = chat.activate_callback(chat.activate)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=activateMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=activateMessage, parse_mode="markdown")
 
 
 @run_async
@@ -405,7 +430,8 @@ def cmd_chat_toggle_activated(update, context):
     chat = models.create_chat_obj(update=update)
     toggleMessage = chat.activate_callback(chat.toggle_activated)
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=toggleMessage, parse_mode="markdown")
+    context.bot.send_message(chat_id=update.effective_chat.id,
+                             reply_to_message_id=update.message.message_id, text=toggleMessage, parse_mode="markdown")
 
 
 @run_async
@@ -413,8 +439,10 @@ def cmd_chat_toggle_activated(update, context):
 def cmd_sorrizoronaldo(update, context):
     """Send default Sorrizo Ronaldo video."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoChegou, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.sorrizoChegou, parse_mode="markdown")
+    context.bot.send_video(chat_id=update.effective_chat.id,
+                           video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA")
 
 
 @run_async
@@ -422,8 +450,10 @@ def cmd_sorrizoronaldo(update, context):
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """Send "We Will Rock You" Sorrizo Ronaldo video variation."""
 
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, text=bot_messages.sorrizoQueen, parse_mode="markdown")
-    context.bot.send_video(chat_id=update.effective_chat.id, video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
+    context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                             text=bot_messages.sorrizoQueen, parse_mode="markdown")
+    context.bot.send_video(chat_id=update.effective_chat.id,
+                           video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA")
 
 
 @run_async
