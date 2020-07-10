@@ -1,22 +1,21 @@
 import os
 import logging
-import json
 
 import telegram
 import arrow
 import requests
 import fgrequests
 import pycep_correios as pycep
+from telegram.ext.dispatcher import run_async
 
 import models
-from scraping import parse_alerts, scrap_satellites
+from scraping import parse_alerts
 from utils import viacep, bot_messages, bot_utils
-from telegram.ext.dispatcher import run_async
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
 
-MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" error
+MAX_ALERTS_PER_MESSAGE = 6  # To avoid "me  ssage is too long" error
 
 
 @bot_utils.send_typing_action
@@ -78,7 +77,7 @@ def cmd_vpr(update, context):
     # We do this because retrieving hours from the API takes several seconds, so it is faster to guess endpoints (only three are possible)
     requestURLS = []
     for i in range(1, 4):
-        tryDate = floorDate.shift(minutes=-i*10)
+        tryDate = floorDate.shift(minutes=-i * 10)
         requestURLS.append(f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}/{tryDate.format('HH:mm')}")
 
     # Get the most recent request that was successful
@@ -112,16 +111,32 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
 def cmd_vpr_gif(update, context):
     """Create and send GIF made of recent VPR satellite images to the user."""
 
-    # nImages = bot_utils.parse_n_images_input(update, context)
-    # if nImages:
-    #     # Save the message so it can be deleted afterwards
-    #     waitMessage = context.bot.send_message(
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
+    nImages = bot_utils.parse_n_images_input(update, context)
+    if nImages:
+        # Save the message so it can be deleted afterwards
+        waitMessage = context.bot.send_message(
+            chat_id=update.effective_chat.id, text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...", parse_mode="markdown")
 
-    # vprVideoPath = scrap_satellites.get_vpr_gif(nImages)
+        # Get images from INMET's API
+        APIBaseURL = "https://apisat.inmet.gov.br/"
+        regiao = "BR"
 
-    # return send_vpr_video(update, context, vprVideoPath, nImages, waitMessage)
+        utcNow = arrow.utcnow()
+        dayNow = utcNow.format("YYYY-MM-DD")
+
+        # Get the most recent request that was successful
+        response = requests.get(f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}")
+        data = response.json()
+
+        # Only get images from the current day (to avoid slow API calls)
+        nImagesForToday = len(data)
+        # if nImages > nImagesForToday:
+        #     nImagesForYesterday = nImages - nImagesForToday
+        realNImages = nImages if nImages < nImagesForToday else nImagesForToday
+
+        gifFilename = bot_utils.get_vpr_gif(data, nImages)
+
+        return send_vpr_video(update, context, gifFilename, realNImages, waitMessage)
 
 
 @run_async
@@ -304,16 +319,16 @@ def alerts_location(update, context):
         latitude = location['location']['latitude']
         longitude = location['location']['longitude']
 
-        reverseGeocode = requests.get(f"https://api.3geonames.org/{latitude},{longitude}.json")
-        if reverseGeocode.status_code == 200:
+        response = requests.get(f"https://api.3geonames.org/{latitude},{longitude}.json")
+        if response.status_code == 200:
             functionsLogger.info("Successful GET request to reverse geocoding API!")
 
-            json = reverseGeocode.json()
-            functionsLogger.debug(f"reverseGeocode json: {json}")
-            state = json["nearest"]["state"]
+            responseData = response.json()
+            functionsLogger.debug(f"reverseGeocode json: {responseData}")
+            state = responseData["nearest"]["state"]
 
             if state == "BR":
-                city = json["nearest"]["region"]
+                city = responseData["nearest"]["region"]
 
                 # Include moderate alerts
                 alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
