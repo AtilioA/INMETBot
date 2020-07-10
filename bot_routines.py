@@ -1,9 +1,8 @@
 import arrow
 import logging
-from scraping import parse_alerts
 import models
 from telegram.error import TelegramError
-from utils import viacep, bot_utils
+from utils import viacep, parse_alerts
 from bot_config import updater
 from bot_functions import MAX_ALERTS_PER_MESSAGE
 

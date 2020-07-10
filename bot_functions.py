@@ -9,8 +9,7 @@ import pycep_correios as pycep
 from telegram.ext.dispatcher import run_async
 
 import models
-from scraping import parse_alerts
-from utils import viacep, bot_messages, bot_utils
+from utils import viacep, bot_messages, bot_utils, parse_alerts
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
