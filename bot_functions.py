@@ -205,21 +205,6 @@ def cmd_acumulada(update, context):
                                  text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
 
 
-@run_async
-@bot_utils.send_upload_photo_action
-def cmd_acumulada_previsao(update, context):
-    """Fetch and send accumulated precipitation satellite image forecast for the next 24 hours to the user."""
-
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             reply_to_message_id=update.message.message_id, text=f"❌ Em manutenção!", parse_mode="markdown")
-
-    # functionsLogger.debug("Getting acumulada previsão images...")
-
-    # acumuladaPrevisaoImageURL = scrap_satellites.get_acumulada_previsao()
-
-    # context.bot.send_photo(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id, caption="Precipitação acumulada prevista para as próximas 24 horas", photo=acumuladaPrevisaoImageURL, timeout=10000)
-
-
 def parse_CEP(update, context, cepRequired=True):
     """Parse CEP from user's text message."""
 
