@@ -29,7 +29,7 @@ imageio-ffmpeg
 jaraco.functools==3.0.0
 markdown==3.2
 more-itertools==8.2.0
-pillow
+pillow==7.2.0
 pycep-correios
 pycparser==2.19
 pymongo
