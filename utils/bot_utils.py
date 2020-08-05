@@ -21,6 +21,17 @@ MIN_VPR_IMAGES = 2
 DEFAULT_VPR_IMAGES = 9  # 2 hours of images
 MAX_VPR_IMAGES = 48  # 12 hours of images
 
+# Decorator to log user interaction
+def log_command_decorator(logger):
+    def decorator(func):
+        @wraps(func)
+        def command_func(update, context, *args, **kwargs):
+            logger.debug(
+            f"{update.message.text} ({update.message.chat.type}) from @{update.message.chat.username}")
+            return func(update, context, *args, **kwargs)
+        return command_func
+    return decorator
+
 
 # Decorators to simulate user feedback
 def send_action(action):
@@ -36,6 +47,7 @@ def send_action(action):
     return decorator
 
 
+log_command = log_command_decorator(utilsLogger)
 send_typing_action = send_action(telegram.ChatAction.TYPING)
 send_upload_photo_action = send_action(telegram.ChatAction.UPLOAD_PHOTO)
 send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
