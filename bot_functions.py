@@ -63,6 +63,7 @@ def cmd_start(update, context):
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
+    try:
     # "Guess" image from INMET's API
     APIBaseURL = "https://apisat.inmet.gov.br/"
     regiao = "BR"
@@ -73,6 +74,9 @@ def cmd_vpr(update, context):
     floorMinutes = int(minutesNow) // 10 * 10
     floorDate = utcNow.replace(minute=floorMinutes)
 
+        headers = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+        }
     # We do this because retrieving hours from the API takes several seconds, so it is faster to guess endpoints (only three are possible)
     requestURLS = []
     for i in range(1, 4):
@@ -90,8 +94,27 @@ def cmd_vpr(update, context):
 
     # Send image from memory
     context.bot.send_photo(chat_id=update.effective_chat.id,
-                           reply_to_message_id=update.message.message_id, photo=vprImage, timeout=10000)
+                            reply_to_message_id=update.message.message_id, photo=vprImage, caption="Última imagem disponível", timeout=10000)
+    except IndexError:
+        try:
+            response = requests.get(f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}",
+                            headers=headers, allow_redirects=False)
+            if response.status_code == 200:
 
+                # Get latest image
+                data = response.json()[0]
+                functionsLogger.info('Successful GET request to API VPR endpoint!')
+                context.bot.send_chat_action(chat_id=update.effective_message.chat_id,
+                                            action=telegram.ChatAction.UPLOAD_PHOTO)
+
+                vprImage = bot_utils.loadB64ImageToMemory(data['base64'])
+
+                # Send image from memory
+                context.bot.send_photo(chat_id=update.effective_chat.id,
+                                       reply_to_message_id=update.message.message_id, photo=vprImage, caption="Última imagem disponível", timeout=10000)
+        except IndexError:
+            context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                    text="❌ Imagem indisponível.")
 
 @bot_utils.send_upload_video_action
 def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
@@ -123,16 +146,16 @@ def cmd_vpr_gif(update, context):
         utcNow = arrow.utcnow()
         dayNow = utcNow.format("YYYY-MM-DD")
 
-        # Get the most recent request that was successful
         headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
         }
         response = requests.get(f"{APIBaseURL}/horas/GOES/{regiao}/VP/{dayNow}",
                                 headers=headers, allow_redirects=False)
         if response.status_code == 200:
-            functionsLogger.info('Successful GET request to VPR page!')
+            functionsLogger.info('Successful GET request to API VPR endpoint!')
             data = response.json()
 
+            # Get images from today + images from yesterday (if needed)
             nImagesForToday = len(data)
             dataYesterday = None
             nImagesForYesterday = None
@@ -147,7 +170,7 @@ def cmd_vpr_gif(update, context):
 
             return send_vpr_video(update, context, gifFilename, nImages, waitMessage)
         else:
-            functionsLogger.error("Failed GET request to VPR page.")
+            functionsLogger.error("Failed GET request to VPR API.")
             context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                                      text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
             return None
@@ -158,6 +181,7 @@ def cmd_vpr_gif(update, context):
 def cmd_acumulada(update, context):
     """Fetch and send accumulated precipitation within given interval satellite image to the user."""
 
+    try:
     functionsLogger.debug("Getting acumulada images...")
 
     # Parse input
@@ -166,8 +190,8 @@ def cmd_acumulada(update, context):
     except IndexError:
         functionsLogger.warning(
             f"No input in cmd_acumulada. Message text: \"{update.message.text}\"")
-        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
-                                 text=bot_messages.acumuladaError, parse_mode="markdown")
+            acumuladaWarnMessage = context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                    text=bot_messages.acumuladaWarn, parse_mode="markdown")
         interval = 1  # Use 1 day as default
 
     context.bot.send_chat_action(chat_id=update.effective_message.chat_id,
@@ -182,7 +206,7 @@ def cmd_acumulada(update, context):
     }
     response = requests.get(f"{APIBaseURL}{dayNow}", headers=headers, allow_redirects=False)
     if response.status_code == 200:
-        functionsLogger.info('Successful GET request to VPR page!')
+            functionsLogger.info('Successful GET request to API VPR endpoint!')
         data = response.json()
 
         intervals = [3, 5, 10, 15, 30, 90]
@@ -200,30 +224,15 @@ def cmd_acumulada(update, context):
         context.bot.send_photo(chat_id=update.effective_chat.id,
                                reply_to_message_id=update.message.message_id, photo=acumuladaImage, caption=caption, timeout=10000)
     else:
-        functionsLogger.error("Failed GET request to VPR page.")
+            functionsLogger.error("Failed GET request to API VPR endpoint.")
         context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
                                  text="❌ Não foi possível obter a imagem!", parse_mode="markdown")
+    except ValueError:
+        context.bot.send_message(chat_id=update.effective_chat.id, reply_to_message_id=update.message.message_id,
+                                text="❌ Imagem indisponível.")
+        if acumuladaWarnMessage:
+            context.bot.delete_message(chat_id=acumuladaWarnMessage.chat.id, message_id=acumuladaWarnMessage.message_id)
 
-
-def parse_CEP(update, context, cepRequired=True):
-    """Parse CEP from user's text message."""
-
-    text = update.message.text
-
-    try:
-        cep = context.args[0].strip().replace("-", "")  # Get string after "/alertas_CEP"
-        return cep
-    except IndexError:  # No number after /command
-        functionsLogger.warning(f"No input in parse_CEP. Message text: \"{text}\"")
-        message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
-    else:
-        if not pycep.validar_cep(cep):
-            message = f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
-
-    if cepRequired:
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
-        return None
 
 
 def check_and_send_alerts_warning(update, context, alerts, city=None):
@@ -297,7 +306,7 @@ def cmd_alerts_CEP(update, context):
 
     functionsLogger.debug("Getting alerts by CEP (zip code)...")
 
-    cep = parse_CEP(update, context)
+    cep = bot_utils.parse_CEP(update, context)
     try:
         if cep:
             city = viacep.get_cep_city(cep)
@@ -397,7 +406,7 @@ def cmd_chat_subscribe_alerts(update, context):
 def cmd_chat_unsubscribe_alerts(update, context):
     """Unsubscribe chat and/or CEP."""
 
-    cep = parse_CEP(update, context, cepRequired=False)
+    cep = bot_utils.parse_CEP(update, context, cepRequired=False)
 
     chat = models.create_chat_obj(update)
     unsubscribeResult = chat.unsubscribe_chat(cep)

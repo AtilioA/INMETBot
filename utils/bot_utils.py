@@ -9,6 +9,7 @@ import telegram
 from PIL import Image
 import arrow
 import fgrequests
+import pycep_correios as pycep
 
 import sys
 sys.path.append(sys.path[0] + "/..")
@@ -141,3 +142,24 @@ def parse_n_images_input(update, context):
                                  reply_to_message_id=update.message.message_id, parse_mode="markdown")
 
     return nImages
+
+
+def parse_CEP(update, context, cepRequired=True):
+    """Parse CEP from user's text message."""
+
+    text = update.message.text
+
+    try:
+        cep = context.args[0].strip().replace("-", "")  # Get string after "/alertas_CEP"
+        return cep
+    except IndexError:  # No number after /command
+        utilsLogger.warning(f"No input in parse_CEP. Message text: \"{text}\"")
+        message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+    else:
+        if not pycep.validar_cep(cep):
+            message = f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+
+    if cepRequired:
+        context.bot.send_message(chat_id=update.effective_chat.id,
+                                 reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
+        return None
