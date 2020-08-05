@@ -57,11 +57,11 @@ def notify_chats_routine():
 
     for chat in subscribedChats:
         if chat["activated"]:
-            routinesLogger.debug(f"- Checking chat {chat['chatID']}")
+            routinesLogger.debug(f"Checking chat {chat['chatID']}")
             for cep in chat["CEPs"]:
                 try:
                     city = viacep.get_cep_city(cep)
-                    routinesLogger.debug(f"Checking {city}...")
+                    routinesLogger.debug(f"- Checking {city}...")
                 except Exception as error:
                     routinesLogger.warning(f"Viacep error: {error}")
                     continue
@@ -74,7 +74,7 @@ def notify_chats_routine():
                     ]}
                 ))
                 if alerts:
-                    # Any alert here is to be sent to the chat,
+                    # Any alerts here are to be sent to the chat,
                     # since they affect a zipcode and the chat hasn't been notified yet
                     alertMessage = ""
                     routinesLogger.info(

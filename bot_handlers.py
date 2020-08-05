@@ -16,8 +16,6 @@ vpr_gif_handler = CommandHandler(
 
 acumulada_handler = CommandHandler(
     'acumulada', bot_functions.cmd_acumulada, filters=~Filters.update.edited_message)
-acumulada_previsao_handler = CommandHandler(('acumulada_previsao_24hrs', 'acumulada_previsao'),
-                                            bot_functions.cmd_acumulada_previsao, filters=~Filters.update.edited_message)
 
 alerts_brazil_handler = CommandHandler(('alertas', 'alertas_brasil', 'avisos'),
                                        bot_functions.cmd_alerts_brazil, filters=~Filters.update.edited_message)
@@ -58,7 +56,6 @@ dispatcher.add_handler(vpr_handler)
 dispatcher.add_handler(vpr_gif_handler)
 
 dispatcher.add_handler(acumulada_handler)
-dispatcher.add_handler(acumulada_previsao_handler)
 
 dispatcher.add_handler(alerts_brazil_handler)
 dispatcher.add_handler(alerts_CEP_handler)

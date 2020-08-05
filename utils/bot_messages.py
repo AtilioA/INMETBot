@@ -19,7 +19,6 @@ Exemplo: `/alertas_CEP 29075-910`.
 Exemplo: `/nuvens 5`
 /acumulada exibe imagem de precipitação acumulada no intervalo de dias especificado (1, 3, 5, 10, 15, 30 ou 90) anteriores ao atual no Brasil.
 Exemplo: `/acumulada 3`
-/acumulada\_previsao exibe imagem de precipitação acumulada prevista para as próximas 24 horas no Brasil.
 Para mais detalhes, clique em /help.
 
 —
@@ -50,7 +49,6 @@ Exemplo: `/alertas_CEP 29075-910` exibe alertas *graves e moderados* para o CEP 
 Exemplo: `/nuvens 5` exibe um GIF com as últimas 5 imagens do satélite de vapor de água realçado.
 /acumulada exibe imagem de precipitação acumulada no intervalo de dias especificado (1, 3, 5, 10, 15, 30 ou 90) anteriores ao atual no Brasil.
 Exemplo: `/acumulada 3` exibe o mapa de precipitação acumulada nas últimas 72h (3 dias).
-/acumulada\_previsao exibe imagem da precipitação acumulada prevista para as próximas 24 horas no Brasil.
 
 📖 *Bot open-source*:
 https://github.com/AtilioA/INMETBot
@@ -61,7 +59,7 @@ Criado por @AtilioA
 """
 
 instructions = "Instruções de uso: clique em /help ou /ajuda."
-acumuladaError = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *1* como valor.\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
+acumuladaWarn = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *1* como valor.\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
 alertsMapMessage = "⏳ Buscando imagem do mapa de alertas..."
 sorrizoChegou = "É O *SORRIZO RONALDO* 😁 QUE CHEGOU..."
 sorrizoQueen = "👊👊👏 *SORRIZ*.."
