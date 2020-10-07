@@ -27,9 +27,14 @@ def log_command_decorator(logger):
     def decorator(func):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
-            logger.debug(
-                f"{update.message.text} ({update.message.chat.type}) from @{update.message.chat.username}"
+            debugMessage = f"{update.message.text} ({update.message.chat.type}) from @{update.message.from_user.username}"
+
+            logger.debug(debugMessage)
+
+            context.bot.send_message(
+                chat_id="-366810591", text=debugMessage,
             )
+            
             return func(update, context, *args, **kwargs)
 
         return command_func
@@ -185,9 +190,7 @@ def parse_CEP(update, context, cepRequired=True):
             context.args[0].strip().replace("-", "")
         )  # Get string after "/alertas_CEP"
     except IndexError:  # No number after /command
-        utilsLogger.warning(
-            f'No input in parse_CEP. Message text: "{text}"'
-        )
+        utilsLogger.warning(f'No input in parse_CEP. Message text: "{text}"')
         message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
     else:
         if cep and not pycep.validar_cep(cep):

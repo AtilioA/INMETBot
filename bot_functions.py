@@ -47,10 +47,6 @@ def catch_all_if_private(update, context):
 def cmd_help(update, context):
     """Send the help message to the user."""
 
-    functionsLogger.debug(
-        f"{update.message.chat.type} to @{update.message.chat.username}"
-    )
-
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
@@ -65,10 +61,6 @@ def cmd_help(update, context):
 @bot_utils.send_typing_action
 def cmd_start(update, context):
     """Send the start message to the user."""
-
-    functionsLogger.debug(
-        f"{update.message.chat.type} to @{update.message.chat.username}"
-    )
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -408,7 +400,7 @@ def cmd_alerts_brazil(update, context):
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
-        text="🚧 Em manutenção!",
+        text="🚧 Em manutenção!\nPor enquanto, use o comando /mapa",
         parse_mode="markdown",
         disable_web_page_preview=True,
     )
@@ -602,7 +594,7 @@ def cmd_chat_deactivate(update, context):
     """ Set chat's activated status to False. """
 
     chat = models.create_chat_obj(update=update)
-    deactivateMessage = chat.activate_callback(chat.deactivate)
+    deactivateMessage = chat.toggle_subscription_callback(chat.deactivate)
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -618,7 +610,7 @@ def cmd_chat_activate(update, context):
     """ Set chat's activated status to True. """
 
     chat = models.create_chat_obj(update=update)
-    activateMessage = chat.activate_callback(chat.activate)
+    activateMessage = chat.toggle_subscription_callback(chat.activate)
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -634,7 +626,7 @@ def cmd_chat_toggle_activated(update, context):
     """ Toggle chat's activated status """
 
     chat = models.create_chat_obj(update=update)
-    toggleMessage = chat.activate_callback(chat.toggle_activated)
+    toggleMessage = chat.toggle_subscription_callback(chat.toggle_activated)
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -647,8 +639,12 @@ def cmd_chat_toggle_activated(update, context):
 @run_async
 @bot_utils.send_typing_action
 def f(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id,
-                             reply_to_message_id=update.message.message_id, text="F.", parse_mode="markdown")
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        reply_to_message_id=update.message.message_id,
+        text="F.",
+        parse_mode="markdown",
+    )
 
 
 @run_async
