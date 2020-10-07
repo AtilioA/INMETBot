@@ -203,7 +203,7 @@ class Chat(ABC):
             )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
         else:
-            return "❌ Os alertas já estão desativados.\nAtive-os novamente com /ativar."
+            return "❕ Os alertas já estão desativados.\nAtive-os novamente com /ativar."
 
     def activate(self):
         """ Set chat's activated status to True. """
@@ -214,7 +214,7 @@ class Chat(ABC):
             )
             return "▶️ Ativei os alertas.\nDesative-os temporariamente com /desativar."
         else:
-            return "❌ Os alertas já estão ativados.\nDesative-os temporariamente com /desativar."
+            return "❕ Os alertas já estão ativados.\nDesative-os temporariamente com /desativar."
 
     def toggle_activated(self):
         """ Negate the activated boolean attribute. """
@@ -391,7 +391,9 @@ class GroupChat(Chat):
         if self.subscribed:
             return callback_func()
         else:
-            return "⚠️ O grupo não está inscrito nos alertas. Inscreva-o com /inscrever."
+            return (
+                "❌ O grupo não está inscrito nos alertas. Inscreva-o com /inscrever."
+            )
 
 
 class Alert:

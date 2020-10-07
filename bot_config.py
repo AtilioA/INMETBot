@@ -2,6 +2,7 @@ import os
 import telegram
 from telegram.ext import Updater
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # CREDENTIALS

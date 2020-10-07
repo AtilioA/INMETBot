@@ -34,7 +34,7 @@ def log_command_decorator(logger):
             context.bot.send_message(
                 chat_id="-366810591", text=debugMessage,
             )
-            
+
             return func(update, context, *args, **kwargs)
 
         return command_func

@@ -8,15 +8,21 @@ from threading import Thread
 
 from bot_config import updater
 import bot_handlers  # noqa (ignore linter warning)
-from bot_routines import parse_alerts_routine, delete_past_alerts_routine, notify_chats_routine
+from bot_routines import (
+    parse_alerts_routine,
+    delete_past_alerts_routine,
+    notify_chats_routine,
+)
 
 # ROUTINES_INTERVAL = 60
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s %(message)s',
-                    datefmt='%d/%m/%Y %H:%M:%S',
-                    filename='bot.log',
-                    level=logging.DEBUG)
+logging.basicConfig(
+    format="%(asctime)s %(message)s",
+    datefmt="%d/%m/%Y %H:%M:%S",
+    filename="bot.log",
+    level=logging.DEBUG,
+)
 
 
 # Thread for running routines periodically
@@ -41,8 +47,8 @@ def main():
     fCheckAlert.start()
 
     # Start web server
-    port = os.environ.get('PORT', 2832)
-    webserver.run(host='0.0.0.0', port=int(port))
+    port = os.environ.get("PORT", 2832)
+    webserver.run(host="0.0.0.0", port=int(port))
 
     # Run the bot until Ctrl-C is pressed
     updater.idle()
