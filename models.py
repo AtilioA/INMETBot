@@ -308,8 +308,8 @@ class PrivateChat(Chat):
         """Get subscription status message according to subscription status for a private chat."""
 
         subscriptionStatusDict = {
-            "SUBSCRIBED": "Você está inscrito nos alertas.\n\n",
-            "NOT_SUBSCRIBED": "Você não está inscrito nos alertas.",
+            "SUBSCRIBED": "🔔 Você está inscrito nos alertas.\n\n",
+            "NOT_SUBSCRIBED": "🔕 Você não está inscrito nos alertas. ",
         }
 
         subscriptionStatusMessage = f"{subscriptionStatusDict.get(subscriptionStatus[0])}{subscriptionStatus[1]}"
@@ -319,7 +319,7 @@ class PrivateChat(Chat):
         if self.subscribed:
             return toggle_subscription_callback_func()
         else:
-            return "Você não está inscrito nos alertas. Inscreva-se com /inscrever."
+            return "❌ Você não está inscrito nos alertas. Inscreva-se com /inscrever."
 
 
 class GroupChat(Chat):
@@ -380,8 +380,8 @@ class GroupChat(Chat):
         """Get subscription status message according to subscription status for a group chat."""
 
         subscriptionStatusDict = {
-            "SUBSCRIBED": "O grupo está inscrito nos alertas.\n\n",
-            "NOT_SUBSCRIBED": "O grupo não está inscrito nos alertas.",
+            "SUBSCRIBED": "🔔 O grupo está inscrito nos alertas.\n\n",
+            "NOT_SUBSCRIBED": "🔕 O grupo não está inscrito nos alertas. ",
         }
 
         subscriptionStatusMessage = f"{subscriptionStatusDict.get(subscriptionStatus[0])}{subscriptionStatus[1]}"

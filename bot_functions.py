@@ -164,7 +164,7 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
         reply_to_message_id=update.message.message_id,
         caption=caption,
         animation=open(vprVideoPath, "rb"),
-        timeout=10000,
+        timeout=15000,
     )
     context.bot.delete_message(
         chat_id=waitMessage.chat.id, message_id=waitMessage.message_id
@@ -388,22 +388,23 @@ def cmd_alerts_brazil(update, context):
 
     functionsLogger.debug("Getting alerts for Brazil...")
 
-    # # Ignore moderate alerts
-    # alerts = models.INMETBotDB.alertsCollection.find(
-    #     {"severity": {"$ne": "Perigo Potencial"}}
-    # )
-    # if list(alerts):
-    #     if check_and_send_alerts_warning(update, context, alerts):
-    #         return None
-    # else:
-    #     alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        reply_to_message_id=update.message.message_id,
-        text="🚧 Em manutenção!\nPor enquanto, use o comando /mapa",
-        parse_mode="markdown",
-        disable_web_page_preview=True,
-    )
+    # Ignore moderate alerts
+    alerts = list(models.INMETBotDB.alertsCollection.find(
+        {"severity": {"$ne": "Perigo Potencial"}}
+    ))
+
+    if list(alerts):
+        return check_and_send_alerts_warning(update, context, alerts)
+    else:
+        alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            reply_to_message_id=update.message.message_id,
+            text=alertMessage,
+            parse_mode="markdown",
+            disable_web_page_preview=True,
+        )
 
 
 @run_async
@@ -508,7 +509,7 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
         caption="Fonte: http://www.inmet.gov.br/portal/alert-as/",
         reply_to_message_id=update.message.message_id,
         photo=open(alertsMapPath, "rb"),
-        timeout=10000,
+        timeout=15000,
     )
 
     context.bot.delete_message(
