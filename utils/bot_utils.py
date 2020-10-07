@@ -12,6 +12,7 @@ import fgrequests
 import pycep_correios as pycep
 
 import sys
+
 sys.path.append(sys.path[0] + "/..")
 
 utilsLogger = logging.getLogger(__name__)
@@ -27,9 +28,12 @@ def log_command_decorator(logger):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
             logger.debug(
-            f"{update.message.text} ({update.message.chat.type}) from @{update.message.chat.username}")
+                f"{update.message.text} ({update.message.chat.type}) from @{update.message.chat.username}"
+            )
             return func(update, context, *args, **kwargs)
+
         return command_func
+
     return decorator
 
 
@@ -40,8 +44,11 @@ def send_action(action):
     def decorator(func):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
-            context.bot.send_chat_action(chat_id=update.effective_message.chat_id, action=action)
+            context.bot.send_chat_action(
+                chat_id=update.effective_message.chat_id, action=action
+            )
             return func(update, context, *args, **kwargs)
+
         return command_func
 
     return decorator
@@ -61,8 +68,8 @@ def loadB64ImageToMemory(base64String):
 
     # Save image to memory
     bytesIOImage = BytesIO()
-    bytesIOImage.name = 'image.jpeg'
-    image.save(bytesIOImage, 'JPEG')
+    bytesIOImage.name = "image.jpeg"
+    image.save(bytesIOImage, "JPEG")
     bytesIOImage.seek(0)
 
     return bytesIOImage
@@ -76,28 +83,32 @@ def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=N
 
     for hourToday in data[:nImages]:
         URLsToBeRequested.append(
-            f"{APIBaseURL}/GOES/{regiao}/VP/{dayNow}/{hourToday['sigla']}")
+            f"{APIBaseURL}/GOES/{regiao}/VP/{dayNow}/{hourToday['sigla']}"
+        )
 
     if dataYesterday:
         nImages = nImages + nImagesForYesterday
 
         for hour in dataYesterday[:nImagesForYesterday]:
             URLsToBeRequested.append(
-                f"{APIBaseURL}/GOES/{regiao}/VP/{arrow.utcnow().shift(days=-1).format('YYYY-MM-DD')}/{hour['sigla']}")
+                f"{APIBaseURL}/GOES/{regiao}/VP/{arrow.utcnow().shift(days=-1).format('YYYY-MM-DD')}/{hour['sigla']}"
+            )
 
-    responses = list(filter(lambda x: x.status_code == 200, fgrequests.build(URLsToBeRequested)))
+    responses = list(
+        filter(lambda x: x.status_code == 200, fgrequests.build(URLsToBeRequested))
+    )
     data = [entry.json() for entry in responses]
 
     readImages = []
     for entry in reversed(data[:nImages]):
-        loadedImg = loadB64ImageToMemory(entry['base64'])
+        loadedImg = loadB64ImageToMemory(entry["base64"])
         readImages.append(imageio.imread(loadedImg))
 
     uniqueID = uuid.uuid4().hex
     gifFilename = os.path.join("tmp", f"VPR_{uniqueID}.mp4")
 
-    kargs = {'fps': 10, 'macro_block_size': None}
-    imageio.mimsave(f'{gifFilename}', readImages, 'MP4', **kargs)
+    kargs = {"fps": 10, "macro_block_size": None}
+    imageio.mimsave(f"{gifFilename}", readImages, "MP4", **kargs)
 
     return gifFilename
 
@@ -142,16 +153,24 @@ def parse_n_images_input(update, context):
             nImages = int(float(nImages))
             nImages, nImagesMessage = get_n_images_and_message(nImages)
         except ValueError:
-            context.bot.send_message(chat_id=update.message.chat.id, text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`",
-                                     reply_to_message_id=update.message.message_id, parse_mode="markdown")
+            context.bot.send_message(
+                chat_id=update.message.chat.id,
+                text=f"❌ Não entendi!\nExemplo:\n`/vpr_gif 3` ou `/nuvens 3`",
+                reply_to_message_id=update.message.message_id,
+                parse_mode="markdown",
+            )
             return None
     except (IndexError, AttributeError):
         nImages, nImagesMessage = get_n_images_and_message(None)
-        utilsLogger.warning(f"No input in parse_n_images_input. Message text: \"{text}\"")
+        utilsLogger.warning(f'No input in parse_n_images_input. Message text: "{text}"')
 
     if nImagesMessage:
-        context.bot.send_message(chat_id=update.message.chat.id, text=nImagesMessage,
-                                 reply_to_message_id=update.message.message_id, parse_mode="markdown")
+        context.bot.send_message(
+            chat_id=update.message.chat.id,
+            text=nImagesMessage,
+            reply_to_message_id=update.message.message_id,
+            parse_mode="markdown",
+        )
 
     return nImages
 
@@ -162,16 +181,28 @@ def parse_CEP(update, context, cepRequired=True):
     text = update.message.text
 
     try:
-        cep = context.args[0].strip().replace("-", "")  # Get string after "/alertas_CEP"
-        return cep
+        cep = (
+            context.args[0].strip().replace("-", "")
+        )  # Get string after "/alertas_CEP"
     except IndexError:  # No number after /command
-        utilsLogger.warning(f"No input in parse_CEP. Message text: \"{text}\"")
+        utilsLogger.warning(
+            f'No input in parse_CEP. Message text: "{text}"'
+        )
         message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
     else:
-        if not pycep.validar_cep(cep):
+        if cep and not pycep.validar_cep(cep):
             message = f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+            utilsLogger.warning(f"CEP inválido: {cep}")
+            # return message
+            raise Exception
+        else:
+            return cep
 
     if cepRequired:
-        context.bot.send_message(chat_id=update.effective_chat.id,
-                                 reply_to_message_id=update.message.message_id, text=message, parse_mode="markdown")
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            reply_to_message_id=update.message.message_id,
+            text=message,
+            parse_mode="markdown",
+        )
         return None

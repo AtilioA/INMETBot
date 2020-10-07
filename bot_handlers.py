@@ -12,7 +12,7 @@ help_handler = CommandHandler(('help', 'ajuda'), bot_functions.cmd_help,
 vpr_handler = CommandHandler(('vpr', 'vapor_de_agua', 'nuvem'),
                              bot_functions.cmd_vpr, filters=~Filters.update.edited_message)
 vpr_gif_handler = CommandHandler(
-    ('vpr_gif', 'nuvens'), bot_functions.cmd_vpr_gif, filters=~Filters.update.edited_message)
+    ('vpr_gif', 'nuvens', 'nuvems', 'vprs'), bot_functions.cmd_vpr_gif, filters=~Filters.update.edited_message)
 
 acumulada_handler = CommandHandler(
     'acumulada', bot_functions.cmd_acumulada, filters=~Filters.update.edited_message)
