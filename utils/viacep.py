@@ -25,7 +25,7 @@ def cep_lookup(CEPString):
 def viacep_request(CEPString):
     """Make a request to the viacep's API with given CEP."""
 
-    return f'http://www.viacep.com.br/ws/{CEPString}/json'
+    return f"http://www.viacep.com.br/ws/{CEPString}/json"
 
 
 def cepReplace(CEPString):
@@ -37,4 +37,4 @@ def cepReplace(CEPString):
 def matchCepRegex(CEPString):
     """Try to match regex pattern to string."""
 
-    return re.match('[0-9]{8}', cepReplace(CEPString))
+    return re.match("[0-9]{8}", cepReplace(CEPString))

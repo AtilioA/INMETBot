@@ -9,6 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import models
 import sys
+
 sys.path.append(sys.path[0] + "/..")
 
 parsingLogger = logging.getLogger(__name__)
@@ -22,12 +23,14 @@ def take_screenshot_alerts_map():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--window-size=540x1080")
 
-    if 'ON_HEROKU' in os.environ:
+    if "ON_HEROKU" in os.environ:
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--no-sandbox")
 
         chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_PATH")
-        driver = webdriver.Chrome(executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=chrome_options)
+        driver = webdriver.Chrome(
+            executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=chrome_options
+        )
     else:
         chrome_driver = os.path.join(os.getcwd(), "chromedriver.exe")
         driver = webdriver.Chrome(options=chrome_options, executable_path=chrome_driver)
@@ -36,7 +39,9 @@ def take_screenshot_alerts_map():
     parsingLogger.debug(f"Accessed alert-as map.")
 
     alertsMapPath = os.path.join("tmp", f"alerts_map_{uuid.uuid4().hex}.png")
-    driver.find_element_by_id('OpenLayers.Map_3_OpenLayers_ViewPort').screenshot(alertsMapPath)
+    driver.find_element_by_id("OpenLayers.Map_3_OpenLayers_ViewPort").screenshot(
+        alertsMapPath
+    )
 
     return alertsMapPath
 
@@ -154,7 +159,9 @@ def parse_alert_xml(xmlURL):
         parsed XML or None if GET request to XML URL fails.
     """
 
-    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
+    headers = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
+    }
 
     req = requests.get(xmlURL, headers=headers, allow_redirects=False)
     if req.status_code == 200:
@@ -162,7 +169,7 @@ def parse_alert_xml(xmlURL):
 
         # Retrieve the XML content
         content = req.content
-        parsedAlertXML = BeautifulSoup(content, 'xml')
+        parsedAlertXML = BeautifulSoup(content, "xml")
         return parsedAlertXML
     else:
         parsingLogger.error("Failed GET request to alert XML.")
@@ -183,7 +190,9 @@ def get_alerts_xml(ignoreModerate=True):
         List of all available XML URLs for alerts.
     """
 
-    headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
+    headers = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
+    }
 
     alertsURL = "https://alerts.inmet.gov.br/cap_12/rss/alert-as.rss"
     req = requests.get(alertsURL, headers=headers, allow_redirects=False)
@@ -192,12 +201,14 @@ def get_alerts_xml(ignoreModerate=True):
 
         # Retrieve the RSS feed content
         content = req.content
-        xml = BeautifulSoup(content, 'html.parser')
+        xml = BeautifulSoup(content, "html.parser")
         # parsingLogger.debug(xml)
 
         # Get alerts' XML URL from each item entry
         items = xml.channel.find_all("item")
-        itemsXMLURLs = [item.guid.text for item in items if is_wanted_alert(item, ignoreModerate)]
+        itemsXMLURLs = [
+            item.guid.text for item in items if is_wanted_alert(item, ignoreModerate)
+        ]
 
         return itemsXMLURLs
     else:

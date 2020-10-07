@@ -126,7 +126,9 @@ class Chat(ABC):
                     modelsLogger.info("CEP will not be subscribed; already subscribed.")
                     return "CHAT_EXISTS_CEP_EXISTS"
                 else:  # Chat is already subscribed, new CEP
-                    INMETBotDB.subscribedChatsCollection.update_one({"chatID": self.id}, {"$push": {"CEPs": cep}})
+                    INMETBotDB.subscribedChatsCollection.update_one(
+                        {"chatID": self.id}, {"$push": {"CEPs": cep}}
+                    )
                     modelsLogger.info(f"CEP {cep} has been subscribed.")
                     return "CHAT_EXISTS_CEP_SUBSCRIBED"
             else:  # Chat is already subscribed, no CEP
@@ -152,7 +154,9 @@ class Chat(ABC):
         if self.subscribed:
             if cep:
                 if cep in self.CEPs:  # Chat is subscribed, CEP is subscribed
-                    INMETBotDB.subscribedChatsCollection.update_one({"chatID": self.id}, {"$pull": {"CEPs": cep}})
+                    INMETBotDB.subscribedChatsCollection.update_one(
+                        {"chatID": self.id}, {"$pull": {"CEPs": cep}}
+                    )
                     unsubscribeMessage = f"🔕 Desinscrevi o CEP {cep}."
                     modelsLogger.info(f"CEP {cep} has been unsubscribed.")
                     return "CHAT_EXISTS_CEP_UNSUBSCRIBED"
@@ -163,7 +167,7 @@ class Chat(ABC):
                 INMETBotDB.subscribedChatsCollection.delete_one({"chatID": self.id})
                 modelsLogger.info(f"Chat {self.id} has been unsubscribed.")
                 return "CHAT_UNSUBSCRIBED"
-        else:   # Chat is not subscribed, CEP is optional
+        else:  # Chat is not subscribed, CEP is optional
             modelsLogger.info(f"Chat {self.id} has not been unsubscribed.")
             return "CHAT_NOT_UNSUBSCRIBED"
         return unsubscribeMessage
@@ -194,37 +198,55 @@ class Chat(ABC):
         """ Set chat's activated status to False. """
 
         if self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one({"chatID": self.id}, {"$set": {"activated": False}})
+            INMETBotDB.subscribedChatsCollection.update_one(
+                {"chatID": self.id}, {"$set": {"activated": False}}
+            )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
         else:
-            return "❌ Os alertas já estão desativados.\nAtive-os novamente com /ativar."
+            return "❕ Os alertas já estão desativados.\nAtive-os novamente com /ativar."
 
     def activate(self):
         """ Set chat's activated status to True. """
 
         if not self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one({"chatID": self.id}, {"$set": {"activated": True}})
+            INMETBotDB.subscribedChatsCollection.update_one(
+                {"chatID": self.id}, {"$set": {"activated": True}}
+            )
             return "▶️ Ativei os alertas.\nDesative-os temporariamente com /desativar."
         else:
-            return "❌ Os alertas já estão ativados.\nDesative-os temporariamente com /desativar."
+            return "❕ Os alertas já estão ativados.\nDesative-os temporariamente com /desativar."
 
     def toggle_activated(self):
         """ Negate the activated boolean attribute. """
 
         if self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one({"chatID": self.id}, {"$set": {"activated": False}})
+            INMETBotDB.subscribedChatsCollection.update_one(
+                {"chatID": self.id}, {"$set": {"activated": False}}
+            )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
         else:
-            INMETBotDB.subscribedChatsCollection.update_one({"chatID": self.id}, {"$set": {"activated": True}})
+            INMETBotDB.subscribedChatsCollection.update_one(
+                {"chatID": self.id}, {"$set": {"activated": True}}
+            )
             return "▶️ Ativei os alertas novamente.\nDesative-os com /desativar."
 
     def serialize(self, cep=None):
         """Serialize chat subscription for database insertion."""
 
         if cep:
-            subscribedChatsDocument = {'chatID': self.id, "title": self.title, 'CEPs': [cep], 'activated': True}
+            subscribedChatsDocument = {
+                "chatID": self.id,
+                "title": self.title,
+                "CEPs": [cep],
+                "activated": True,
+            }
         else:
-            subscribedChatsDocument = {'chatID': self.id, "title": self.title, 'CEPs': [], 'activated': True}
+            subscribedChatsDocument = {
+                "chatID": self.id,
+                "title": self.title,
+                "CEPs": [],
+                "activated": True,
+            }
         return subscribedChatsDocument
 
 
@@ -263,7 +285,7 @@ class PrivateChat(Chat):
             "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
             "CHAT_EXISTS_NO_CEP": f"❕Você já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
             "CHAT_AND_CEP_SUBSCRIBED": f"🔔 Inscrevi você e o CEP {cep}.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_SUBSCRIBED": f"🔔 Inscrevi você.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar."
+            "CHAT_SUBSCRIBED": f"🔔 Inscrevi você.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
         }
 
         subscribeMessage = subscribeMessageDict.get(subscribeResult, None)
@@ -276,7 +298,7 @@ class PrivateChat(Chat):
             "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep}.\nDesative alertas temporariamente com /desativar.",
             "CHAT_EXISTS_CEP_NOT_FOUND": f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
             "CHAT_UNSUBSCRIBED": "🔕 Você foi desinscrito dos alertas.\nInscreva-se com /inscrever.",
-            "CHAT_NOT_UNSUBSCRIBED": "❌ Você não está inscrito nos alertas.\nInscreva-se com /inscrever."
+            "CHAT_NOT_UNSUBSCRIBED": "❌ Você não está inscrito nos alertas.\nInscreva-se com /inscrever.",
         }
 
         unsubscribeMessage = unsubscribeMessageDict.get(unsubscribeResult, None)
@@ -287,15 +309,15 @@ class PrivateChat(Chat):
 
         subscriptionStatusDict = {
             "SUBSCRIBED": "Você está inscrito nos alertas.\n\n",
-            "NOT_SUBSCRIBED": "Você não está inscrito nos alertas."
+            "NOT_SUBSCRIBED": "Você não está inscrito nos alertas.",
         }
 
-        subscriptionStatusMessage = f"{subscriptionStatusDict.get(subscriptionStatus[0])} {subscriptionStatus[1]}"
+        subscriptionStatusMessage = f"{subscriptionStatusDict.get(subscriptionStatus[0])}{subscriptionStatus[1]}"
         return subscriptionStatusMessage
 
-    def activate_callback(self, activate_callback_func):
+    def toggle_subscription_callback(self, toggle_subscription_callback_func):
         if self.subscribed:
-            return activate_callback_func()
+            return toggle_subscription_callback_func()
         else:
             return "Você não está inscrito nos alertas. Inscreva-se com /inscrever."
 
@@ -335,7 +357,7 @@ class GroupChat(Chat):
             "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
             "CHAT_EXISTS_NO_CEP": f"❕O grupo já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
             "CHAT_AND_CEP_SUBSCRIBED": f"🔔 Inscrevi o grupo e o CEP {cep}.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_SUBSCRIBED": f"🔔 Inscrevi o grupo.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar."
+            "CHAT_SUBSCRIBED": f"🔔 Inscrevi o grupo.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
         }
 
         subscribeMessage = subscribeMessageDict.get(subscribeResult, None)
@@ -359,17 +381,20 @@ class GroupChat(Chat):
 
         subscriptionStatusDict = {
             "SUBSCRIBED": "O grupo está inscrito nos alertas.\n\n",
-            "NOT_SUBSCRIBED": "O grupo não está inscrito nos alertas."
+            "NOT_SUBSCRIBED": "O grupo não está inscrito nos alertas.",
         }
 
-        subscriptionStatusMessage = f"{subscriptionStatusDict.get(subscriptionStatus[0])} {subscriptionStatus[1]}"
+        subscriptionStatusMessage = f"{subscriptionStatusDict.get(subscriptionStatus[0])}{subscriptionStatus[1]}"
         return subscriptionStatusMessage
 
-    def activate_callback(self, activate_callback_func):
+    def toggle_subscription_callback(self, callback_func):
         if self.subscribed:
-            return activate_callback_func()
+            return callback_func()
         else:
-            return "O grupo não está inscrito nos alertas. Inscreva-o com /inscrever."
+            return (
+                "❌ O grupo não está inscrito nos alertas. Inscreva-o com /inscrever."
+            )
+
 
 class Alert:
     """The Alert object can carry information about an alert (reads from XML file or json).
