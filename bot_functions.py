@@ -72,7 +72,6 @@ def cmd_start(update, context):
 
 @run_async
 @bot_utils.log_command
-@bot_utils.log_command
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
@@ -389,9 +388,11 @@ def cmd_alerts_brazil(update, context):
     functionsLogger.debug("Getting alerts for Brazil...")
 
     # Ignore moderate alerts
-    alerts = list(models.INMETBotDB.alertsCollection.find(
-        {"severity": {"$ne": "Perigo Potencial"}}
-    ))
+    alerts = list(
+        models.INMETBotDB.alertsCollection.find(
+            {"severity": {"$ne": "Perigo Potencial"}}
+        )
+    )
 
     if list(alerts):
         return check_and_send_alerts_warning(update, context, alerts)
@@ -482,6 +483,7 @@ def alerts_location(update, context):
     )
 
 
+@bot_utils.log_command
 @bot_utils.send_typing_action
 def cmd_alerts_map(update, context):
     """Take screenshot of the alerts map with Selenium and send to the user."""
@@ -633,17 +635,6 @@ def cmd_chat_toggle_activated(update, context):
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
         text=toggleMessage,
-        parse_mode="markdown",
-    )
-
-
-@run_async
-@bot_utils.send_typing_action
-def f(update, context):
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        reply_to_message_id=update.message.message_id,
-        text="F.",
         parse_mode="markdown",
     )
 

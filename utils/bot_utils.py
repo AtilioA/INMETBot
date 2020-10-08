@@ -22,12 +22,18 @@ MIN_VPR_IMAGES = 2
 DEFAULT_VPR_IMAGES = 9  # 2 hours of images
 MAX_VPR_IMAGES = 48  # 12 hours of images
 
+
 # Decorator to log user interaction
 def log_command_decorator(logger):
     def decorator(func):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
-            debugMessage = f"{update.message.text} ({update.message.chat.type}) from @{update.message.from_user.username}"
+            if update.message.from_user.username:
+                user = f'@{update.message.from_user.username}'
+            else:
+                user = f"'{update.message.from_user.name}'"
+
+            debugMessage = f"{update.message.text} from {user} ({update.message.chat.type})"
 
             logger.debug(debugMessage)
 
