@@ -416,17 +416,17 @@ def cmd_alerts_CEP(update, context):
 
     functionsLogger.debug("Getting alerts by CEP (zip code)...")
 
-    cep = bot_utils.parse_CEP(update, context)
     try:
-        if isinstance(cep, int):
-            city = viacep.get_cep_city(cep)
+        cep = bot_utils.parse_CEP(update, context)
+        city = viacep.get_cep_city(cep)
 
-            # Include moderate alerts
-            alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
-            check_and_send_alerts_warning(update, context, alerts, city)
+        # Include moderate alerts
+        alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
+        check_and_send_alerts_warning(update, context, alerts, city)
     except (
         pycep.excecoes.ExcecaoPyCEPCorreios,
         KeyError,
+        Exception
     ) as cepError:  # Invalid zip code
         functionsLogger.warning(
             f'{cepError} on cmd_alerts_CEP. Message text: "{update.message.text}"'
