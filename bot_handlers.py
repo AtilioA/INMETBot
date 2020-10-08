@@ -64,12 +64,6 @@ toggle_activated_handler = CommandHandler(
     ("alternar", "toggle"), bot_functions.cmd_chat_toggle_activated
 )
 
-send_boletim_handler = CommandHandler(
-    ("boletim", "ultimo_boletim"),
-    bot_functions.f,
-    filters=~Filters.update.edited_message,
-)
-
 sorrizoronaldo_handler = CommandHandler(
     ("sorrizo", "sorrizoronaldo", "fodase"),
     bot_functions.cmd_sorrizoronaldo,
@@ -110,8 +104,6 @@ dispatcher.add_handler(chat_subscription_status_handler)
 dispatcher.add_handler(deactivate_handler)
 dispatcher.add_handler(activate_handler)
 dispatcher.add_handler(toggle_activated_handler)
-
-dispatcher.add_handler(send_boletim_handler)
 
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)

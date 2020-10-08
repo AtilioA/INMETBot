@@ -638,17 +638,6 @@ def cmd_chat_toggle_activated(update, context):
 
 
 @run_async
-@bot_utils.send_typing_action
-def f(update, context):
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        reply_to_message_id=update.message.message_id,
-        text="F.",
-        parse_mode="markdown",
-    )
-
-
-@run_async
 @bot_utils.log_command
 @bot_utils.send_upload_video_action
 def cmd_sorrizoronaldo(update, context):
