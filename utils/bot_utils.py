@@ -32,7 +32,7 @@ def log_command_decorator(logger):
             logger.debug(debugMessage)
 
             context.bot.send_message(
-                chat_id="-366810591", text=debugMessage,
+                chat_id="-1001361751085", text=debugMessage,
             )
 
             return func(update, context, *args, **kwargs)
