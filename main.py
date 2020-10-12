@@ -14,7 +14,7 @@ from bot_routines import (
     notify_chats_routine,
 )
 
-# ROUTINES_INTERVAL = 60
+ROUTINES_INTERVAL = 20
 
 # Enable logging
 logging.basicConfig(
@@ -33,9 +33,9 @@ class RoutinesThread(Thread):
             time.sleep(60)
 
 
-schedule.every().hour.do(parse_alerts_routine)
-schedule.every().hour.do(delete_past_alerts_routine)
-schedule.every().hour.do(notify_chats_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
+schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
 
 
 def main():
