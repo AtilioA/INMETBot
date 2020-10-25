@@ -42,7 +42,7 @@ First, clone the repository and create a virtual environment for the project (to
 
 `pipenv shell` - Activate virtual environment
 
-Some of the bot's functionality depends on being connected to a MongoDB database. If you wish to use your own database, just set the `INMET_MONGO_URI` environment variable in the `.env.example` file to your URI connection string and rename the `.env.example` file to `.env` or, alternatively, set `INMET_MONGO_URI` as an environment variable of the system hosting the bot.
+Some of the bot's functionality depends on being connected to a MongoDB database. If you wish to use your own database, just set the `INMETBOT_MONGO_URI` environment variable in the `.env.example` file to your URI connection string and rename the `.env.example` file to `.env` or, alternatively, set `INMETBOT_MONGO_URI` as an environment variable of the system hosting the bot.
 
 You'll be doing the same thing for the `TELEGRAM_INMETBOT_APIKEY` environment variable. You can get your token/key with [BotFather](t.me/BotFather), the official way to create bots on Telegram.
 
