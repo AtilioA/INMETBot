@@ -157,7 +157,7 @@ class Chat(ABC):
                     INMETBotDB.subscribedChatsCollection.update_one(
                         {"chatID": self.id}, {"$pull": {"CEPs": cep}}
                     )
-                    unsubscribeMessage = f"🔕 Desinscrevi o CEP {cep}."
+                    unsubscribeMessage = f"🔕 Desinscrevi o CEP {cep} ({viacep.get_cep_city(cep)})."
                     modelsLogger.info(f"CEP {cep} has been unsubscribed.")
                     return "CHAT_EXISTS_CEP_UNSUBSCRIBED"
                 else:  # Chat is subscribed, CEP is not subscribed
@@ -282,9 +282,9 @@ class PrivateChat(Chat):
 
         subscribeMessageDict = {
             "CHAT_EXISTS_CEP_EXISTS": f"❕O CEP já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep} ({viacep.get_cep_city(cep)}).\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
             "CHAT_EXISTS_NO_CEP": f"❕Você já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_AND_CEP_SUBSCRIBED": f"🔔 Inscrevi você e o CEP {cep}.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_AND_CEP_SUBSCRIBED": f"🔔 Inscrevi você e o CEP {cep} ({viacep.get_cep_city(cep)}).\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
             "CHAT_SUBSCRIBED": f"🔔 Inscrevi você.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
         }
 
@@ -295,8 +295,8 @@ class PrivateChat(Chat):
         """Get unsubscribe message according to unsubscription result for a private chat."""
 
         unsubscribeMessageDict = {
-            "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep}.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_EXISTS_CEP_NOT_FOUND": f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep} ({viacep.get_cep_city(cep)}).\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CEP_NOT_FOUND": f"❌ O CEP {cep} ({viacep.get_cep_city(cep)}) não está inscrito.\nAdicione CEPs: `/inscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
             "CHAT_UNSUBSCRIBED": "🔕 Você foi desinscrito dos alertas.\nInscreva-se com /inscrever.",
             "CHAT_NOT_UNSUBSCRIBED": "❌ Você não está inscrito nos alertas.\nInscreva-se com /inscrever.",
         }
@@ -353,10 +353,10 @@ class GroupChat(Chat):
         """Get subscribe message according to subscription result for a group chat."""
 
         subscribeMessageDict = {
-            "CHAT_EXISTS_CEP_EXISTS": f"❕O CEP {cep} já está inscrito.\nDesinscreva CEPs: `{textArgs[0]} {cep}`.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep}.\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CEP_EXISTS": f"❕O CEP {cep} ({viacep.get_cep_city(cep)}) já está inscrito.\nDesinscreva CEPs: `{textArgs[0]} {cep}`.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep} ({viacep.get_cep_city(cep)}).\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
             "CHAT_EXISTS_NO_CEP": f"❕O grupo já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_AND_CEP_SUBSCRIBED": f"🔔 Inscrevi o grupo e o CEP {cep}.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_AND_CEP_SUBSCRIBED": f"🔔 Inscrevi o grupo e o CEP {cep} ({viacep.get_cep_city(cep)}).\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
             "CHAT_SUBSCRIBED": f"🔔 Inscrevi o grupo.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva o grupo com /desinscrever.\nDesative alertas temporariamente com /desativar.",
         }
 
@@ -367,8 +367,8 @@ class GroupChat(Chat):
         """Get unsubscribe message according to unsubscription result for a group chat."""
 
         unsubscribeMessageDict = {
-            "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep}.\nDesative alertas temporariamente com /desativar.",
-            "CHAT_EXISTS_CEP_NOT_FOUND": f"❌ O CEP {cep} não está inscrito.\nAdicione CEPs: `/inscrever {cep}`",
+            "CHAT_EXISTS_CEP_UNSUBSCRIBED": f"🔕 Desinscrevi o CEP {cep} ({viacep.get_cep_city(cep)}).\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CEP_NOT_FOUND": f"❌ O CEP {cep} ({viacep.get_cep_city(cep)}) não está inscrito.\nAdicione CEPs: `/inscrever {cep}`",
             "CHAT_UNSUBSCRIBED": "🔕 O grupo foi desinscrito dos alertas.\nInscreva o grupo com /inscrever.",
             "CHAT_NOT_UNSUBSCRIBED": "❌ O grupo não está inscrito nos alertas.\nInscreva-o com /inscrever.",
         }

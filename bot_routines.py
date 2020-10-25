@@ -1,4 +1,5 @@
 import arrow
+import requests
 import logging
 import models
 from telegram.error import TelegramError
@@ -8,6 +9,10 @@ from bot_functions import MAX_ALERTS_PER_MESSAGE
 
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
+
+
+def ping(URL):
+    return requests.get(URL)
 
 
 def delete_past_alerts_routine():
