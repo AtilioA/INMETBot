@@ -698,7 +698,6 @@ def cmd_forecast(update, context):
             # pprint.pprint(response.json()[IBGECode])
 
             data = response.json()[IBGECode]
-            print(f"{APIBaseURL}/previsao/{IBGECode}")
 
             for date in data.keys():
                 pprint.pprint(date)

@@ -88,55 +88,44 @@ def createForecastMessage(date, forecastDay):
     except (KeyError, IndexError):
         city = forecastDay["manha"]["entidade"]
 
-    forecastMessage = f"*PREVISÃO PARA {city} - {date}\n\n*".upper()
+    forecastMessage = f"*PREVISÃO PARA {city} - {date}\n*".upper()
 
-    print("Oi")
     try:
         forecastDayMorning = forecastDay["manha"]
         forecastDayAfternoon = forecastDay["tarde"]
         forecastDayEvening = forecastDay["noite"]
 
+        forecastMessage += forecastText(
+            forecastDayMorning["cod_icone"],
+            forecastDayMorning["resumo"],
+            forecastDayMorning["temp_max"],
+            forecastDayMorning["temp_min"],
+            forecastDayMorning["umidade_max"],
+            forecastDayMorning["umidade_min"],
+            forecastDayMorning["dir_vento"],
+            forecastDayMorning["int_vento"],
+            forecastDayMorning["nascer"],
+            forecastDayMorning["ocaso"],
+            isWholeDay=True,
+        )
+
         if forecastDayMorning:
-            forecastMessage += """🌄 *Manhã*:"""
-            forecastMessage += forecastText(
-                forecastDayMorning["cod_icone"],
-                forecastDayMorning["resumo"],
-                forecastDayMorning["temp_max"],
-                forecastDayMorning["temp_min"],
-                forecastDayMorning["umidade_max"],
-                forecastDayMorning["umidade_min"],
-                forecastDayMorning["dir_vento"],
-                forecastDayMorning["int_vento"],
-                forecastDayMorning["nascer"],
-                forecastDayMorning["ocaso"],
+            forecastMessage += """
+    🌄 *Manhã*:"""
+            forecastMessage += forecastTextPeriodOfDay(
+                forecastDayMorning["cod_icone"], forecastDayMorning["resumo"],
             )
         if forecastDayAfternoon:
-            forecastMessage += """\n🕑 *Tarde*:"""
-            forecastMessage += forecastText(
-                forecastDayAfternoon["cod_icone"],
-                forecastDayAfternoon["resumo"],
-                forecastDayAfternoon["temp_max"],
-                forecastDayAfternoon["temp_min"],
-                forecastDayAfternoon["umidade_max"],
-                forecastDayAfternoon["umidade_min"],
-                forecastDayAfternoon["dir_vento"],
-                forecastDayAfternoon["int_vento"],
-                forecastDayAfternoon["nascer"],
-                forecastDayAfternoon["ocaso"],
+            forecastMessage += """
+    🕑 *Tarde*:"""
+            forecastMessage += forecastTextPeriodOfDay(
+                forecastDayAfternoon["cod_icone"], forecastDayAfternoon["resumo"],
             )
         if forecastDayEvening:
-            forecastMessage += """\n🌌 *Noite*:"""
-            forecastMessage += forecastText(
-                forecastDayEvening["cod_icone"],
-                forecastDayEvening["resumo"],
-                forecastDayEvening["temp_max"],
-                forecastDayEvening["temp_min"],
-                forecastDayEvening["umidade_max"],
-                forecastDayEvening["umidade_min"],
-                forecastDayEvening["dir_vento"],
-                forecastDayEvening["int_vento"],
-                forecastDayEvening["nascer"],
-                forecastDayEvening["ocaso"],
+            forecastMessage += """
+    🌌 *Noite*:"""
+            forecastMessage += forecastTextPeriodOfDay(
+                forecastDayEvening["cod_icone"], forecastDayEvening["resumo"],
             )
 
     except (KeyError, IndexError):
@@ -159,6 +148,18 @@ def createForecastMessage(date, forecastDay):
     return forecastMessage
 
 
+def forecastIconDict(code):
+    return {46: "🌧", 60: "⛈", 87: "⛈", 88: "🌥⛈", 34: "⛅️🌥",}.get(code, "")
+
+
+def forecastTextPeriodOfDay(
+    forecastIcon, summary,
+):
+    return f"""
+            *{forecastIconDict(int(forecastIcon))} {summary}*
+    """
+
+
 def forecastText(
     forecastIcon,
     summary,
@@ -172,47 +173,26 @@ def forecastText(
     sunsetTime,
     isWholeDay=False,
 ):
-    forecastIconDict = {
-        46: "🌧",
-        60: "⛈",
-        87: "⛈",
-        88: "🌥⛈",
-        34: "⛅️🌥",
-    }
 
-    if not isWholeDay:
-        """
-    🔥 Temperatura máxima: *{maxTemperature}°C*
-    ❄️ Temperatura mínima: *{minTemperature}°C*
-
-    💦 Umidade máxima: *{maxHumidity}%*
-    💧 Umidade mínima: *{minHumidity}%*
-
-    🧭 Direção dos ventos: {windDirection}
-    💨 Intensidade dos ventos: {windIntensity}
-
-    🌅 Nascer do sol: \t{sunriseTime}
-    🌇 Pôr do sol: \t{sunsetTime}
-        """
-
-    forecastMessage = f"""
-    \t*{forecastIconDict.get(int(forecastIcon), "")} {summary}*
+    forecastMessage = ""
+    if isWholeDay:
+        forecastMessage += f"""
+    *{forecastIconDict(int(forecastIcon))} {summary}*
     """
 
-    if isWholeDay:
-        """
-    🔥 Temperatura máxima: *{maxTemperature}°C*
-    ❄️ Temperatura mínima: *{minTemperature}°C*
+    forecastMessage += f"""
+    🔥 Temperatura máxima: *{maxTemperature:>5}°C*
+    ❄️ Temperatura mínima: *{minTemperature:>6}°C*
 
-    💦 Umidade máxima: *{maxHumidity}%*
-    💧 Umidade mínima: *{minHumidity}%*
+    💦 Umidade máxima: *{maxHumidity:>5}%*
+    💧 Umidade mínima: *{minHumidity:>6}%*
 
-    🧭 Direção dos ventos: {windDirection}
-    💨 Intensidade dos ventos: {windIntensity}
+    🧭 Direção dos ventos: {windDirection:>14}
+    💨 Intensidade dos ventos: {windIntensity:>8}
 
-    🌅 Nascer do sol: \t{sunriseTime}
-    🌇 Pôr do sol: \t{sunsetTime}
-        """
+    🌅 Nascer do sol: \t{sunriseTime:>5}
+    🌇 Pôr do sol: \t{sunsetTime:>11}
+    """
 
     return forecastMessage
 
