@@ -58,6 +58,10 @@ chat_subscription_status_handler = CommandHandler(
     filters=~Filters.update.edited_message,
 )
 
+forecast_handler = CommandHandler(
+    ("previsao"), bot_functions.cmd_forecast, filters=~Filters.update.edited_message,
+)
+
 deactivate_handler = CommandHandler(("desativar"), bot_functions.cmd_chat_deactivate)
 activate_handler = CommandHandler(("ativar"), bot_functions.cmd_chat_activate)
 toggle_activated_handler = CommandHandler(
@@ -104,6 +108,8 @@ dispatcher.add_handler(chat_subscription_status_handler)
 dispatcher.add_handler(deactivate_handler)
 dispatcher.add_handler(activate_handler)
 dispatcher.add_handler(toggle_activated_handler)
+
+dispatcher.add_handler(forecast_handler)
 
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)

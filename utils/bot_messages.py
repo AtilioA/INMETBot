@@ -78,5 +78,194 @@ noAlertsBrazil = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê
 noAlertsCity = "✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
 locationOutsideBrazil = "❌ A localização indica uma região fora do Brasil."
 unableCheckAlertsLocation = "❌ Não foi possível verificar a região 😔."
-invalidZipcode = "❌ CEP inválido/não existe!\nExemplo:\n`{textArgs} 29075-910`"
+invalidZipCode = "❌ CEP inválido/não existe!\nExemplo:\n`{textArgs} 29075-910`"
 alertsMapMessage = "⏳ Buscando imagem do mapa de alertas..."
+
+
+def createForecastMessage(date, forecastDay):
+    try:
+        city = forecastDay["entidade"]
+    except (KeyError, IndexError):
+        city = forecastDay["manha"]["entidade"]
+
+    forecastMessage = f"*PREVISÃO PARA {city} - {date}\n\n*".upper()
+
+    print("Oi")
+    try:
+        forecastDayMorning = forecastDay["manha"]
+        forecastDayAfternoon = forecastDay["tarde"]
+        forecastDayEvening = forecastDay["noite"]
+
+        if forecastDayMorning:
+            forecastMessage += """🌄 *Manhã*:"""
+            forecastMessage += forecastText(
+                forecastDayMorning["cod_icone"],
+                forecastDayMorning["resumo"],
+                forecastDayMorning["temp_max"],
+                forecastDayMorning["temp_min"],
+                forecastDayMorning["umidade_max"],
+                forecastDayMorning["umidade_min"],
+                forecastDayMorning["dir_vento"],
+                forecastDayMorning["int_vento"],
+                forecastDayMorning["nascer"],
+                forecastDayMorning["ocaso"],
+            )
+        if forecastDayAfternoon:
+            forecastMessage += """\n🕑 *Tarde*:"""
+            forecastMessage += forecastText(
+                forecastDayAfternoon["cod_icone"],
+                forecastDayAfternoon["resumo"],
+                forecastDayAfternoon["temp_max"],
+                forecastDayAfternoon["temp_min"],
+                forecastDayAfternoon["umidade_max"],
+                forecastDayAfternoon["umidade_min"],
+                forecastDayAfternoon["dir_vento"],
+                forecastDayAfternoon["int_vento"],
+                forecastDayAfternoon["nascer"],
+                forecastDayAfternoon["ocaso"],
+            )
+        if forecastDayEvening:
+            forecastMessage += """\n🌌 *Noite*:"""
+            forecastMessage += forecastText(
+                forecastDayEvening["cod_icone"],
+                forecastDayEvening["resumo"],
+                forecastDayEvening["temp_max"],
+                forecastDayEvening["temp_min"],
+                forecastDayEvening["umidade_max"],
+                forecastDayEvening["umidade_min"],
+                forecastDayEvening["dir_vento"],
+                forecastDayEvening["int_vento"],
+                forecastDayEvening["nascer"],
+                forecastDayEvening["ocaso"],
+            )
+
+    except (KeyError, IndexError):
+        forecastMessage += forecastText(
+            forecastDay["cod_icone"],
+            forecastDay["resumo"],
+            forecastDay["temp_max"],
+            forecastDay["temp_min"],
+            forecastDay["umidade_max"],
+            forecastDay["umidade_min"],
+            forecastDay["dir_vento"],
+            forecastDay["int_vento"],
+            forecastDay["nascer"],
+            forecastDay["ocaso"],
+            isWholeDay=True,
+        )
+
+    forecastMessage += "\nFonte: INMET - PrevMet"
+
+    return forecastMessage
+
+
+def forecastText(
+    forecastIcon,
+    summary,
+    maxTemperature,
+    minTemperature,
+    maxHumidity,
+    minHumidity,
+    windDirection,
+    windIntensity,
+    sunriseTime,
+    sunsetTime,
+    isWholeDay=False,
+):
+    forecastIconDict = {
+        46: "🌧",
+        60: "⛈",
+        87: "⛈",
+        88: "🌥⛈",
+        34: "⛅️🌥",
+    }
+
+    if not isWholeDay:
+        """
+    🔥 Temperatura máxima: *{maxTemperature}°C*
+    ❄️ Temperatura mínima: *{minTemperature}°C*
+
+    💦 Umidade máxima: *{maxHumidity}%*
+    💧 Umidade mínima: *{minHumidity}%*
+
+    🧭 Direção dos ventos: {windDirection}
+    💨 Intensidade dos ventos: {windIntensity}
+
+    🌅 Nascer do sol: \t{sunriseTime}
+    🌇 Pôr do sol: \t{sunsetTime}
+        """
+
+    forecastMessage = f"""
+    \t*{forecastIconDict.get(int(forecastIcon), "")} {summary}*
+    """
+
+    if isWholeDay:
+        """
+    🔥 Temperatura máxima: *{maxTemperature}°C*
+    ❄️ Temperatura mínima: *{minTemperature}°C*
+
+    💦 Umidade máxima: *{maxHumidity}%*
+    💧 Umidade mínima: *{minHumidity}%*
+
+    🧭 Direção dos ventos: {windDirection}
+    💨 Intensidade dos ventos: {windIntensity}
+
+    🌅 Nascer do sol: \t{sunriseTime}
+    🌇 Pôr do sol: \t{sunsetTime}
+        """
+
+    return forecastMessage
+
+
+# forecastMessage = """
+# 🌄 Manhã:
+
+#     {forecastIconDict.get(forecastIcon)}{summaryMorning}
+
+#     🔥 Temperatura máxima: {maxTemperatureMorning}
+#     ❄️ Temperatura mínima: {minTemperatureMorning}
+
+#     💦 Umidade máxima: {maxHumidityMorning}
+#     💧 Umidade mínima: {minHumidityMorning}
+
+#     🧭 Direção dos ventos: {windDirectionMorning}
+#     📶 ou 💪 ou 💨 Intensidade dos ventos: {windIntensityMorning}
+
+#     🌅 Nascer do sol: {sunriseTimeMorning}
+#     🌇 Pôr do sol: {sunsetTimeMorning}
+
+# —
+# 🕑 Tarde:
+
+#     {forecastIconDict.get(forecastIcon)}{summaryAfternoon}
+
+#     🔥 Temperatura máxima: {maxTemperatureAfternoon}
+#     ❄️ Temperatura mínima: {minTemperatureAfternoon}
+
+#     💦 Umidade máxima: {maxHumidityAfternoon}
+#     💧 Umidade mínima: {minHumidityAfternoon}
+
+#     🧭 Direção dos ventos: {windDirectionAfternoon}
+#     📶 ou 💪 ou 💨 Intensidade dos ventos: {windIntensityAfternoon}
+
+#     🌅 Nascer do sol: {sunriseTimeAfternoon}
+#     🌇 Pôr do sol: {sunsetTimeAfternoon}
+
+# —
+# 🌌 Noite:
+#     {forecastIconDict.get(forecastIcon)}{summaryEvening}
+
+#     🔥 Temperatura máxima: {maxTemperatureEvening}
+#     ❄️ Temperatura mínima: {minTemperatureEvening}
+
+#     💦 Umidade máxima: {maxHumidityEvening}
+#     💧 Umidade mínima: {minHumidityEvening}
+
+#     🧭 Direção dos ventos: {windDirectionEvening}
+#     📶 ou 💪 ou 💨 Intensidade dos ventos: {windIntensityEvening}
+
+#     🌅 Nascer do sol: {sunriseTimeEvening}
+#     🌇 Pôr do sol: {sunsetTimeEvening}
+
+# Fonte: INMET - PrevMet
+# """

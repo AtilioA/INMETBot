@@ -3,6 +3,16 @@ import json
 import requests
 
 
+def get_cep_IBGE(CEPString):
+    """Lookup CEP's IBGE code."""
+
+    lookup = cep_lookup(CEPString)
+    if lookup:
+        return lookup["ibge"]
+    else:
+        raise KeyError
+
+
 def get_cep_city(CEPString):
     """Lookup CEP's city."""
 
