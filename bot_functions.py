@@ -14,7 +14,7 @@ from utils import viacep, bot_messages, bot_utils, parse_alerts
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
 
-MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" error
+MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" Telegram error
 
 
 @bot_utils.send_typing_action
@@ -122,7 +122,7 @@ def cmd_vpr(update, context):
             chat_id=update.effective_chat.id,
             reply_to_message_id=update.message.message_id,
             photo=vprImage,
-            caption="Última imagem disponível",
+            caption=bot_messages.lastAvailableImageCaption,
             timeout=10000,
         )
     # If no request was successful
@@ -153,7 +153,7 @@ def cmd_vpr(update, context):
                     chat_id=update.effective_chat.id,
                     reply_to_message_id=update.message.message_id,
                     photo=vprImage,
-                    caption="Última imagem disponível",
+                    caption=bot_messages.lastAvailableImageCaption,
                     timeout=10000,
                 )
         # If all else fails
@@ -161,7 +161,7 @@ def cmd_vpr(update, context):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 reply_to_message_id=update.message.message_id,
-                text="❌ Imagem indisponível.",
+                text=bot_messages.unavailableImage,
             )
 
 
@@ -195,7 +195,7 @@ def cmd_vpr_gif(update, context):
         # Save the message so it can be deleted afterwards
         waitMessage = context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f"⏳ Buscando as últimas {nImages} imagens e criando GIF...",
+            text=bot_messages.waitMessageSearchGIF.format(nImages=nImages),
             parse_mode="markdown",
         )
 
@@ -241,7 +241,7 @@ def cmd_vpr_gif(update, context):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 reply_to_message_id=update.message.message_id,
-                text="❌ Não foi possível obter a imagem!",
+                text=bot_messages.failedFetchImage,
                 parse_mode="markdown",
             )
             return None
@@ -339,7 +339,7 @@ def cmd_acumulada(update, context):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 reply_to_message_id=update.message.message_id,
-                text="❌ Não foi possível obter a imagem!",
+                text=bot_messages.failedFetchImage,
                 parse_mode="markdown",
             )
     # If all else fails
@@ -347,7 +347,7 @@ def cmd_acumulada(update, context):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             reply_to_message_id=update.message.message_id,
-            text="❌ Imagem indisponível.",
+            text=bot_messages.unavailableImage,
         )
         if acumuladaWarnMessage:
             context.bot.delete_message(
@@ -390,11 +390,11 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
         warned = True
 
         # "Footer" message after all alerts
-        alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+        alertMessage += bot_messages.moreInfoAlertAS
     elif not city:
-        alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+        alertMessage = bot_messages.noAlertsBrazil
     else:
-        alertMessage = f"✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
+        alertMessage = bot_messages.noAlertsCity.format(city=city)
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -425,7 +425,7 @@ def cmd_alerts_brazil(update, context):
     if list(alerts):
         return check_and_send_alerts_warning(update, context, alerts)
     else:
-        alertMessage = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+        alertMessage = bot_messages.noAlertsBrazil
 
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -501,10 +501,10 @@ def alerts_location(update, context):
             alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
             return check_and_send_alerts_warning(update, context, alerts, city)
         else:
-            alertMessage = "❌ A localização indica uma região fora do Brasil."
+            alertMessage = bot_messages.locationOutsideBrazil
     else:
         functionsLogger.error("Failed GET request to reverse geocoding API.")
-        alertMessage = "❌ Não foi possível verificar a região 😔."
+        alertMessage = bot_messages.unableCheckAlertsLocation
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -563,9 +563,7 @@ def cmd_chat_subscribe_alerts(update, context):
     try:
         cep = bot_utils.parse_CEP(update, context, cepRequired=False)
     except Exception:
-        subscribeMessage = (
-            f"❌ CEP inválido/não existe!\nExemplo:\n`{textArgs[0]} 29075-910`"
-        )
+        subscribeMessage = bot_messages.invalidZipcode.format(textArgs=textArgs[0])
     else:
         chat = models.create_chat_obj(update)
         subscribeResult = chat.subscribe_chat(cep)

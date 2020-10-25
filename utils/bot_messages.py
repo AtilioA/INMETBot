@@ -61,8 +61,22 @@ Não filiado ao INMET
 """
 
 instructions = "Instruções de uso: clique em /help ou /ajuda."
-acumuladaWarn = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *{interval}* (valor mais próximo de {inputInterval}).\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
-acumuladaWarnMissing = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *{interval}* como valor.\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
-alertsMapMessage = "⏳ Buscando imagem do mapa de alertas..."
+
+acumuladaWarn = "❕ O intervalo não é válido! Portanto, utilizarei *{interval}* (valor mais próximo de {inputInterval}).\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
+acumuladaWarnMissing = "❕ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *{interval}* como valor.\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
+
 sorrizoChegou = "É O *SORRIZO RONALDO* 😁 QUE CHEGOU..."
 sorrizoQueen = "👊👊👏 *SORRIZ*.."
+
+lastAvailableImageCaption = "Última imagem disponível"
+waitMessageSearchGIF = "⏳ Buscando as últimas {nImages} imagens e criando GIF..."
+failedFetchImage = "❌ Não foi possível obter a imagem!"
+unavailableImage = "❌ Imagem indisponível."
+
+moreInfoAlertAS = "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+noAlertsBrazil = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
+noAlertsCity = "✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
+locationOutsideBrazil = "❌ A localização indica uma região fora do Brasil."
+unableCheckAlertsLocation = "❌ Não foi possível verificar a região 😔."
+invalidZipcode = "❌ CEP inválido/não existe!\nExemplo:\n`{textArgs} 29075-910`"
+alertsMapMessage = "⏳ Buscando imagem do mapa de alertas..."
