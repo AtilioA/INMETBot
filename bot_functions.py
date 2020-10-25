@@ -80,15 +80,20 @@ def cmd_vpr(update, context):
         APIBaseURL = "https://apisat.inmet.gov.br/"
         regiao = "BR"
 
+        # Get current time
         utcNow = arrow.utcnow()
         dayNow = utcNow.format("YYYY-MM-DD")
         minutesNow = utcNow.format("mm")
+
+        # Get round hours
         floorMinutes = int(minutesNow) // 10 * 10
         floorDate = utcNow.replace(minute=floorMinutes)
 
+        # Create headers for requests
         headers = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
         }
+
         # We do this because retrieving hours from the API takes several seconds, so it is faster to guess endpoints (only three are possible)
         requestURLS = []
         for i in range(1, 4):
@@ -97,10 +102,11 @@ def cmd_vpr(update, context):
                 f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}/{tryDate.format('HH:mm')}"
             )
 
-        # Get the most recent request that was successful
+        # Request all URLs, filter the most recent one that was successful
         response = list(
             filter(lambda x: x.status_code == 200, fgrequests.build(requestURLS))
         )
+        # Get json from the response
         data = response[0].json()
 
         context.bot.send_chat_action(
@@ -108,6 +114,7 @@ def cmd_vpr(update, context):
             action=telegram.ChatAction.UPLOAD_PHOTO,
         )
 
+        # Load image from base64 to memory
         vprImage = bot_utils.loadB64ImageToMemory(data["base64"])
 
         # Send image from memory
@@ -118,23 +125,27 @@ def cmd_vpr(update, context):
             caption="Última imagem disponível",
             timeout=10000,
         )
+    # If no request was successful
     except IndexError:
         try:
+            # Request all images from today
             response = requests.get(
                 f"{APIBaseURL}GOES/{regiao}/VP/{dayNow}",
                 headers=headers,
                 allow_redirects=False,
             )
-            if response.status_code == 200:
 
-                # Get latest image
+            if response.status_code == 200:
+                # Get only the latest image
                 data = response.json()[0]
                 functionsLogger.info("Successful GET request to API VPR endpoint!")
+
                 context.bot.send_chat_action(
                     chat_id=update.effective_message.chat_id,
                     action=telegram.ChatAction.UPLOAD_PHOTO,
                 )
 
+                # Load image from base64 to memory
                 vprImage = bot_utils.loadB64ImageToMemory(data["base64"])
 
                 # Send image from memory
@@ -145,6 +156,7 @@ def cmd_vpr(update, context):
                     caption="Última imagem disponível",
                     timeout=10000,
                 )
+        # If all else fails
         except IndexError:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -355,38 +367,28 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
 
     warned = False
     alertMessage = ""
-    alertCounter = 1
+    alertCounter = 0
 
     if alerts:
         for alert in alerts:
             alertObj = models.Alert(alertDict=alert)
-            warned = True
-            if not city:
-                alertMessage += alertObj.get_alert_message(brazil=True)
-                if alertCounter >= MAX_ALERTS_PER_MESSAGE:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        reply_to_message_id=update.message.message_id,
-                        text=alertMessage,
-                        parse_mode="markdown",
-                        disable_web_page_preview=True,
-                    )
-                    alertMessage = ""
-                    alertCounter = 1
-                alertCounter += 1
-            else:
-                alertMessage += alertObj.get_alert_message(location=city)
-                if alertCounter >= 6:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        reply_to_message_id=update.message.message_id,
-                        text=alertMessage,
-                        parse_mode="markdown",
-                        disable_web_page_preview=True,
-                    )
-                    alertMessage = ""
-                    alertCounter = 1
-                alertCounter += 1
+            alertMessage += alertObj.get_alert_message(
+                location=city, brazil=not (bool(city))
+            )
+            alertCounter += 1
+
+            if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    reply_to_message_id=update.message.message_id,
+                    text=alertMessage,
+                    parse_mode="markdown",
+                    disable_web_page_preview=True,
+                )
+                alertMessage = ""
+                alertCounter = 0
+        warned = True
+
         # "Footer" message after all alerts
         alertMessage += "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
     elif not city:
@@ -468,14 +470,17 @@ def alerts_location(update, context):
         Send message with current alerts, if any.
     """
 
+    # Parse location from message
     location = update.message
     if location:
         latitude = location["location"]["latitude"]
         longitude = location["location"]["longitude"]
 
+    # Create headers for request
     headers = {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
     }
+    # Request to location API
     response = requests.get(
         f"https://api.3geonames.org/{latitude},{longitude}.json",
         headers=headers,
@@ -484,6 +489,7 @@ def alerts_location(update, context):
     if response.status_code == 200:
         functionsLogger.info("Successful GET request to reverse geocoding API!")
 
+        # Get data from response
         responseData = response.json()
         functionsLogger.debug(f"reverseGeocode json: {responseData}")
         state = responseData["nearest"]["state"]
@@ -493,8 +499,7 @@ def alerts_location(update, context):
 
             # Include moderate alerts
             alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
-            check_and_send_alerts_warning(update, context, alerts, city)
-            return None
+            return check_and_send_alerts_warning(update, context, alerts, city)
         else:
             alertMessage = "❌ A localização indica uma região fora do Brasil."
     else:
