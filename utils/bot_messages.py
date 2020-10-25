@@ -61,7 +61,8 @@ Não filiado ao INMET
 """
 
 instructions = "Instruções de uso: clique em /help ou /ajuda."
-acumuladaWarn = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *1* como valor.\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
+acumuladaWarn = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *{interval}* (valor mais próximo de {inputInterval}).\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
+acumuladaWarnMissing = "❌ Não foi possível identificar o intervalo de dias! Portanto, utilizarei *{interval}* como valor.\nOs intervalos de dias permitidos são: 1, 3, 5, 10, 15, 30 e 90 dias.\nExemplo:\n`/acumulada 3`"
 alertsMapMessage = "⏳ Buscando imagem do mapa de alertas..."
 sorrizoChegou = "É O *SORRIZO RONALDO* 😁 QUE CHEGOU..."
 sorrizoQueen = "👊👊👏 *SORRIZ*.."

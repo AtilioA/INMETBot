@@ -33,7 +33,7 @@ def log_command_decorator(logger):
             else:
                 user = f"'{update.message.from_user.name}'"
 
-            debugMessage = f"{update.message.text} from {user} ({update.message.chat.type})"
+            debugMessage = f"\"'{update.message.text}' from {user} ({update.message.chat.type})\""
 
             logger.debug(debugMessage)
 
