@@ -30,6 +30,10 @@ class BotDatabase:
 
     def __init__(self):
         try:
+            if not MONGO_URI:
+                raise pymongo.errors.ConfigurationError(
+                    f"Connection string is {MONGO_URI}"
+                )
             # throw ServerSelectionTimeoutError if serverTimeout is exceeded
             serverTimeout = 10000
             self.client = pymongo.MongoClient(
@@ -45,6 +49,12 @@ class BotDatabase:
             modelsLogger.error(
                 f"Failed to connect to the INMETBot database: {mongoClientErr}"
             )
+            exit(-1)
+        except pymongo.errors.ConfigurationError as mongoClientErr:
+            modelsLogger.error(
+                f"Failed to connect to the INMETBot database: {mongoClientErr}"
+            )
+            exit(-1)
 
 
 INMETBotDB = BotDatabase()
@@ -157,7 +167,9 @@ class Chat(ABC):
                     INMETBotDB.subscribedChatsCollection.update_one(
                         {"chatID": self.id}, {"$pull": {"CEPs": cep}}
                     )
-                    unsubscribeMessage = f"🔕 Desinscrevi o CEP {cep} ({viacep.get_cep_city(cep)})."
+                    unsubscribeMessage = (
+                        f"🔕 Desinscrevi o CEP {cep} ({viacep.get_cep_city(cep)})."
+                    )
                     modelsLogger.info(f"CEP {cep} has been unsubscribed.")
                     return "CHAT_EXISTS_CEP_UNSUBSCRIBED"
                 else:  # Chat is subscribed, CEP is not subscribed
@@ -391,9 +403,7 @@ class GroupChat(Chat):
         if self.subscribed:
             return callback_func()
         else:
-            return (
-                "❌ O grupo não está inscrito nos alertas. Inscreva-o com /inscrever."
-            )
+            return "❌ O grupo não está inscrito nos alertas. Inscreva-o com /inscrever."
 
 
 class Alert:

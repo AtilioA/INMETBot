@@ -42,7 +42,7 @@ schedule.every(ROUTINES_INTERVAL).minutes.do(
     ping, URL="https://inmetbot.herokuapp.com/"
 )
 schedule.every(ROUTINES_INTERVAL).minutes.do(
-  ping, URL=('https://chooseipsum.herokuapp.com/');
+    ping, URL="https://chooseipsum.herokuapp.com/"
 )
 for i in range(12, 24):
     schedule.every().day.at(f"{i}:00").do(
