@@ -243,10 +243,11 @@ def cmd_acumulada(update, context):
 
     try:
         functionsLogger.debug("Getting acumulada images...")
+        acumuladaWarnMessage = ""
 
         # Parse input
         try:
-            interval = int(context.args[0])
+            inputInterval = int(context.args[0])
         except IndexError:
             functionsLogger.warning(
                 f'No input in cmd_acumulada. Message text: "{update.message.text}"'
@@ -254,15 +255,17 @@ def cmd_acumulada(update, context):
             acumuladaWarnMessage = context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 reply_to_message_id=update.message.message_id,
-                text=bot_messages.acumuladaWarn,
+                text=bot_messages.acumuladaWarnMissing.format(interval=1),
                 parse_mode="markdown",
             )
-            interval = 1  # Use 1 day as default
+            inputInterval = 1  # Use 1 day as default
 
+        # Send uploading photo action
         context.bot.send_chat_action(
             chat_id=update.effective_message.chat_id,
             action=telegram.ChatAction.UPLOAD_PHOTO,
         )
+
         # Request image from INMET's API
         brazilNow = arrow.utcnow().to("Brazil/East").shift(days=-1)
         dayNow = brazilNow.format("YYYY-MM-DD")
@@ -275,18 +278,39 @@ def cmd_acumulada(update, context):
             f"{APIBaseURL}{dayNow}", headers=headers, allow_redirects=False
         )
         if response.status_code == 200:
-            functionsLogger.info("Successful GET request to API VPR endpoint!")
+            functionsLogger.info("Successful GET request to INMET's APIPREC endpoint!")
+
+            # Get data from response
             data = response.json()
 
-            intervals = [3, 5, 10, 15, 30, 90]
-            if interval in intervals:
+            # Adjust input to available intervals
+            availableIntervals = [1, 3, 5, 10, 15, 30, 90]
+            caption = ""
+            interval = inputInterval
+            if interval in availableIntervals:
                 caption = f"Precipitação acumulada nos últimos {interval} dias"
+                indexInterval = availableIntervals.index(interval)
             else:
-                interval = 1
+                # Get closest value to input if it isn't in the interval
+                absolute_diff = lambda listValue: abs(listValue - interval)
+                interval = min(availableIntervals, key=absolute_diff)
+
+                # Warn user about input change
+                acumuladaWarnMessage = context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    reply_to_message_id=update.message.message_id,
+                    text=bot_messages.acumuladaWarn.format(
+                        interval=interval, inputInterval=inputInterval
+                    ),
+                    parse_mode="markdown",
+                )
+            if interval == 1:
                 caption = "Precipitação acumulada nas últimas 24 horas"
 
-            data = data[intervals.index(interval)]
+            # Get correct image dictionary from list inside json
+            data = data[availableIntervals.index(interval)]
 
+            # Load image from base64 string to memory
             acumuladaImage = bot_utils.loadB64ImageToMemory(data["base64"])
 
             # Send image from memory
@@ -297,14 +321,16 @@ def cmd_acumulada(update, context):
                 caption=caption,
                 timeout=10000,
             )
+        # If request has failed
         else:
-            functionsLogger.error("Failed GET request to API VPR endpoint.")
+            functionsLogger.error("Failed GET request to INMET's APIPREC endpoint.")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 reply_to_message_id=update.message.message_id,
                 text="❌ Não foi possível obter a imagem!",
                 parse_mode="markdown",
             )
+    # If all else fails
     except ValueError:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -426,7 +452,7 @@ def cmd_alerts_CEP(update, context):
     except (
         pycep.excecoes.ExcecaoPyCEPCorreios,
         KeyError,
-        Exception
+        Exception,
     ) as cepError:  # Invalid zip code
         functionsLogger.warning(
             f'{cepError} on cmd_alerts_CEP. Message text: "{update.message.text}"'
