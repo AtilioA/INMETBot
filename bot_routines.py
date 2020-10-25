@@ -83,7 +83,7 @@ def notify_chats_routine():
                 )
                 if alerts:
                     # Any alerts here are to be sent to the chat,
-                    # since they affect a zipcode and the chat hasn't been notified yet
+                    # since they affect a zip code and the chat hasn't been notified yet
                     alertMessage = ""
                     routinesLogger.info(f"-- Existing alert for {city}. --")
                     for alert in alerts:
