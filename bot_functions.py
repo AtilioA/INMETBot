@@ -725,6 +725,11 @@ def cmd_forecast(update, context):
 def cmd_sorrizoronaldo(update, context):
     """Send default Sorrizo Ronaldo video."""
 
+    # Send video to replied message if it exists
+    replyID = None
+    if update.message.reply_to_message:
+        replyID = update.message.reply_to_message.message_id
+
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
@@ -734,6 +739,7 @@ def cmd_sorrizoronaldo(update, context):
     context.bot.send_video(
         chat_id=update.effective_chat.id,
         video="BAACAgEAAxkBAAPmXkSUcBDsVM300QABV4Oerb9PcUx3AAL8AAODXihGe5y1jndyb80YBA",
+        reply_to_message_id=replyID,
     )
 
 
@@ -742,6 +748,11 @@ def cmd_sorrizoronaldo(update, context):
 @bot_utils.send_upload_video_action
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """Send "We Will Rock You" Sorrizo Ronaldo video variation."""
+
+    # Send video to replied message if it exists
+    replyID = None
+    if update.message.reply_to_message:
+        replyID = update.message.reply_to_message.message_id
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -752,6 +763,7 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
     context.bot.send_video(
         chat_id=update.effective_chat.id,
         video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA",
+        reply_to_message_id=replyID,
     )
 
 

@@ -12,7 +12,8 @@ routinesLogger.setLevel(logging.DEBUG)
 
 
 def ping(URL):
-    return requests.get(URL)
+    requests.get(URL)
+    routinesLogger.info("Pinged {URL}.")
 
 
 def delete_past_alerts_routine():
