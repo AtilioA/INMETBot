@@ -89,14 +89,20 @@ def notify_chats_routine():
                     routinesLogger.info(f"-- Existing alert for {city}. --")
                     for alert in alerts:
                         if alertCounter >= MAX_ALERTS_PER_MESSAGE:
-                            updater.bot.send_message(
-                                chat_id=chat["chatID"],
-                                text=alertMessage,
-                                parse_mode="markdown",
-                                disable_web_page_preview=True,
-                            )
-                            alertMessage = ""
-                            alertCounter = 1
+                            try:
+                                updater.bot.send_message(
+                                    chat_id=chat["chatID"],
+                                    text=alertMessage,
+                                    parse_mode="markdown",
+                                    disable_web_page_preview=True,
+                                )
+                            except:
+                                routinesLogger.error(
+                                    f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']})."
+                                )
+
+                                alertMessage = ""
+                                alertCounter = 1
                         alertObj = models.Alert(alertDict=alert)
                         alertMessage += alertObj.get_alert_message(city)
                         routinesLogger.info(
@@ -121,7 +127,7 @@ def notify_chats_routine():
                             parse_mode="markdown",
                             disable_web_page_preview=True,
                         )
-                    except TelegramError:
+                    except:
                         routinesLogger.error(
                             f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']}). Removendo chat do BD..."
                         )
