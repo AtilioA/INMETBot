@@ -726,6 +726,22 @@ def cmd_forecast(update, context):
         )
 
 
+@bot_utils.log_command
+@bot_utils.send_typing_action
+def broadcast_message_subscribed_chats(update, context, message):
+    """Send message to all subscribed chats."""
+
+    chats = list(models.INMETBotDB.subscribedChatsCollection.find())
+    pprint.pprint(chats)
+    for document in chats:
+        time.sleep(2)
+        context.bot.send_message(
+            chat_id=document['chatID'],
+            text=message,
+            parse_mode="markdown",
+        )
+
+
 @run_async
 @bot_utils.log_command
 @bot_utils.send_upload_video_action
