@@ -6,21 +6,27 @@ import requests
 def get_cep_IBGE(CEPString):
     """Lookup CEP's IBGE code."""
 
-    lookup = cep_lookup(CEPString)
-    if lookup:
-        return lookup["ibge"]
+    if CEPString:
+        lookup = cep_lookup(CEPString)
+        if lookup:
+            return lookup["ibge"]
+        else:
+            raise KeyError
     else:
-        raise KeyError
+        return None
 
 
 def get_cep_city(CEPString):
     """Lookup CEP's city."""
 
-    lookup = cep_lookup(CEPString)
-    if lookup:
-        return lookup["localidade"]
+    if CEPString:
+        lookup = cep_lookup(CEPString)
+        if lookup:
+            return lookup["localidade"]
+        else:
+            raise KeyError
     else:
-        raise KeyError
+        return None
 
 
 def cep_lookup(CEPString):
@@ -41,10 +47,16 @@ def viacep_request(CEPString):
 def cepReplace(CEPString):
     """Remove - and space from string."""
 
-    return CEPString.replace("-", "").replace(" ", "")
+    if CEPString:
+        return CEPString.replace("-", "").replace(" ", "")
+    else:
+        return None
 
 
 def matchCepRegex(CEPString):
     """Try to match regex pattern to string."""
 
-    return re.match("[0-9]{8}", cepReplace(CEPString))
+    if CEPString:
+        return re.match("[0-9]{8}", cepReplace(CEPString))
+    else:
+        return None

@@ -195,7 +195,7 @@ def parse_CEP(update, context, cepRequired=True):
         cep = (
             context.args[0].strip().replace("-", "")
         )  # Get string after "/alertas_CEP"
-    except IndexError:  # No number after /command
+    except (TypeError, IndexError):  # No number after /command
         utilsLogger.warning(f'No input in parse_CEP. Message text: "{text}"')
         message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
     else:

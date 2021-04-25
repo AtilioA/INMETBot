@@ -460,8 +460,15 @@ def cmd_alerts_CEP(update, context):
         KeyError,
         Exception,
     ) as cepError:  # Invalid zip code
+        message = f"❌ CEP inválido/não existe!\nExemplo:\n`{update.message.text.split(' ')[0]} 29075-910`"
         functionsLogger.warning(
             f'{cepError} on cmd_alerts_CEP. Message text: "{update.message.text}"'
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            reply_to_message_id=update.message.message_id,
+            text=message,
+            parse_mode="markdown",
         )
 
 
@@ -589,13 +596,13 @@ def cmd_chat_unsubscribe_alerts(update, context):
     textArgs = update.message.text.split(" ")
 
     try:
-        cep = textArgs[1]
-    except:
-        cep = None
-
+        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
+    except Exception:
+        unsubscribeMessage = bot_messages.invalidZipCode.format(textArgs=textArgs[0])
+    else:
     chat = models.create_chat_obj(update)
     unsubscribeResult = chat.unsubscribe_chat(cep)
-    unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, cep=cep)
+        unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, cep)
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
