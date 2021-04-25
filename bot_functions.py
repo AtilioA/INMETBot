@@ -448,6 +448,8 @@ def cmd_alerts_CEP(update, context):
 
     functionsLogger.debug("Getting alerts by CEP (zip code)...")
 
+    textArgs = update.message.text.split(" ")
+
     try:
         cep = bot_utils.parse_CEP(update, context)
         city = viacep.get_cep_city(cep)
@@ -460,7 +462,7 @@ def cmd_alerts_CEP(update, context):
         KeyError,
         Exception,
     ) as cepError:  # Invalid zip code
-        message = f"❌ CEP inválido/não existe!\nExemplo:\n`{update.message.text.split(' ')[0]} 29075-910`"
+        message = bot_messages.invalidZipCode.format(textArgs=textArgs[0])
         functionsLogger.warning(
             f'{cepError} on cmd_alerts_CEP. Message text: "{update.message.text}"'
         )
@@ -600,8 +602,8 @@ def cmd_chat_unsubscribe_alerts(update, context):
     except Exception:
         unsubscribeMessage = bot_messages.invalidZipCode.format(textArgs=textArgs[0])
     else:
-    chat = models.create_chat_obj(update)
-    unsubscribeResult = chat.unsubscribe_chat(cep)
+        chat = models.create_chat_obj(update)
+        unsubscribeResult = chat.unsubscribe_chat(cep)
         unsubscribeMessage = chat.get_unsubscribe_message(unsubscribeResult, cep)
 
     context.bot.send_message(
@@ -686,6 +688,7 @@ def cmd_forecast(update, context):
     """Fetch and send weather forecast for the next 3 days for given CEP (zip code)."""
 
     functionsLogger.debug("Getting weather forecast by CEP (zip code)...")
+    textArgs = update.message.text.split(" ")
 
     try:
         cep = bot_utils.parse_CEP(update, context)
@@ -723,6 +726,13 @@ def cmd_forecast(update, context):
     ) as cepError:  # Invalid zip code
         functionsLogger.warning(
             f'{cepError} on cmd_forecast. Message text: "{update.message.text}"'
+        )
+        message = bot_messages.invalidZipCode.format(textArgs=textArgs[0])
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            reply_to_message_id=update.message.message_id,
+            text=message,
+            parse_mode="markdown",
         )
 
 
