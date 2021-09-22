@@ -1,3 +1,4 @@
+import time
 import pprint
 import os
 import logging
@@ -673,12 +674,15 @@ def cmd_chat_toggle_activated(update, context):
     chat = models.create_chat_obj(update=update)
     toggleMessage = chat.toggle_subscription_callback(chat.toggle_activated)
 
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        reply_to_message_id=update.message.message_id,
-        text=toggleMessage,
-        parse_mode="markdown",
-    )
+    try:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            reply_to_message_id=update.message.message_id,
+            text=toggleMessage,
+            parse_mode="markdown",
+        )
+    except:
+        pass
 
 
 @run_async

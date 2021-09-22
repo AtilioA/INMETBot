@@ -122,7 +122,8 @@ def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
         If set to True, will ignore alerts of moderate severity. Defaults to True.
     """
 
-    return [models.Alert(alertXML) for alertXML in alertsXML]
+    if alertsXML:
+        return [models.Alert(alertXML) for alertXML in alertsXML]
 
 
 def parse_alerts_xml(ignoreModerate=True):
@@ -140,9 +141,12 @@ def parse_alerts_xml(ignoreModerate=True):
     """
 
     xmlURLs = get_alerts_xml(ignoreModerate)
-    xmls = [parse_alert_xml(xmlURL) for xmlURL in xmlURLs]
-    parsingLogger.debug("Done parsing XMLs.")
-    return xmls
+    if xmlURLs:
+        xmls = [parse_alert_xml(xmlURL) for xmlURL in xmlURLs]
+        parsingLogger.debug("Done parsing XMLs.")
+        return xmls
+    else:
+        return None
 
 
 def parse_alert_xml(xmlURL):

@@ -41,11 +41,12 @@ def parse_alerts_routine(ignoreModerate=False):
     """
 
     alertsXML = parse_alerts.parse_alerts_xml(ignoreModerate)
-    alerts = parse_alerts.instantiate_alerts_objects(alertsXML, ignoreModerate)
-    routinesLogger.info(f"New alerts found: {alerts}")
-    for alert in alerts:
-        alert.insert_alert()
-    routinesLogger.info("Finished parse_alerts_routine routine.")
+    if alertsXML:
+        alerts = parse_alerts.instantiate_alerts_objects(alertsXML, ignoreModerate)
+        routinesLogger.info(f"New alerts found: {alerts}")
+        for alert in alerts:
+            alert.insert_alert()
+        routinesLogger.info("Finished parse_alerts_routine routine.")
 
 
 def notify_chats_routine():
