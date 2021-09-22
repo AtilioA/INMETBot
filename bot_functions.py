@@ -423,7 +423,7 @@ def cmd_alerts_brazil(update, context):
     # Ignore moderate alerts
     alerts = list(
         models.INMETBotDB.alertsCollection.find(
-            {"severity": {"$ne": "Perigo Potencial"}}
+            {"severity": {"$ne": "Moderate"}}
         )
     )
 

@@ -423,7 +423,7 @@ class Alert:
     event : str
         The Alert event/header.
     severity : str
-        The Alert's severity ("Perigo Potencial", "Perigo", "Grande Perigo")
+        The Alert's severity ("Moderate", "Severe", "Very Severe"?)
     startDate : Arrow
         The date on which the Alert begins.
     endDate : Arrow
@@ -484,13 +484,14 @@ class Alert:
     def determine_severity_emoji(self):
         """Determine emoji for alert message and return it."""
 
+        print(self.severity)
         if isinstance(self.severity, str):
             emojiDict = {
-                "Perigo Potencial": "⚠️",  # Yellow alert
-                "Perigo": "🔶",  # Orange alert
-                "Grande Perigo": "🚨",  # Red alert
+                "Moderate": "⚠️",  # Yellow alert
+                "Severe": "🔶",  # Orange alert
+                "Very Severe": "🚨",  # Red alert
             }
-            return emojiDict.get(self.severity, None)
+            return emojiDict.get(self.severity.title(), None)
         else:
             logging.error(f"severity is not string: {self.severity}")
             return None

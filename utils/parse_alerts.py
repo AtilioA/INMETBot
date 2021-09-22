@@ -88,7 +88,7 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
     severityMatch = re.search(severityPattern, str(alertXML))
     if severityMatch:
         severity = severityMatch.group(1)
-        if severity == "Perigo Potencial" and ignoreModerate:
+        if severity == "Moderate" and ignoreModerate:
             return False
     else:
         parsingLogger.error("No severity match.")
