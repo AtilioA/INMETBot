@@ -69,7 +69,7 @@ toggle_activated_handler = CommandHandler(
 )
 
 sorrizoronaldo_handler = CommandHandler(
-    ("sorrizo", "sorrizoronaldo", "fodase"),
+    ("sorrizo", "sorrizoronaldo", "fodase", "earte", "ead"),
     bot_functions.cmd_sorrizoronaldo,
     filters=~Filters.update.edited_message,
 )
