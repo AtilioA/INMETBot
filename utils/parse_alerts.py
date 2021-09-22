@@ -16,6 +16,10 @@ parsingLogger = logging.getLogger(__name__)
 parsingLogger.setLevel(logging.DEBUG)
 
 
+HEADERS = {
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
+}
+
 def take_screenshot_alerts_map():
     """Take screenshot of the alerts map and store it in the tmp folder."""
 
@@ -99,18 +103,18 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
         parsingLogger.error("No date match.")
 
     guidTag = alertXML.find("guid").text
-    guidPattern = r"(?<!\/\d\d\/)urn:oid:(.*?)\.xml"
-    guidMatch = re.search(guidPattern, str(guidTag))
-    if guidMatch:
-        alertID = guidMatch.group(1)
-        if models.INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
-            parsingLogger.debug("Alert already in database.")
-            return False
-        else:
-            parsingLogger.debug("New alert.")
-            return True
+    parsedXML = parse_alert_xml(guidTag)
+    if parsedXML:
+        alertID = parsedXML.identifier.text.replace("urn:oid:", "")
+        if alertID:
+            if models.INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
+                parsingLogger.debug("Alert already in database.")
+                return False
+            else:
+                parsingLogger.debug("New alert.")
+                return True
     else:
-        parsingLogger.error("No guid match.")
+        parsingLogger.error("No parsedXML.")
 
 
 def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
@@ -163,11 +167,7 @@ def parse_alert_xml(xmlURL):
         parsed XML or None if GET request to XML URL fails.
     """
 
-    headers = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
-    }
-
-    req = requests.get(xmlURL, headers=headers, allow_redirects=False)
+    req = requests.get(xmlURL, headers=HEADERS, allow_redirects=False)
     if req.status_code == 200:
         parsingLogger.info("Successful GET request to alert XML!")
 
@@ -194,12 +194,8 @@ def get_alerts_xml(ignoreModerate=True):
         List of all available XML URLs for alerts.
     """
 
-    headers = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
-    }
-
-    alertsURL = "https://alerts.inmet.gov.br/cap_12/rss/alert-as.rss"
-    req = requests.get(alertsURL, headers=headers, allow_redirects=False)
+    ALERTS_URL = "https://apiprevmet3.inmet.gov.br/avisos/rss"
+    req = requests.get(ALERTS_URL, headers=HEADERS, allow_redirects=False)
     if req.status_code == 200:
         parsingLogger.info("Successful GET request to alerts RSS!")
 
@@ -216,7 +212,7 @@ def get_alerts_xml(ignoreModerate=True):
 
         return itemsXMLURLs
     else:
-        parsingLogger.error("Failed GET request to alerts RSS.")
+        parsingLogger.error(f"Failed GET request to alerts RSS: {req}")
         return None
 
 
