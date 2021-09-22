@@ -15,7 +15,7 @@ from bot_routines import (
     ping,
 )
 
-ROUTINES_INTERVAL = 20
+ROUTINES_INTERVAL = 15
 
 # Enable logging
 logging.basicConfig(
