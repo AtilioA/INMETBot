@@ -25,8 +25,8 @@ Para mais detalhes, clique em /help.
 
 —
 Não filiado ao INMET
-✈️ Criado por @AtilioA
-💰 Doações: PicPay @atilioa
+⚒ Criado por @AtilioA
+💰 Doações: PicPay [@atilioa](https://picpay.me/atilioa)
 """
 
 helpMessage = """🌥 @INMETBot
@@ -60,8 +60,8 @@ https://github.com/AtilioA/INMETBot
 
 —
 Não filiado ao INMET
-✈️ Criado por @AtilioA
-💰 Doações: PicPay @atilioa
+⚒ Criado por @AtilioA
+💰 Doações: PicPay [@atilioa](https://picpay.me/atilioa)
 """
 
 instructions = "Instruções de uso: clique em /help ou /ajuda."
