@@ -35,7 +35,7 @@ class BotDatabase:
                     f"Connection string is {MONGO_URI}"
                 )
             # throw ServerSelectionTimeoutError if serverTimeout is exceeded
-            serverTimeout = 10000
+            serverTimeout = 20000
             self.client = pymongo.MongoClient(
                 MONGO_URI, serverSelectionTimeoutMS=serverTimeout
             )
@@ -423,7 +423,7 @@ class Alert:
     event : str
         The Alert event/header.
     severity : str
-        The Alert's severity ("Moderate", "Severe", "Very Severe"?)
+        The Alert's severity ("Moderate", "Severe", "Extreme")
     startDate : Arrow
         The date on which the Alert begins.
     endDate : Arrow
@@ -489,7 +489,7 @@ class Alert:
             emojiDict = {
                 "Moderate": "⚠️",  # Yellow alert
                 "Severe": "🔶",  # Orange alert
-                "Very Severe": "🚨",  # Red alert
+                "Extreme": "🚨",  # Red alert
             }
             return emojiDict.get(self.severity.title(), None)
         else:
