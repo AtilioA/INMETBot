@@ -22,6 +22,34 @@ MIN_VPR_IMAGES = 2
 DEFAULT_VPR_IMAGES = 9  # 2 hours of images
 MAX_VPR_IMAGES = 48  # 12 hours of images
 
+IGNORED_USERS = [1528688653, 1149342586]
+
+
+# Decorator to ignore a user
+def ignore_users_decorator(logger):
+    def decorator(func):
+        @wraps(func)
+        def command_func(update, context, *args, **kwargs):
+            print(update.message.from_user)
+            if update.message.from_user.id in IGNORED_USERS:
+                return
+            else:
+                return func(update, context, *args, **kwargs)
+
+            debugMessage = f"Ignoring {update.message.from_user.id}"
+
+            logger.debug(debugMessage)
+
+            context.bot.send_message(
+                chat_id="-1001361751085", text=debugMessage,
+            )
+
+            return func(update, context, *args, **kwargs)
+
+        return command_func
+
+    return decorator
+
 
 # Decorator to log user interaction
 def log_command_decorator(logger):
@@ -66,6 +94,7 @@ def send_action(action):
 
 
 log_command = log_command_decorator(utilsLogger)
+ignore_users = ignore_users_decorator(utilsLogger)
 send_typing_action = send_action(telegram.ChatAction.TYPING)
 send_upload_photo_action = send_action(telegram.ChatAction.UPLOAD_PHOTO)
 send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)

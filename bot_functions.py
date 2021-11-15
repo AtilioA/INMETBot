@@ -32,6 +32,7 @@ def send_instructions_message(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 def catch_all_if_private(update, context):
     """Reply to any message not handled (if not sent to a group/channel)."""
 
@@ -45,6 +46,7 @@ def catch_all_if_private(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_typing_action
 def cmd_help(update, context):
@@ -60,6 +62,7 @@ def cmd_help(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_typing_action
 def cmd_start(update, context):
@@ -74,6 +77,7 @@ def cmd_start(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
@@ -126,7 +130,7 @@ def cmd_vpr(update, context):
             reply_to_message_id=update.message.message_id,
             photo=vprImage,
             caption=bot_messages.lastAvailableImageCaption,
-            timeout=10000,
+            timeout=20000,
         )
     # If no request was successful
     except IndexError:
@@ -157,7 +161,7 @@ def cmd_vpr(update, context):
                     reply_to_message_id=update.message.message_id,
                     photo=vprImage,
                     caption=bot_messages.lastAvailableImageCaption,
-                    timeout=10000,
+                    timeout=20000,
                 )
         # If all else fails
         except IndexError:
@@ -178,7 +182,7 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
         reply_to_message_id=update.message.message_id,
         caption=caption,
         animation=open(vprVideoPath, "rb"),
-        timeout=15000,
+        timeout=20000,
     )
     context.bot.delete_message(
         chat_id=waitMessage.chat.id, message_id=waitMessage.message_id
@@ -188,6 +192,7 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_typing_action
 def cmd_vpr_gif(update, context):
@@ -252,6 +257,7 @@ def cmd_vpr_gif(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_upload_photo_action
 def cmd_acumulada(update, context):
@@ -336,7 +342,7 @@ def cmd_acumulada(update, context):
                 reply_to_message_id=update.message.message_id,
                 photo=acumuladaImage,
                 caption=caption,
-                timeout=10000,
+                timeout=20000,
             )
         # If request has failed
         else:
@@ -413,6 +419,7 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_typing_action
 def cmd_alerts_brazil(update, context):
@@ -442,6 +449,7 @@ def cmd_alerts_brazil(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_typing_action
 def cmd_alerts_CEP(update, context):
@@ -476,6 +484,7 @@ def cmd_alerts_CEP(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_typing_action
 def alerts_location(update, context):
@@ -529,6 +538,7 @@ def alerts_location(update, context):
 
 
 @bot_utils.log_command
+@bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_alerts_map(update, context):
     """Take screenshot of the alerts map with Selenium and send to the user."""
@@ -546,6 +556,7 @@ def cmd_alerts_map(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_upload_photo_action
 def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
@@ -556,7 +567,7 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
         caption="Fonte: http://www.inmet.gov.br/portal/alert-as/",
         reply_to_message_id=update.message.message_id,
         photo=open(alertsMapPath, "rb"),
-        timeout=15000,
+        timeout=20000,
     )
 
     context.bot.delete_message(
@@ -568,6 +579,7 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
 
 
 @bot_utils.log_command
+@bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_subscribe_alerts(update, context):
     """Subscribe chat and/or CEP."""
@@ -592,6 +604,7 @@ def cmd_chat_subscribe_alerts(update, context):
 
 
 @bot_utils.log_command
+@bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_unsubscribe_alerts(update, context):
     """Unsubscribe chat and/or CEP."""
@@ -616,6 +629,7 @@ def cmd_chat_unsubscribe_alerts(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.log_command
 @bot_utils.send_typing_action
 def cmd_chat_subscription_status(update, context):
@@ -635,6 +649,7 @@ def cmd_chat_subscription_status(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_deactivate(update, context):
     """ Set chat's activated status to False. """
@@ -651,6 +666,7 @@ def cmd_chat_deactivate(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_activate(update, context):
     """ Set chat's activated status to True. """
@@ -667,6 +683,7 @@ def cmd_chat_activate(update, context):
 
 
 @run_async
+@bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_toggle_activated(update, context):
     """ Toggle chat's activated status """
@@ -687,6 +704,7 @@ def cmd_chat_toggle_activated(update, context):
 
 @run_async
 @bot_utils.log_command
+@bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_forecast(update, context):
     """Fetch and send weather forecast for the next 3 days for given CEP (zip code)."""
