@@ -1,43 +1,46 @@
-################################################################################
-# This requirements file has been automatically generated from `Pipfile` with
-# `pipenv-to-requirements`
-#
-#
-# This has been done to maintain backward compatibility with tools and services
-# that do not support `Pipfile` yet.
-#
-# Do NOT edit it directly, use `pipenv install [-d]` to modify `Pipfile` and
-# `Pipfile.lock` and then regenerate `requirements*.txt`.
-################################################################################
-
-arrow
+appdirs==1.4.4
+arrow==1.0.3
+attrs==20.3.0
 beautifulsoup4==4.8.2
-bottle
+bottle==0.12.19
 bs4==0.0.1
+cached-property==1.5.2
 certifi==2019.11.28
 cffi==1.14.0
 chardet==3.0.4
 cheroot==8.3.0
 cryptography==3.3.2
 decorator==4.4.1
-dnspython
-fgrequests
+defusedxml==0.7.1
+Deprecated==1.2.12
+dnspython==2.1.0
+fgrequests==0.1.1
 future==0.18.2
 idna==2.8
-imageio
-imageio-ffmpeg
+imageio==2.9.0
+imageio-ffmpeg==0.4.3
+isodate==0.6.0
 jaraco.functools==3.0.0
-markdown==3.2
+lxml==4.6.3
+Markdown==3.2
 more-itertools==8.2.0
-pillow
+numpy==1.20.2
+Pillow==8.1.1
 pycep-correios==4.0.4
 pycparser==2.19
 pymongo==3.11.0
-python-dotenv
+python-dateutil==2.8.1
+python-dotenv==0.17.0
 python-telegram-bot==12.4.2
+pytz==2021.1
 requests==2.22.0
-schedule
-selenium
+requests-file==1.5.1
+requests-toolbelt==0.9.1
+schedule==1.1.0
+selenium==3.141.0
 six==1.14.0
 soupsieve==1.9.5
 tornado==6.0.3
+urllib3==1.25.8
+wrapt==1.12.1
+zeep==4.0.0
