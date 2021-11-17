@@ -1,14 +1,19 @@
+import sys
 import os
 import re
 import logging
+import uuid
+import time
+
 import requests
 import arrow
 from bs4 import BeautifulSoup
-import uuid
+from PIL import Image
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
 import models
-import sys
 
 sys.path.append(sys.path[0] + "/..")
 
@@ -20,12 +25,14 @@ HEADERS = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
 }
 
+ALERTS_MAP_URL = "http://alert-as.inmet.gov.br/cv/"
+
 def take_screenshot_alerts_map():
     """Take screenshot of the alerts map and store it in the tmp folder."""
 
     chrome_options = Options()
     chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--window-size=540x1080")
+    chrome_options.add_argument("--window-size=1280x720")
 
     if "ON_HEROKU" in os.environ:
         chrome_options.add_argument("--disable-dev-shm-usage")
@@ -36,16 +43,37 @@ def take_screenshot_alerts_map():
             executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=chrome_options
         )
     else:
-        chrome_driver = os.path.join(os.getcwd(), "chromedriver.exe")
-        driver = webdriver.Chrome(options=chrome_options, executable_path=chrome_driver)
+        driver = webdriver.Chrome(options=chrome_options, executable_path=os.environ.get("CHROMEDRIVER_PATH"))
 
-    driver.get("http://alert-as.inmet.gov.br/cv/")
+    driver.get(ALERTS_MAP_URL)
+
     parsingLogger.debug(f"Accessed alert-as map.")
 
     alertsMapPath = os.path.join("tmp", f"alerts_map_{uuid.uuid4().hex}.png")
-    driver.find_element_by_id("OpenLayers.Map_3_OpenLayers_ViewPort").screenshot(
+
+    # Wait for JavaScript to load
+    time.sleep(0.5)
+
+    alertsMapElement = driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/div[1]/div')
+    # print(alertsMapElement)
+    mapSize = alertsMapElement.size
+    mapLocation = alertsMapElement.location
+
+    alertsMapElement.screenshot(
         alertsMapPath
     )
+
+    # Crop map UI
+    im = Image.open(alertsMapPath) # uses PIL library to open image in memory
+
+    # Define crop points
+    left = 70
+    top = 0
+    right = mapSize['width'] - 25
+    bottom = mapSize['height'] - 50
+
+    im = im.crop((left, top, right, bottom))
+    im.save(alertsMapPath) # Save cropped image
 
     return alertsMapPath
 

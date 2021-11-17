@@ -30,7 +30,6 @@ def ignore_users_decorator(logger):
     def decorator(func):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
-            print(update.message.from_user)
             if update.message.from_user.id in IGNORED_USERS:
                 return
             else:
