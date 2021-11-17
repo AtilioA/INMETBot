@@ -53,7 +53,7 @@ def take_screenshot_alerts_map():
     alertsMapPath = os.path.join("tmp", f"alerts_map_{uuid.uuid4().hex}.png")
 
     # Wait for JavaScript to load
-    time.sleep(0.5)
+    time.sleep(1)
 
     alertsMapElement = driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/div[1]/div')
     # print(alertsMapElement)
