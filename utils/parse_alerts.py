@@ -32,12 +32,13 @@ def take_screenshot_alerts_map():
 
     chrome_options = Options()
     chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument("--window-size=1280x720")
+    # If chrome needs more memory
+    # chrome_options.add_argument("--disable-dev-shm-usage")
 
     if "ON_HEROKU" in os.environ:
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--no-sandbox")
-
         chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_PATH")
         driver = webdriver.Chrome(
             executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=chrome_options
@@ -46,9 +47,9 @@ def take_screenshot_alerts_map():
         driver = webdriver.Chrome(options=chrome_options, executable_path=os.environ.get("CHROMEDRIVER_PATH"))
 
     driver.get(ALERTS_MAP_URL)
-
     parsingLogger.debug(f"Accessed alert-as map.")
 
+    # Get filename for map screenshot
     alertsMapPath = os.path.join("tmp", f"alerts_map_{uuid.uuid4().hex}.png")
 
     # Wait for JavaScript to load
