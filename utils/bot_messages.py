@@ -77,9 +77,9 @@ waitMessageSearchGIF = "⏳ Buscando as últimas {nImages} imagens e criando GIF
 failedFetchImage = "❌ Não foi possível obter a imagem!"
 unavailableImage = "❌ Imagem indisponível."
 
-moreInfoAlertAS = "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
-noAlertsBrazil = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em http://www.inmet.gov.br/portal/alert-as/"
-noAlertsCity = "✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em http://www.inmet.gov.br/portal/alert-as/"
+moreInfoAlertAS = "\nMais informações em https://alertas2.inmet.gov.br/"
+noAlertsBrazil = "✅ Não há alertas graves para o Brasil no momento.\n\nVocê pode ver outros alertas menores em https://alertas2.inmet.gov.br/"
+noAlertsCity = "✅ Não há alertas para {city} no momento.\n\nVocê pode ver outros alertas em https://alertas2.inmet.gov.br/"
 locationOutsideBrazil = "❌ A localização indica uma região fora do Brasil."
 unableCheckAlertsLocation = "❌ Não foi possível verificar a região 😔."
 invalidZipCode = "❌ CEP inválido/não existe!\nExemplo:\n`{textArgs} 29075-910`"

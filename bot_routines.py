@@ -118,7 +118,7 @@ def notify_chats_routine():
 
                     # "Footer" message after all alerts
                     alertMessage += (
-                        "\nMais informações em http://www.inmet.gov.br/portal/alert-as/"
+                        "\nMais informações em https://alertas2.inmet.gov.br/"
                     )
 
                     try:

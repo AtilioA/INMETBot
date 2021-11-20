@@ -564,7 +564,7 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
 
     context.bot.send_photo(
         chat_id=update.effective_chat.id,
-        caption="Fonte: http://www.inmet.gov.br/portal/alert-as/",
+        caption="Fonte: https://alertas2.inmet.gov.br/",
         reply_to_message_id=update.message.message_id,
         photo=open(alertsMapPath, "rb"),
         timeout=20000,
