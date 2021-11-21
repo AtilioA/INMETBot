@@ -8,9 +8,9 @@ Olá! Este bot pode enviar imagens e informações úteis disponíveis pelo INME
 🕹 *COMANDOS DISPONÍVEIS*:
 */start* exibe esta mensagem de boas-vindas.
 */help* ou */ajuda* exibe a mensagem de ajuda.
-*/alertas* ou /alertas\_brasil exibe alertas graves em vigor no Brasil.
-`/alertas_CEP` exibe alertas graves em vigor para o CEP fornecido.
-- Exemplo: `/alertas_CEP 29075-910`.
+*/alertas* ou /alertas\_brasil por padrão exibe alertas graves (severos: 🔶 e extremos: 🚨) em vigor no Brasil.
+`/alertas_CEP` exibe todos os alertas em vigor para o CEP fornecido.
+- Exemplo: `/alertas_CEP 29075-910` ou mesmo `/alertas 29075-910`.
 \* Você também pode simplesmente enviar sua localização para checar alertas em sua cidade.
 */inscrever* inscreve o chat para ser avisado automaticamente quando alertas incluírem regiões cadastradas. Para isso, adicione CEPs como no exemplo: `/inscrever 29075-910`.
 */status* exibe o status de inscrição do chat nos alertas e lista CEPs inscritos.
@@ -40,9 +40,9 @@ Para utilizar o bot, envie alguns destes comandos:
 */help* ou */ajuda* exibe esta mensagem de ajuda.
 
 *⚠️ Alertas -*
-*/alertas* ou /alertas\_brasil exibe alertas *graves* (apenas severos e extremos) em vigor para o Brasil.
+*/alertas* ou /alertas\_brasil por padrão exibe alertas *graves* (apenas severos e extremos) em vigor para o Brasil.
 `/alertas_CEP` exibe todos os alertas, isto é, *moderados (⚠️), severos (🔶) e extremos (🚨)*, em vigor para o CEP fornecido.
-Exemplo: `/alertas_CEP 29075-910` exibe alertas *graves e moderados* para o CEP 29075-910.
+Exemplo: `/alertas_CEP 29075-910` exibe alertas *graves e moderados* para o CEP 29075-910. Também é possível usar `/alertas` seguido de um CEP: `/alertas 29075-910`.
   \* Você também pode simplesmente enviar sua localização para checar alertas em sua cidade a qualquer momento.
 */inscrever* inscreve você ou o seu grupo para ser avisado automaticamente quando alertas incluírem sua região. Para isso, adicione CEPs com `/inscrever 29075-910`, por exemplo.
 */desinscrever* desinscreve o chat e CEPs dos alertas.

@@ -126,7 +126,7 @@ def cmd_vpr(update, context):
 
         hourLastImage = arrow.get(vprData['hora'], "HH:mm").to("-03:00").format("HH:mm")
         hourLastImageCaption = f" ({hourLastImage})."
-        
+
         caption = bot_messages.lastAvailableImageCaption + hourLastImageCaption
 
         # Send image from memory
@@ -440,6 +440,14 @@ def cmd_alerts_brazil(update, context):
     """Fetch and send active high-risk alerts for Brazil."""
 
     functionsLogger.debug("Getting alerts for Brazil...")
+
+    try:
+        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
+        if cep:
+            return cmd_alerts_CEP(update, context)
+    except:
+        # No zip code provided
+        pass
 
     # Ignore moderate alerts
     alerts = list(
