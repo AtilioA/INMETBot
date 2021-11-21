@@ -114,7 +114,7 @@ def cmd_vpr(update, context):
             filter(lambda x: x.status_code == 200, fgrequests.build(requestURLS))
         )
         # Get json from the response
-        data = response[0].json()
+        vprData = response[0].json()
 
         context.bot.send_chat_action(
             chat_id=update.effective_message.chat_id,
@@ -122,14 +122,19 @@ def cmd_vpr(update, context):
         )
 
         # Load image from base64 to memory
-        vprImage = bot_utils.loadB64ImageToMemory(data["base64"])
+        vprImage = bot_utils.loadB64ImageToMemory(vprData["base64"])
+
+        hourLastImage = arrow.get(vprData['hora'], "HH:mm").to("-03:00").format("HH:mm")
+        hourLastImageCaption = f" ({hourLastImage})."
+        
+        caption = bot_messages.lastAvailableImageCaption + hourLastImageCaption
 
         # Send image from memory
         context.bot.send_photo(
             chat_id=update.effective_chat.id,
             reply_to_message_id=update.message.message_id,
             photo=vprImage,
-            caption=bot_messages.lastAvailableImageCaption,
+            caption=caption,
             timeout=20000,
         )
     # If no request was successful
@@ -173,10 +178,14 @@ def cmd_vpr(update, context):
 
 
 @bot_utils.send_upload_video_action
-def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
+def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage, gifTimeBoundariesDict):
     """Send the .mp4 file to the user and delete it."""
 
-    caption = f"Últimas {nImages} imagens"
+    timeBoundaries = ""
+    if gifTimeBoundariesDict:
+        timeBoundaries = f" (de {gifTimeBoundariesDict['firstImage']} até {gifTimeBoundariesDict['lastImage']})"
+
+    caption = f"Últimas {nImages} imagens" + timeBoundaries
     context.bot.send_animation(
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
@@ -221,7 +230,7 @@ def cmd_vpr_gif(update, context):
         response = requests.get(
             f"{APIBaseURL}/horas/GOES/{regiao}/VP/{dayNow}",
             headers=headers,
-            allow_redirects=False,
+            allow_redirects=True,
         )
         if response.status_code == 200:
             functionsLogger.info("Successful GET request to API VPR endpoint!")
@@ -236,15 +245,20 @@ def cmd_vpr_gif(update, context):
                 responseYesterday = requests.get(
                     f"{APIBaseURL}/horas/GOES/{regiao}/VP/{utcNow.shift(days=-1).format('YYYY-MM-DD')}",
                     headers=headers,
-                    allow_redirects=False,
+                    allow_redirects=True,
                 )
                 dataYesterday = responseYesterday.json()[:nImagesForYesterday]
 
-            gifFilename = bot_utils.get_vpr_gif(
+            vprResponse = bot_utils.get_vpr_images_data(
                 data, nImages, dayNow, nImagesForYesterday, dataYesterday
             )
+            gifTimeBoundariesDict = {
+                "firstImage": arrow.get(vprResponse[-1]['hora'], "HH:mm").to("-03:00").format("HH:mm"),
+                "lastImage": arrow.get(vprResponse[0]['hora'], "HH:mm").to("-03:00").format("HH:mm")
+            }
+            gifFilename = bot_utils.create_gif_vpr_data(vprResponse, nImages)
 
-            return send_vpr_video(update, context, gifFilename, nImages, waitMessage)
+            return send_vpr_video(update, context, gifFilename, nImages, waitMessage, gifTimeBoundariesDict)
         else:
             functionsLogger.error("Failed GET request to VPR API.")
             context.bot.send_message(

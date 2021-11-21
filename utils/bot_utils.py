@@ -114,7 +114,7 @@ def loadB64ImageToMemory(base64String):
     return bytesIOImage
 
 
-def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
+def get_vpr_images_data(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
     regiao = "BR"
     APIBaseURL = "https://apisat.inmet.gov.br"
 
@@ -136,8 +136,12 @@ def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=N
     responses = list(
         filter(lambda x: x.status_code == 200, fgrequests.build(URLsToBeRequested))
     )
-    data = [entry.json() for entry in responses]
+    responseData = [entry.json() for entry in responses]
 
+    return responseData
+
+
+def create_gif_vpr_data(data, nImages):
     readImages = []
     for entry in reversed(data[:nImages]):
         loadedImg = loadB64ImageToMemory(entry["base64"])
@@ -148,6 +152,13 @@ def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=N
 
     kargs = {"fps": 10, "macro_block_size": None}
     imageio.mimsave(f"{gifFilename}", readImages, "MP4", **kargs)
+
+    return gifFilename
+
+def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
+    vprResponse = get_vpr_images_data(data, nImages, dayNow, nImagesForYesterday, dataYesterday)
+
+    create_gif_vpr_data(vprResponse, nImages)
 
     return gifFilename
 
