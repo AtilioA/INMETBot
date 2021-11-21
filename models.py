@@ -199,9 +199,14 @@ class Chat(ABC):
                     cepMessage += f"{cep} (*{viacep.get_cep_city(cep)}*)\n"
             else:
                 cepMessage = "Não há CEPs inscritos."
-            status = ("SUBSCRIBED", cepMessage)
+
+            if self.activated:
+                status = ("SUBSCRIBED_ACTIVATED", cepMessage)
+            else:
+                status = ("SUBSCRIBED_DEACTIVATED", cepMessage)
         else:
-            cepMessage = "Não há CEPs inscritos."
+            # Unsubscribed chats can't haev zip codes anyways
+            cepMessage = ""
             status = ("NOT_SUBSCRIBED", cepMessage)
 
         return status
@@ -320,7 +325,8 @@ class PrivateChat(Chat):
         """Get subscription status message according to subscription status for a private chat."""
 
         subscriptionStatusDict = {
-            "SUBSCRIBED": "🔔 Você está inscrito nos alertas.\n\n",
+            "SUBSCRIBED_ACTIVATED": "🔔 Você está inscrito nos alertas.\n\n",
+            "SUBSCRIBED_DEACTIVATED": "🔇 Você está inscrito nos alertas, mas as notificações estão *desativadas*. Ative-as com /ativar.\n\n",
             "NOT_SUBSCRIBED": "🔕 Você não está inscrito nos alertas. ",
         }
 
@@ -392,7 +398,8 @@ class GroupChat(Chat):
         """Get subscription status message according to subscription status for a group chat."""
 
         subscriptionStatusDict = {
-            "SUBSCRIBED": "🔔 O grupo está inscrito nos alertas.\n\n",
+            "SUBSCRIBED_ACTIVATED": "🔔 O grupo está inscrito nos alertas.\n\n",
+            "SUBSCRIBED_DEACTIVATED": "🔇 O grupo está inscrito nos alertas, mas as notificações estão *desativadas*. Ative-as com /ativar.\n\n",
             "NOT_SUBSCRIBED": "🔕 O grupo não está inscrito nos alertas. ",
         }
 
@@ -484,7 +491,6 @@ class Alert:
     def determine_severity_emoji(self):
         """Determine emoji for alert message and return it."""
 
-        print(self.severity)
         if isinstance(self.severity, str):
             emojiDict = {
                 "Moderate": "⚠️",  # Yellow alert
