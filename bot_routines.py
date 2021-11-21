@@ -3,7 +3,7 @@ import requests
 import logging
 import models
 from telegram.error import TelegramError
-from utils import viacep, parse_alerts
+from utils import viacep, parse_alerts, bot_messages
 from bot_config import updater
 from bot_functions import MAX_ALERTS_PER_MESSAGE
 
@@ -118,7 +118,7 @@ def notify_chats_routine():
 
                     # "Footer" message after all alerts
                     alertMessage += (
-                        "\nMais informações em https://alertas2.inmet.gov.br/"
+                        f"\nMais informações em {bot_messages.ALERTAS_URL}."
                     )
 
                     try:

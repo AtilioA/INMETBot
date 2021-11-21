@@ -405,7 +405,7 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
     elif not city:
         alertMessage = bot_messages.noAlertsBrazil
     else:
-        alertMessage = bot_messages.noAlertsCity.format(city=city)
+        alertMessage = bot_messages.noAlertsCity.format(city=city, ALERTAS_URL=bot_messages.ALERTAS_URL)
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -564,7 +564,7 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
 
     context.bot.send_photo(
         chat_id=update.effective_chat.id,
-        caption="Fonte: https://alertas2.inmet.gov.br/",
+        caption=f"Fonte: {bot_messages.ALERTAS_URL}",
         reply_to_message_id=update.message.message_id,
         photo=open(alertsMapPath, "rb"),
         timeout=20000,
