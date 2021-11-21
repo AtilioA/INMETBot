@@ -236,10 +236,10 @@ def parse_CEP(update, context, cepRequired=True):
         )  # Get string after "/alertas_CEP"
     except (TypeError, IndexError):  # No number after /command
         utilsLogger.warning(f'No input in parse_CEP. Message text: "{text}"')
-        message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+        message = f"❌ *CEP não informado*!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
     else:
         if cep and not pycep.validar_cep(cep):
-            message = f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+            message = f"❌ *CEP inválido/não existe*!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
             utilsLogger.warning(f"CEP inválido: {cep}")
             # return message
             raise Exception

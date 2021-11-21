@@ -28,6 +28,7 @@ def send_instructions_message(update, context):
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
         text=bot_messages.instructions,
+        parse_mode="markdown",
     )
 
 
@@ -482,8 +483,10 @@ def cmd_alerts_CEP(update, context):
     textArgs = update.message.text.split(" ")
 
     try:
-        cep = bot_utils.parse_CEP(update, context)
+        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
         city = viacep.get_cep_city(cep)
+        if not (cep or city):
+            raise pycep.excecoes.ExcecaoPyCEPCorreios
 
         # Include moderate alerts
         alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
@@ -503,6 +506,89 @@ def cmd_alerts_CEP(update, context):
             text=message,
             parse_mode="markdown",
         )
+
+        chat = models.create_chat_obj(update=update)
+        if chat.subscribed:
+            checkingForSubscribed = context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                reply_to_message_id=update.message.message_id,
+                text="*[🛠 BETA]* Irei checar os CEPs cadastrados no chat:",
+                parse_mode="markdown",
+            )
+
+            # STUB:
+            for cep in chat.CEPs:
+                try:
+                    city = viacep.get_cep_city(cep)
+                    functionsLogger.debug(f"- Checking {city}...")
+                except Exception as error:
+                    functionsLogger.warning(f"Viacep error: {error}")
+                    continue
+
+                # Get alerts, by city, that weren't notified to this chat
+                alerts = list(
+                    models.INMETBotDB.alertsCollection.find({"cities": city})
+                )
+                if alerts:
+                    print("tem alerta o carai")
+                    # Any alerts here are to be sent to the chat,
+                    # since they affect a zip code and the chat hasn't been notified yet
+                    alertCounter = 1
+                    alertMessage = ""
+                    functionsLogger.info(f"-- Existing alert for {city}. --")
+                    for alert in alerts:
+                        if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+                            try:
+                                print(chat.id,)
+                                context.bot.send_message(
+                                    chat_id=chat.id,
+                                    text=alertMessage,
+                                    parse_mode="markdown",
+                                    disable_web_page_preview=True,
+                                )
+                            except:
+                                functionsLogger.error(
+                                    f"ERRO: não foi possível enviar mensagem para {chat.id} ({chat.title})."
+                                )
+
+                                alertMessage = ""
+                                alertCounter = 1
+
+                        alertObj = models.Alert(alertDict=alert)
+                        alertMessage += alertObj.get_alert_message(city)
+                        functionsLogger.info(
+                            f"-- Notifying chat {chat.id} about alert {alert['alertID']}... --"
+                        )
+
+                        models.INMETBotDB.alertsCollection.update_one(
+                            {"alertID": alert["alertID"]},
+                            {"$addToSet": {"notifiedChats": chat.id}},
+                        )
+                        alertCounter += 1
+
+                    # "Footer" message after all alerts
+                    alertMessage += (
+                        f"\nMais informações em {bot_messages.ALERTAS_URL}."
+                    )
+
+                    try:
+                        context.bot.send_message(
+                            chat_id=chat.id,
+                            text=alertMessage,
+                            parse_mode="markdown",
+                            disable_web_page_preview=True,
+                        )
+                    except:
+                        functionsLogger.error(
+                            f"ERRO: não foi possível enviar mensagem para {chat.id} ({chat.title}). Removendo chat do BD..."
+                        )
+                        models.INMETBotDB.subscribedChatsCollection.delete_one(
+                            {"chatID": chat.id}
+                        )
+
+            context.bot.delete_message(
+                chat_id=checkingForSubscribed.chat.id, message_id=checkingForSubscribed.message_id
+            )
 
 
 @run_async
