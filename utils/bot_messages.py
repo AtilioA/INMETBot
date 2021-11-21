@@ -40,8 +40,8 @@ Para utilizar o bot, envie alguns destes comandos:
 */help* ou */ajuda* exibe esta mensagem de ajuda.
 
 *⚠️ Alertas -*
-*/alertas* ou /alertas\_brasil exibe alertas *graves* (apenas laranjas e vermelhos) em vigor para o Brasil.
-`/alertas_CEP` exibe alertas *graves e moderados* (todos) em vigor para o CEP fornecido.
+*/alertas* ou /alertas\_brasil exibe alertas *graves* (apenas severos e extremos) em vigor para o Brasil.
+`/alertas_CEP` exibe todos os alertas, isto é, *moderados (⚠️), severos (🔶) e extremos (🚨)*, em vigor para o CEP fornecido.
 Exemplo: `/alertas_CEP 29075-910` exibe alertas *graves e moderados* para o CEP 29075-910.
   \* Você também pode simplesmente enviar sua localização para checar alertas em sua cidade a qualquer momento.
 */inscrever* inscreve você ou o seu grupo para ser avisado automaticamente quando alertas incluírem sua região. Para isso, adicione CEPs com `/inscrever 29075-910`, por exemplo.
