@@ -19,8 +19,8 @@ utilsLogger = logging.getLogger(__name__)
 utilsLogger.setLevel(logging.DEBUG)
 
 MIN_VPR_IMAGES = 2
-DEFAULT_VPR_IMAGES = 9  # 2 hours of images
-MAX_VPR_IMAGES = 48  # 12 hours of images
+DEFAULT_VPR_IMAGES = 12  # 2 hours of images
+MAX_VPR_IMAGES = 72  # 12 hours of images
 
 IGNORED_USERS = [1528688653, 1149342586]
 
@@ -179,7 +179,7 @@ def parse_n_images_input(update, context):
                 nImagesMessage = None
             return (nImages, nImagesMessage)
 
-        nImagesMessage = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""  # noqa
+        nImagesMessage = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe cerca de 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""  # noqa
         nImages = DEFAULT_VPR_IMAGES
 
         return (nImages, nImagesMessage)
