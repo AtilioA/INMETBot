@@ -3,6 +3,7 @@ import logging
 from io import BytesIO
 import uuid
 import base64
+import hashlib
 from functools import wraps
 import imageio
 import telegram
@@ -15,6 +16,7 @@ import sys
 
 sys.path.append(sys.path[0] + "/..")
 
+SALT = str(uuid.uuid4())
 utilsLogger = logging.getLogger(__name__)
 utilsLogger.setLevel(logging.DEBUG)
 
@@ -56,16 +58,16 @@ def log_command_decorator(logger):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
             if update.message.from_user.username:
-                user = f'@{update.message.from_user.username}'
+                hashed_username = hashlib.sha512(update.message.from_user.username.encode('utf-8') + SALT.encode('utf-8')).hexdigest()
             else:
-                user = f"'{update.message.from_user.name}'"
+                hashed_username = hashlib.sha512(update.message.from_user.name.encode('utf-8') + SALT.encode('utf-8')).hexdigest()
 
-            debugMessage = f"\"'{update.message.text}' from {user} ({update.message.chat.type})\""
+            debugMessage = f"\"'{update.message.text}' from `{hashed_username[:6]}` ({update.message.chat.type})\""
 
             logger.debug(debugMessage)
 
             context.bot.send_message(
-                chat_id="-1001361751085", text=debugMessage,
+                chat_id="-1001361751085", text=debugMessage, parse_mode="markdown",
             )
 
             return func(update, context, *args, **kwargs)
