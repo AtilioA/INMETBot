@@ -24,7 +24,7 @@ jaraco.functools==3.0.0
 lxml==4.6.5
 Markdown==3.2
 more-itertools==8.2.0
-numpy==1.20.2
+numpy==1.21.0
 Pillow==9.0.0
 pycep-correios==4.0.4
 pycparser==2.19
