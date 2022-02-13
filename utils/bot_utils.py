@@ -170,40 +170,42 @@ def parse_n_images_input(update, context):
 
     Returns
     --------
-    (nImages, nImagesMessage)
+    (nImages, nImagesText)
 
     nImages : int
         Number of images to be fetched.
-    nImagesMessage : str
+    nImagesText : str
         Message to be sent by the bot.
     """
 
     def get_n_images_and_message(nImages=None):
-        """Process nImages input and determine nImagesMessage for vpr_gif function."""
+        """Process nImages input and determine nImagesText for vpr_gif function."""
 
         if nImages:
             if nImages > MAX_VPR_IMAGES:
-                nImagesMessage = f"❕O número máximo de imagens é {MAX_VPR_IMAGES} (12 horas de imagens)! Utilizarei-o no lugar de {nImages}."
+                nImagesText = f"❕O número máximo de imagens é {MAX_VPR_IMAGES} (12 horas de imagens)! Utilizarei-o no lugar de {nImages}."
                 nImages = MAX_VPR_IMAGES
             elif nImages < MIN_VPR_IMAGES:
-                nImagesMessage = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
+                nImagesText = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
                 nImages = MIN_VPR_IMAGES
             else:
-                nImagesMessage = None
-            return (nImages, nImagesMessage)
+                nImagesText = None
+            return (nImages, nImagesText)
 
-        nImagesMessage = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe cerca de 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""  # noqa
+        # TODO: Move to bot_messages.py
+        nImagesText = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe cerca de 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""
         nImages = DEFAULT_VPR_IMAGES
 
-        return (nImages, nImagesMessage)
+        return (nImages, nImagesText)
 
     text = update.message.text
 
     try:
+        nImagesMessage = None
         nImages = context.args[0]
         try:
             nImages = int(float(nImages))
-            nImages, nImagesMessage = get_n_images_and_message(nImages)
+            nImages, nImagesText = get_n_images_and_message(nImages)
         except ValueError:
             context.bot.send_message(
                 chat_id=update.message.chat.id,
@@ -213,18 +215,18 @@ def parse_n_images_input(update, context):
             )
             return None
     except (IndexError, AttributeError):
-        nImages, nImagesMessage = get_n_images_and_message(None)
+        nImages, nImagesText = get_n_images_and_message(None)
         utilsLogger.warning(f'No input in parse_n_images_input. Message text: "{text}"')
 
-    if nImagesMessage:
-        context.bot.send_message(
+    if nImagesText:
+        nImagesMessage = context.bot.send_message(
             chat_id=update.message.chat.id,
-            text=nImagesMessage,
+            text=nImagesText,
             reply_to_message_id=update.message.message_id,
             parse_mode="markdown",
         )
 
-    return nImages
+    return (nImages, nImagesMessage)
 
 
 def parse_CEP(update, context, cepRequired=True):

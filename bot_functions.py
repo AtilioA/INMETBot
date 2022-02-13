@@ -178,7 +178,7 @@ def cmd_vpr(update, context):
 
 
 @bot_utils.send_upload_video_action
-def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage, gifTimeBoundariesDict):
+def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage, nImagesMessage, gifTimeBoundariesDict):
     """Send the .mp4 file to the user and delete it."""
 
     timeBoundaries = ""
@@ -193,9 +193,14 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage, gifTimeB
         animation=open(vprVideoPath, "rb"),
         timeout=20000,
     )
+
     context.bot.delete_message(
         chat_id=waitMessage.chat.id, message_id=waitMessage.message_id
     )
+    context.bot.delete_message(
+        chat_id=nImagesMessage.chat.id, message_id=nImagesMessage.message_id
+    )
+
     os.remove(vprVideoPath)
     functionsLogger.info(f"Deleted {vprVideoPath}.")
 
@@ -207,7 +212,7 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage, gifTimeB
 def cmd_vpr_gif(update, context):
     """Create and send GIF made of recent VPR satellite images to the user."""
 
-    nImages = bot_utils.parse_n_images_input(update, context)
+    nImages, nImagesMessage = bot_utils.parse_n_images_input(update, context)
     if nImages:
         # Save the message so it can be deleted afterwards
         waitMessage = context.bot.send_message(
@@ -258,7 +263,7 @@ def cmd_vpr_gif(update, context):
             }
             gifFilename = bot_utils.create_gif_vpr_data(vprResponse, nImages)
 
-            return send_vpr_video(update, context, gifFilename, nImages, waitMessage, gifTimeBoundariesDict)
+            return send_vpr_video(update, context, gifFilename, nImages, waitMessage, nImagesMessage, gifTimeBoundariesDict)
         else:
             functionsLogger.error("Failed GET request to VPR API.")
             context.bot.send_message(
@@ -267,6 +272,10 @@ def cmd_vpr_gif(update, context):
                 text=bot_messages.failedFetchImage,
                 parse_mode="markdown",
             )
+            if nImagesMessage:
+                context.bot.delete_message(
+                    chat_id=update.effective_chat.id, message_id=nImagesMessage
+                )
             return None
 
 
@@ -374,11 +383,14 @@ def cmd_acumulada(update, context):
             reply_to_message_id=update.message.message_id,
             text=bot_messages.unavailableImage,
         )
-        if acumuladaWarnMessage:
-            context.bot.delete_message(
-                chat_id=acumuladaWarnMessage.chat.id,
-                message_id=acumuladaWarnMessage.message_id,
-            )
+
+    if acumuladaWarnMessage:
+        # Only the current thread will sleep
+        time.sleep(5)
+        context.bot.delete_message(
+            chat_id=acumuladaWarnMessage.chat.id,
+            message_id=acumuladaWarnMessage.message_id,
+        )
 
 
 def check_and_send_alerts_warning(update, context, alerts, city=None):
