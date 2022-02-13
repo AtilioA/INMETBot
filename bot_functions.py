@@ -11,13 +11,12 @@ import pycep_correios as pycep
 from telegram.ext.dispatcher import run_async
 
 import models
+from bot_routines import delete_past_alerts_routine, parse_alerts_routine
 from utils import viacep, bot_messages, bot_utils, parse_alerts
 
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
-
-MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" Telegram error
 
 
 @bot_utils.send_typing_action
@@ -928,6 +927,16 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
         video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA",
         reply_to_message_id=replyID,
     )
+
+
+@run_async
+@bot_utils.log_command
+@bot_utils.send_typing_action
+def cmd_update_alerts(update, context):
+    """Update alerts from database. (DEBUGGING)"""
+
+    delete_past_alerts_routine()
+    parse_alerts_routine()
 
 
 @run_async

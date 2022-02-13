@@ -1,6 +1,8 @@
 # Plain strings for the bot
 
 ALERTAS_URL = "https://alertas2.inmet.gov.br/"
+MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" Telegram error
+
 
 welcomeMessage = """*🌥 @INMETBot*
 Olá! Este bot pode enviar imagens e informações úteis disponíveis pelo INMET diretamente pelo Telegram.

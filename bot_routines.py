@@ -5,7 +5,6 @@ import models
 from telegram.error import TelegramError
 from utils import viacep, parse_alerts, bot_messages
 from bot_config import updater
-from bot_functions import MAX_ALERTS_PER_MESSAGE
 
 routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
@@ -89,7 +88,7 @@ def notify_chats_routine():
                     alertMessage = ""
                     routinesLogger.info(f"-- Existing alert for {city}. --")
                     for alert in alerts:
-                        if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+                        if alertCounter >= bot_messages.MAX_ALERTS_PER_MESSAGE:
                             try:
                                 updater.bot.send_message(
                                     chat_id=chat["chatID"],

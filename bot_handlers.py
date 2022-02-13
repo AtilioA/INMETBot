@@ -1,7 +1,7 @@
 from telegram.ext import CommandHandler, Filters, MessageHandler
 
-from bot_config import dispatcher
 import bot_functions
+from bot_config import dispatcher
 
 # Initialize handlers
 start_handler = CommandHandler(
@@ -85,6 +85,12 @@ sorrizoronaldo_will_rock_you_handler = CommandHandler(
     filters=~Filters.update.edited_message,
 )
 
+update_handler = CommandHandler(
+    ("update"),
+    bot_functions.cmd_update_alerts,
+    filters=~Filters.update.edited_message,
+)
+
 catch_all_if_private_handler = MessageHandler(
     Filters.text & ~Filters.update.edited_message, bot_functions.catch_all_if_private
 )
@@ -113,6 +119,8 @@ dispatcher.add_handler(forecast_handler)
 
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
+
+dispatcher.add_handler(update_handler)
 
 dispatcher.add_handler(alerts_location_handler)
 
