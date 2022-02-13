@@ -59,7 +59,7 @@ def main():
     fRoutines.start()
 
     # Start web server
-    port = os.environ.get("PORT", 2832)
+    port = os.environ.get("INMETBOT_PORT", 1909)
     webserver.run(host="0.0.0.0", port=int(port))
 
     # Run the bot until Ctrl-C is pressed
