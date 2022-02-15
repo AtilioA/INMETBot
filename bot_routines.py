@@ -63,6 +63,10 @@ def notify_chats_routine():
     for chat in subscribedChats:
         if chat["activated"]:
             routinesLogger.debug(f"Checking chat {chat['chatID']}")
+            try:
+                cities = [viacep.get_cep(cep) for cep in chats["CEPs"]]
+            except:
+                pass
             for cep in chat["CEPs"]:
                 try:
                     city = viacep.get_cep_city(cep)
@@ -104,7 +108,10 @@ def notify_chats_routine():
                                 alertMessage = ""
                                 alertCounter = 1
                         alertObj = models.Alert(alertDict=alert)
-                        alertMessage += alertObj.get_alert_message(city)
+
+                        affectedCities = [city for city in cities if city in alertObj.cities]
+
+                        alertMessage += alertObj.get_alert_message(affectedCities)
                         routinesLogger.info(
                             f"-- Notifying chat {chat['chatID']} about alert {alert['alertID']}... --"
                         )

@@ -11,7 +11,7 @@ import pycep_correios as pycep
 from telegram.ext.dispatcher import run_async
 
 import models
-from bot_routines import delete_past_alerts_routine, parse_alerts_routine
+from bot_routines import delete_past_alerts_routine, parse_alerts_routine, notify_chats_routine
 from utils import viacep, bot_messages, bot_utils, parse_alerts
 
 
@@ -949,6 +949,7 @@ def cmd_update_alerts(update, context):
 
     delete_past_alerts_routine()
     parse_alerts_routine()
+    notify_chats_routine()
 
 
 @run_async
