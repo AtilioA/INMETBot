@@ -63,8 +63,9 @@ def notify_chats_routine():
     for chat in subscribedChats:
         if chat["activated"]:
             routinesLogger.debug(f"Checking chat {chat['chatID']}")
+            cities = []
             try:
-                cities = [viacep.get_cep(cep) for cep in chats["CEPs"]]
+                cities = [viacep.get_cep_city(cep) for cep in chat["CEPs"]]
             except:
                 pass
             for cep in chat["CEPs"]:
@@ -86,6 +87,7 @@ def notify_chats_routine():
                         }
                     )
                 )
+
                 if alerts:
                     # Any alerts here are to be sent to the chat,
                     # since they affect a zip code and the chat hasn't been notified yet
@@ -107,9 +109,12 @@ def notify_chats_routine():
 
                                 alertMessage = ""
                                 alertCounter = 1
+
                         alertObj = models.Alert(alertDict=alert)
 
-                        affectedCities = [city for city in cities if city in alertObj.cities]
+                        affectedCities = [
+                            city for city in cities if city in alertObj.cities
+                        ]
 
                         alertMessage += alertObj.get_alert_message(affectedCities)
                         routinesLogger.info(
@@ -123,9 +128,7 @@ def notify_chats_routine():
                         alertCounter += 1
 
                     # "Footer" message after all alerts
-                    alertMessage += (
-                        f"\nMais informações em {bot_messages.ALERTAS_URL}."
-                    )
+                    alertMessage += f"\nMais informações em {bot_messages.ALERTAS_URL}."
 
                     try:
                         updater.bot.send_message(
