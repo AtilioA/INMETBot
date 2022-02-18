@@ -414,7 +414,7 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
             )
             alertCounter += 1
 
-            if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+            if alertCounter >= bot_messages.MAX_ALERTS_PER_MESSAGE:
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     reply_to_message_id=update.message.message_id,
@@ -548,7 +548,7 @@ def cmd_alerts_CEP(update, context):
                     alertMessage = ""
                     functionsLogger.info(f"-- Existing alert for {city}. --")
                     for alert in alerts:
-                        if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+                        if alertCounter >= bot_messages.MAX_ALERTS_PER_MESSAGE:
                             try:
                                 print(chat.id,)
                                 context.bot.send_message(
