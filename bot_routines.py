@@ -61,9 +61,9 @@ def notify_chats_routine():
     alertCounter = 1
 
     for chat in subscribedChats:
+        cities = []
         if chat["activated"]:
             routinesLogger.debug(f"Checking chat {chat['chatID']}")
-            cities = []
             try:
                 cities = [viacep.get_cep_city(cep) for cep in chat["CEPs"]]
             except:
