@@ -59,7 +59,9 @@ chat_subscription_status_handler = CommandHandler(
 )
 
 forecast_handler = CommandHandler(
-    ("previsao"), bot_functions.cmd_forecast, filters=~Filters.update.edited_message,
+    ("previsao"),
+    bot_functions.cmd_forecast,
+    filters=~Filters.update.edited_message,
 )
 
 deactivate_handler = CommandHandler(("desativar"), bot_functions.cmd_chat_deactivate)

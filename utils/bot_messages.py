@@ -87,7 +87,7 @@ moreInfoAlertAS = f"\nMais informações em {ALERTAS_URL}."
 noAlertsBrazil = f"✅ *Não há alertas graves para o Brasil no momento.*\n\nVocê pode ver outros alertas menores em {ALERTAS_URL}"
 noAlertsCity = "✅ *Não há alertas para {city} no momento.*\n\nVocê pode ver outros alertas em {ALERTAS_URL}"
 locationOutsideBrazil = "❌ A localização indica uma região fora do Brasil."
-unableCheckAlertsLocation = "❌ Não foi possível verificar a região 😔."
+unableToCheckAlertsLocation = "❌ Não foi possível verificar a região 😔."
 invalidZipCode = "❌ *CEP inválido/não existe*!\nExemplo válido:\n`{textArgs} 29075-910`"
 alertsMapMessage = "⏳ Buscando imagem do mapa de alertas..."
 
@@ -123,19 +123,22 @@ def createForecastMessage(date, forecastDay):
             forecastMessage += """
     🌄 *Manhã*:"""
             forecastMessage += forecastTextPeriodOfDay(
-                forecastDayMorning["cod_icone"], forecastDayMorning["resumo"],
+                forecastDayMorning["cod_icone"],
+                forecastDayMorning["resumo"],
             )
         if forecastDayAfternoon:
             forecastMessage += """
     🕑 *Tarde*:"""
             forecastMessage += forecastTextPeriodOfDay(
-                forecastDayAfternoon["cod_icone"], forecastDayAfternoon["resumo"],
+                forecastDayAfternoon["cod_icone"],
+                forecastDayAfternoon["resumo"],
             )
         if forecastDayEvening:
             forecastMessage += """
     🌌 *Noite*:"""
             forecastMessage += forecastTextPeriodOfDay(
-                forecastDayEvening["cod_icone"], forecastDayEvening["resumo"],
+                forecastDayEvening["cod_icone"],
+                forecastDayEvening["resumo"],
             )
 
     except (KeyError, IndexError):
@@ -163,7 +166,8 @@ def forecastIconDict(code):
 
 
 def forecastTextPeriodOfDay(
-    forecastIcon, summary,
+    forecastIcon,
+    summary,
 ):
     return f"""
             *{forecastIconDict(int(forecastIcon))} {summary}*

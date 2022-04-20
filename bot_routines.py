@@ -48,6 +48,7 @@ def parse_alerts_routine(ignoreModerate=False):
         routinesLogger.info("Finished parse_alerts_routine routine.")
 
 
+# TODO: Reduce code duplication.
 def notify_chats_routine():
     """
     Check alerts from the database and notify chats.
@@ -66,7 +67,10 @@ def notify_chats_routine():
             routinesLogger.debug(f"Checking chat {chat['chatID']}")
             try:
                 cities = [viacep.get_cep_city(cep) for cep in chat["CEPs"]]
-            except:
+            except Exception as error:
+                routinesLogger.error(
+                    f"Unknown error when getting CEPs for chat {chat}: {error}"
+                )
                 pass
             for cep in chat["CEPs"]:
                 try:
@@ -102,9 +106,12 @@ def notify_chats_routine():
                                     parse_mode="markdown",
                                     disable_web_page_preview=True,
                                 )
-                            except:
+                            except Exception as error:
                                 routinesLogger.error(
-                                    f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']})."
+                                    f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']}): {error}.\nRemovendo chat do BD..."
+                                )
+                                models.INMETBotDB.subscribedChatsCollection.delete_one(
+                                    {"chatID": chat["chatID"]}
                                 )
 
                                 alertMessage = ""
@@ -137,9 +144,9 @@ def notify_chats_routine():
                             parse_mode="markdown",
                             disable_web_page_preview=True,
                         )
-                    except:
+                    except Exception as error:
                         routinesLogger.error(
-                            f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']}). Removendo chat do BD..."
+                            f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']}): {error}.\nRemovendo chat do BD..."
                         )
                         models.INMETBotDB.subscribedChatsCollection.delete_one(
                             {"chatID": chat["chatID"]}
