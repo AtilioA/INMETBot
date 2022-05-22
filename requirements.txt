@@ -2,7 +2,6 @@ appdirs==1.4.4
 arrow==1.0.3
 attrs==20.3.0
 beautifulsoup4==4.8.2
-bottle==0.12.19
 bs4==0.0.1
 cached-property==1.5.2
 certifi==2019.11.28

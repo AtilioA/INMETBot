@@ -1,5 +1,3 @@
-# Webserver to prevent the bot from sleeping
-from utils import webserver
 import os
 import logging
 import time
@@ -32,9 +30,6 @@ try:
     schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
 
     schedule.every(ROUTINES_INTERVAL).minutes.do(
-        ping, URL="https://inmetbot.herokuapp.com/"
-    )
-    schedule.every(ROUTINES_INTERVAL).minutes.do(
         ping, URL="https://chooseipsum.herokuapp.com/"
     )
     for i in range(12, 24):
@@ -61,10 +56,6 @@ def main():
     fRoutines = RoutinesThread()
     fRoutines.daemon = True
     fRoutines.start()
-
-    # Start web server
-    port = os.environ.get("INMETBOT_PORT", 1909)
-    webserver.run(host="0.0.0.0", port=int(port))
 
     # Run the bot until Ctrl-C is pressed
     updater.idle()
