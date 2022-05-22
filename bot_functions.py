@@ -563,7 +563,6 @@ def cmd_alerts_CEP(update, context):
                 # Get alerts, by city, that weren't notified to this chat
                 alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
                 if alerts:
-                    print("tem alerta o carai")
                     # Any alerts here are to be sent to the chat,
                     # since they affect a zip code and the chat hasn't been notified yet
                     alertCounter = 1
@@ -583,7 +582,7 @@ def cmd_alerts_CEP(update, context):
                                 )
                             except Exception as error:
                                 functionsLogger.error(
-                                    f"ERRO: não foi possível enviar mensagem para {chat.id} ({chat.title}): {error}. Removendo chat do BD..."
+                                    f"ERRO: unable to send message to {chat.id} ({chat.title}): {error}. Removing chat from DB......"
                                 )
                                 models.INMETBotDB.subscribedChatsCollection.delete_one(
                                     {"chatID": chat.id}
@@ -616,7 +615,7 @@ def cmd_alerts_CEP(update, context):
                         )
                     except Exception as error:
                         functionsLogger.error(
-                            f"ERRO: não foi possível enviar mensagem para {chat.id} ({chat.title}). Removendo chat do BD..."
+                            f"ERRO: unable to send message to {chat.id} ({chat.title}): {error}. Removing chat from DB......"
                         )
                         models.INMETBotDB.subscribedChatsCollection.delete_one(
                             {"chatID": chat.id}

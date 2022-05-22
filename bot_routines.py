@@ -108,7 +108,7 @@ def notify_chats_routine():
                                 )
                             except Exception as error:
                                 routinesLogger.error(
-                                    f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']}): {error}.\nRemovendo chat do BD..."
+                                    f"ERRO: unable to send message to {chat['chatID']} ({chat['title']}): {error}.\nRemoving chat from DB......"
                                 )
                                 models.INMETBotDB.subscribedChatsCollection.delete_one(
                                     {"chatID": chat["chatID"]}
@@ -146,7 +146,7 @@ def notify_chats_routine():
                         )
                     except Exception as error:
                         routinesLogger.error(
-                            f"ERRO: não foi possível enviar mensagem para {chat['chatID']} ({chat['title']}): {error}.\nRemovendo chat do BD..."
+                            f"ERRO: unable to send message to {chat['chatID']} ({chat['title']}): {error}.\nRemoving chat from DB......"
                         )
                         models.INMETBotDB.subscribedChatsCollection.delete_one(
                             {"chatID": chat["chatID"]}
