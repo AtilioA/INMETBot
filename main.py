@@ -25,13 +25,10 @@ logging.basicConfig(
 
 
 try:
-    schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
     schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
+    schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
     schedule.every(ROUTINES_INTERVAL).minutes.do(notify_chats_routine)
 
-    schedule.every(ROUTINES_INTERVAL).minutes.do(
-        ping, URL="https://chooseipsum.herokuapp.com/"
-    )
     for i in range(12, 24):
         schedule.every().day.at(f"{i}:00").do(
             ping, URL="https://covid19nowbot.herokuapp.com/"
