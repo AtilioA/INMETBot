@@ -64,7 +64,7 @@ def log_command_decorator(logger):
 
             debugMessage = f"\"'{update.message.text}' from `{hashed_username[:6]}` ({update.message.chat.type})\""
 
-            logger.debug(debugMessage)
+            logger.debug(debugMessage.replace("`", ""))
 
             context.bot.send_message(
                 chat_id="-1001361751085", text=debugMessage, parse_mode="markdown",
