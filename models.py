@@ -125,16 +125,32 @@ class Chat(ABC):
 
     def subscribe_chat(self, cep=None):
         """Subscribe chat and/or CEP to alerts.
-            Returns
-            --------
-                String to be used by a chat object depicting what happened.
+        Returns
+        --------
+            String to be used by a chat object depicting what happened.
         """
 
         if self.subscribed:
             if cep:
-                if cep in self.CEPs:  # Chat is already subscribed, no NEW CEP
-                    modelsLogger.info("CEP will not be subscribed; already subscribed.")
+                # Chat and cep are already subscribed; don't subscribe
+                if cep in self.CEPs:
+                    modelsLogger.info(
+                        f"CEP {cep} will not be subscribed; CEP is already subscribed."
+                    )
                     return "CHAT_EXISTS_CEP_EXISTS"
+
+                # Check if the city for this CEP is already subscribed (the alerts' granularity is only to the city level)
+                # REFACTOR: Maybe save cities to simplify comparison?
+                # self.CEPs shouldn't be too long (1-10 entries), so this cost is negligible
+                cityCep = viacep.get_cep_city(cep)
+                citiesCEPs = [viacep.get_cep_city(cep) for cep in self.CEPs]
+
+                # City 'is' already subscribed; don't subscribe this CEP
+                if cityCep in citiesCEPs:
+                    modelsLogger.info(
+                        f"CEP {cep} will not be subscribed; city {cityCep} is already subscribed."
+                    )
+                    return "CHAT_EXISTS_CITY_EXISTS"
                 else:  # Chat is already subscribed, new CEP
                     INMETBotDB.subscribedChatsCollection.update_one(
                         {"chatID": self.id}, {"$push": {"CEPs": cep}}
@@ -156,9 +172,9 @@ class Chat(ABC):
 
     def unsubscribe_chat(self, cep=None):
         """Unsubscribe chat and/or CEP from alerts.
-            Returns
-            --------
-                String to be used by a chat object depicting what happened.
+        Returns
+        --------
+            String to be used by a chat object depicting what happened.
         """
 
         if self.subscribed:
@@ -186,10 +202,10 @@ class Chat(ABC):
 
     def check_subscription_status(self):
         """Check chat's subscription status.
-            Returns
-            --------
-            status : string
-                Subscription status and subscribed CEPs as single formatted string.
+        Returns
+        --------
+        status : string
+            Subscription status and subscribed CEPs as single formatted string.
         """
 
         if self.subscribed:
@@ -212,7 +228,7 @@ class Chat(ABC):
         return status
 
     def deactivate(self):
-        """ Set chat's activated status to False. """
+        """Set chat's activated status to False."""
 
         if self.activated:
             INMETBotDB.subscribedChatsCollection.update_one(
@@ -220,10 +236,12 @@ class Chat(ABC):
             )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
         else:
-            return "❕ Os alertas já estão desativados.\nAtive-os novamente com */ativar*."
+            return (
+                "❕ Os alertas já estão desativados.\nAtive-os novamente com */ativar*."
+            )
 
     def activate(self):
-        """ Set chat's activated status to True. """
+        """Set chat's activated status to True."""
 
         if not self.activated:
             INMETBotDB.subscribedChatsCollection.update_one(
@@ -234,7 +252,7 @@ class Chat(ABC):
             return "❕ Os alertas já estão ativados.\nDesative-os temporariamente com */desativar*."
 
     def toggle_activated(self):
-        """ Negate the activated boolean attribute. """
+        """Negate the activated boolean attribute."""
 
         if self.activated:
             INMETBotDB.subscribedChatsCollection.update_one(
@@ -298,7 +316,8 @@ class PrivateChat(Chat):
         """Get subscribe message according to subscription result for a private chat."""
 
         subscribeMessageDict = {
-            "CHAT_EXISTS_CEP_EXISTS": f"❕O CEP já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CEP_EXISTS": f"❕Este CEP já está inscrito.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
+            "CHAT_EXISTS_CITY_EXISTS": f"❕A cidade deste CEP já está inscrita. O nível de granularidade dos alertas é até cidades apenas.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
             "CHAT_EXISTS_CEP_SUBSCRIBED": f"🔔 Inscrevi o CEP {cep} (*{viacep.get_cep_city(cep)}*).\nDesinscreva CEPs: `/desinscrever {cep}`.\nDesative alertas temporariamente com /desativar.",
             "CHAT_EXISTS_NO_CEP": f"❕Você já está inscrito.\nAdicione CEPs: `{textArgs[0]} 29075-910`.\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",
             "CHAT_AND_CEP_SUBSCRIBED": f"🔔 Inscrevi você e o CEP {cep} (*{viacep.get_cep_city(cep)}*).\nDesinscreva-se com /desinscrever.\nDesative alertas temporariamente com /desativar.",

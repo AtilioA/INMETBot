@@ -23,7 +23,7 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-
+# Initialize bot routines
 try:
     schedule.every(ROUTINES_INTERVAL).minutes.do(delete_past_alerts_routine)
     schedule.every(ROUTINES_INTERVAL).minutes.do(parse_alerts_routine)
@@ -32,9 +32,9 @@ try:
     for i in range(12, 24):
         schedule.every().day.at(f"{i}:00").do(
             ping, URL="https://covid19nowbot.herokuapp.com/"
-    )
-except:
-    logging.exception("Error in main routine.")
+        )
+except Exception as error:
+    logging.exception(f"Error in main routine: {error}")
     pass
 
 
