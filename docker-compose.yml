@@ -1,0 +1,12 @@
+version: '3'
+services:
+    bot:
+        build: .
+        volumes:
+            - .:/app
+        environment:
+            CHROMEDRIVER_PATH: "/usr/local/bin/chromedriver"
+        env_file:
+            - .env
+        # Start the bot (README.md for more details)
+        command: [ "python3", "main.py" ]
