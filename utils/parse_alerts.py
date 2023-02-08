@@ -38,13 +38,7 @@ def take_screenshot_alerts_map():
     # If chrome needs more memory
     # chrome_options.add_argument("--disable-dev-shm-usage")
 
-    if "ON_HEROKU" in os.environ:
-        chrome_options.binary_location = os.environ.get("GOOGLE_CHROME_PATH")
-        driver = webdriver.Chrome(
-            executable_path=os.environ.get("CHROMEDRIVER_PATH"), options=chrome_options
-        )
-    else:
-        driver = webdriver.Chrome(options=chrome_options, executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+    driver = webdriver.Chrome(options=chrome_options, executable_path=os.environ.get("CHROMEDRIVER_PATH"))
 
     driver.get(ALERTS_MAP_URL)
     parsingLogger.debug(f"Accessed alert-as map.")

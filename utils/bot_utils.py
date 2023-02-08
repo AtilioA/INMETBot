@@ -3,6 +3,7 @@ import logging
 from io import BytesIO
 import uuid
 import base64
+import hashlib
 from functools import wraps
 import imageio
 import telegram
@@ -15,12 +16,13 @@ import sys
 
 sys.path.append(sys.path[0] + "/..")
 
+SALT = str(uuid.uuid4())
 utilsLogger = logging.getLogger(__name__)
 utilsLogger.setLevel(logging.DEBUG)
 
 MIN_VPR_IMAGES = 2
-DEFAULT_VPR_IMAGES = 9  # 2 hours of images
-MAX_VPR_IMAGES = 48  # 12 hours of images
+DEFAULT_VPR_IMAGES = 13  # 2 hours of images
+MAX_VPR_IMAGES = 72  # 12 hours of images
 
 IGNORED_USERS = [1528688653, 1149342586]
 
@@ -40,7 +42,8 @@ def ignore_users_decorator(logger):
             logger.debug(debugMessage)
 
             context.bot.send_message(
-                chat_id="-1001361751085", text=debugMessage,
+                chat_id="-1001361751085",
+                text=debugMessage,
             )
 
             return func(update, context, *args, **kwargs)
@@ -55,20 +58,31 @@ def log_command_decorator(logger):
     def decorator(func):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
-            if update.message.from_user.username:
-                user = f'@{update.message.from_user.username}'
-            else:
-                user = f"'{update.message.from_user.name}'"
+            try:
+                if update.message.from_user.username:
+                    hashed_username = hashlib.sha512(
+                        update.message.from_user.username.encode("utf-8")
+                        + SALT.encode("utf-8")
+                    ).hexdigest()
+                else:
+                    hashed_username = hashlib.sha512(
+                        update.message.from_user.name.encode("utf-8")
+                        + SALT.encode("utf-8")
+                    ).hexdigest()
 
-            debugMessage = f"\"'{update.message.text}' from {user} ({update.message.chat.type})\""
+                debugMessage = f"\"'{update.message.text}' from `{hashed_username[:6]}` ({update.message.chat.type})\""
 
-            logger.debug(debugMessage)
+                logger.debug(debugMessage.replace("`", ""))
 
-            context.bot.send_message(
-                chat_id="-1001361751085", text=debugMessage,
-            )
+                context.bot.send_message(
+                    chat_id="-1001361751085",
+                    text=debugMessage,
+                    parse_mode="markdown",
+                )
 
-            return func(update, context, *args, **kwargs)
+                return func(update, context, *args, **kwargs)
+            except:
+                pass
 
         return command_func
 
@@ -114,7 +128,9 @@ def loadB64ImageToMemory(base64String):
     return bytesIOImage
 
 
-def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
+def get_vpr_images_data(
+    data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None
+):
     regiao = "BR"
     APIBaseURL = "https://apisat.inmet.gov.br"
 
@@ -136,8 +152,12 @@ def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=N
     responses = list(
         filter(lambda x: x.status_code == 200, fgrequests.build(URLsToBeRequested))
     )
-    data = [entry.json() for entry in responses]
+    responseData = [entry.json() for entry in responses]
 
+    return responseData
+
+
+def create_gif_vpr_data(data, nImages):
     readImages = []
     for entry in reversed(data[:nImages]):
         loadedImg = loadB64ImageToMemory(entry["base64"])
@@ -152,45 +172,57 @@ def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=N
     return gifFilename
 
 
+def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
+    vprResponse = get_vpr_images_data(
+        data, nImages, dayNow, nImagesForYesterday, dataYesterday
+    )
+
+    create_gif_vpr_data(vprResponse, nImages)
+
+    return gifFilename
+
+
 def parse_n_images_input(update, context):
     """Parse input for VPR gifs. Input must exist and be numeric.
 
     Returns
     --------
-    (nImages, nImagesMessage)
+    (nImages, nImagesText)
 
     nImages : int
         Number of images to be fetched.
-    nImagesMessage : str
+    nImagesText : str
         Message to be sent by the bot.
     """
 
     def get_n_images_and_message(nImages=None):
-        """Process nImages input and determine nImagesMessage for vpr_gif function."""
+        """Process nImages input and determine nImagesText for vpr_gif function."""
 
         if nImages:
             if nImages > MAX_VPR_IMAGES:
-                nImagesMessage = f"❕O número máximo de imagens é {MAX_VPR_IMAGES} (12 horas de imagens)! Utilizarei-o no lugar de {nImages}."
+                nImagesText = f"❕O número máximo de imagens é {MAX_VPR_IMAGES} (12 horas de imagens)! Utilizarei-o no lugar de {nImages}."
                 nImages = MAX_VPR_IMAGES
             elif nImages < MIN_VPR_IMAGES:
-                nImagesMessage = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
+                nImagesText = f"❕O número mínimo de imagens é {MIN_VPR_IMAGES}! Utilizarei-o no lugar de {nImages}."
                 nImages = MIN_VPR_IMAGES
             else:
-                nImagesMessage = None
-            return (nImages, nImagesMessage)
+                nImagesText = None
+            return (nImages, nImagesText)
 
-        nImagesMessage = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""  # noqa
+        # TODO: Move to bot_messages.py
+        nImagesText = f"""❕Não foi possível identificar o intervalo. Utilizarei o padrão, que é {DEFAULT_VPR_IMAGES} (exibe cerca de 2 horas de imagens).\nDica: você pode estipular quantas imagens buscar. Ex: `/nuvens 4` buscará as 4 últimas imagens."""
         nImages = DEFAULT_VPR_IMAGES
 
-        return (nImages, nImagesMessage)
+        return (nImages, nImagesText)
 
     text = update.message.text
 
     try:
+        nImagesMessage = None
         nImages = context.args[0]
         try:
             nImages = int(float(nImages))
-            nImages, nImagesMessage = get_n_images_and_message(nImages)
+            nImages, nImagesText = get_n_images_and_message(nImages)
         except ValueError:
             context.bot.send_message(
                 chat_id=update.message.chat.id,
@@ -200,18 +232,18 @@ def parse_n_images_input(update, context):
             )
             return None
     except (IndexError, AttributeError):
-        nImages, nImagesMessage = get_n_images_and_message(None)
+        nImages, nImagesText = get_n_images_and_message(None)
         utilsLogger.warning(f'No input in parse_n_images_input. Message text: "{text}"')
 
-    if nImagesMessage:
-        context.bot.send_message(
+    if nImagesText:
+        nImagesMessage = context.bot.send_message(
             chat_id=update.message.chat.id,
-            text=nImagesMessage,
+            text=nImagesText,
             reply_to_message_id=update.message.message_id,
             parse_mode="markdown",
         )
 
-    return nImages
+    return (nImages, nImagesMessage)
 
 
 def parse_CEP(update, context, cepRequired=True):
@@ -225,10 +257,10 @@ def parse_CEP(update, context, cepRequired=True):
         )  # Get string after "/alertas_CEP"
     except (TypeError, IndexError):  # No number after /command
         utilsLogger.warning(f'No input in parse_CEP. Message text: "{text}"')
-        message = f"❌ CEP não informado!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+        message = f"❌ *CEP não informado*!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
     else:
         if cep and not pycep.validar_cep(cep):
-            message = f"❌ CEP inválido/não existe!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
+            message = f"❌ *CEP inválido/não existe*!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
             utilsLogger.warning(f"CEP inválido: {cep}")
             # return message
             raise Exception

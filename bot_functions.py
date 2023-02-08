@@ -11,13 +11,16 @@ import pycep_correios as pycep
 from telegram.ext.dispatcher import run_async
 
 import models
+from bot_routines import (
+    delete_past_alerts_routine,
+    parse_alerts_routine,
+    notify_chats_routine,
+)
 from utils import viacep, bot_messages, bot_utils, parse_alerts
 
 
 functionsLogger = logging.getLogger(__name__)
 functionsLogger.setLevel(logging.DEBUG)
-
-MAX_ALERTS_PER_MESSAGE = 6  # To avoid "message is too long" Telegram error
 
 
 @bot_utils.send_typing_action
@@ -28,6 +31,7 @@ def send_instructions_message(update, context):
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
         text=bot_messages.instructions,
+        parse_mode="markdown",
     )
 
 
@@ -114,7 +118,7 @@ def cmd_vpr(update, context):
             filter(lambda x: x.status_code == 200, fgrequests.build(requestURLS))
         )
         # Get json from the response
-        data = response[0].json()
+        vprData = response[0].json()
 
         context.bot.send_chat_action(
             chat_id=update.effective_message.chat_id,
@@ -122,14 +126,19 @@ def cmd_vpr(update, context):
         )
 
         # Load image from base64 to memory
-        vprImage = bot_utils.loadB64ImageToMemory(data["base64"])
+        vprImage = bot_utils.loadB64ImageToMemory(vprData["base64"])
+
+        hourLastImage = arrow.get(vprData["hora"], "HH:mm").to("-03:00").format("HH:mm")
+        hourLastImageCaption = f" ({hourLastImage})."
+
+        caption = bot_messages.lastAvailableImageCaption + hourLastImageCaption
 
         # Send image from memory
         context.bot.send_photo(
             chat_id=update.effective_chat.id,
             reply_to_message_id=update.message.message_id,
             photo=vprImage,
-            caption=bot_messages.lastAvailableImageCaption,
+            caption=caption,
             timeout=20000,
         )
     # If no request was successful
@@ -173,10 +182,22 @@ def cmd_vpr(update, context):
 
 
 @bot_utils.send_upload_video_action
-def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
+def send_vpr_video(
+    update,
+    context,
+    vprVideoPath,
+    nImages,
+    waitMessage,
+    nImagesMessage,
+    gifTimeBoundariesDict,
+):
     """Send the .mp4 file to the user and delete it."""
 
-    caption = f"Últimas {nImages} imagens"
+    timeBoundaries = ""
+    if gifTimeBoundariesDict:
+        timeBoundaries = f" (de {gifTimeBoundariesDict['firstImage']} até {gifTimeBoundariesDict['lastImage']})"
+
+    caption = f"Últimas {nImages} imagens" + timeBoundaries
     context.bot.send_animation(
         chat_id=update.effective_chat.id,
         reply_to_message_id=update.message.message_id,
@@ -184,9 +205,14 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
         animation=open(vprVideoPath, "rb"),
         timeout=20000,
     )
+
     context.bot.delete_message(
         chat_id=waitMessage.chat.id, message_id=waitMessage.message_id
     )
+    context.bot.delete_message(
+        chat_id=nImagesMessage.chat.id, message_id=nImagesMessage.message_id
+    )
+
     os.remove(vprVideoPath)
     functionsLogger.info(f"Deleted {vprVideoPath}.")
 
@@ -198,7 +224,7 @@ def send_vpr_video(update, context, vprVideoPath, nImages, waitMessage):
 def cmd_vpr_gif(update, context):
     """Create and send GIF made of recent VPR satellite images to the user."""
 
-    nImages = bot_utils.parse_n_images_input(update, context)
+    nImages, nImagesMessage = bot_utils.parse_n_images_input(update, context)
     if nImages:
         # Save the message so it can be deleted afterwards
         waitMessage = context.bot.send_message(
@@ -221,7 +247,7 @@ def cmd_vpr_gif(update, context):
         response = requests.get(
             f"{APIBaseURL}/horas/GOES/{regiao}/VP/{dayNow}",
             headers=headers,
-            allow_redirects=False,
+            allow_redirects=True,
         )
         if response.status_code == 200:
             functionsLogger.info("Successful GET request to API VPR endpoint!")
@@ -236,15 +262,32 @@ def cmd_vpr_gif(update, context):
                 responseYesterday = requests.get(
                     f"{APIBaseURL}/horas/GOES/{regiao}/VP/{utcNow.shift(days=-1).format('YYYY-MM-DD')}",
                     headers=headers,
-                    allow_redirects=False,
+                    allow_redirects=True,
                 )
                 dataYesterday = responseYesterday.json()[:nImagesForYesterday]
 
-            gifFilename = bot_utils.get_vpr_gif(
+            vprResponse = bot_utils.get_vpr_images_data(
                 data, nImages, dayNow, nImagesForYesterday, dataYesterday
             )
+            gifTimeBoundariesDict = {
+                "firstImage": arrow.get(vprResponse[-1]["hora"], "HH:mm")
+                .to("-03:00")
+                .format("HH:mm"),
+                "lastImage": arrow.get(vprResponse[0]["hora"], "HH:mm")
+                .to("-03:00")
+                .format("HH:mm"),
+            }
+            gifFilename = bot_utils.create_gif_vpr_data(vprResponse, nImages)
 
-            return send_vpr_video(update, context, gifFilename, nImages, waitMessage)
+            return send_vpr_video(
+                update,
+                context,
+                gifFilename,
+                nImages,
+                waitMessage,
+                nImagesMessage,
+                gifTimeBoundariesDict,
+            )
         else:
             functionsLogger.error("Failed GET request to VPR API.")
             context.bot.send_message(
@@ -253,6 +296,10 @@ def cmd_vpr_gif(update, context):
                 text=bot_messages.failedFetchImage,
                 parse_mode="markdown",
             )
+            if nImagesMessage:
+                context.bot.delete_message(
+                    chat_id=update.effective_chat.id, message_id=nImagesMessage
+                )
             return None
 
 
@@ -312,11 +359,11 @@ def cmd_acumulada(update, context):
             interval = inputInterval
             if interval in availableIntervals:
                 caption = f"Precipitação acumulada nos últimos {interval} dias"
-                indexInterval = availableIntervals.index(interval)
+                # indexInterval = availableIntervals.index(interval)
             else:
                 # Get closest value to input if it isn't in the interval
-                absolute_diff = lambda listValue: abs(listValue - interval)
-                interval = min(availableIntervals, key=absolute_diff)
+                absoluteDiff = lambda listValue: abs(listValue - interval)
+                interval = min(availableIntervals, key=absoluteDiff)
 
                 # Warn user about input change
                 acumuladaWarnMessage = context.bot.send_message(
@@ -360,11 +407,14 @@ def cmd_acumulada(update, context):
             reply_to_message_id=update.message.message_id,
             text=bot_messages.unavailableImage,
         )
-        if acumuladaWarnMessage:
-            context.bot.delete_message(
-                chat_id=acumuladaWarnMessage.chat.id,
-                message_id=acumuladaWarnMessage.message_id,
-            )
+
+    if acumuladaWarnMessage:
+        # Only the current thread will sleep
+        time.sleep(5)
+        context.bot.delete_message(
+            chat_id=acumuladaWarnMessage.chat.id,
+            message_id=acumuladaWarnMessage.message_id,
+        )
 
 
 def check_and_send_alerts_warning(update, context, alerts, city=None):
@@ -388,7 +438,7 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
             )
             alertCounter += 1
 
-            if alertCounter >= MAX_ALERTS_PER_MESSAGE:
+            if alertCounter >= bot_messages.MAX_ALERTS_PER_MESSAGE:
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     reply_to_message_id=update.message.message_id,
@@ -405,7 +455,9 @@ def check_and_send_alerts_warning(update, context, alerts, city=None):
     elif not city:
         alertMessage = bot_messages.noAlertsBrazil
     else:
-        alertMessage = bot_messages.noAlertsCity.format(city=city)
+        alertMessage = bot_messages.noAlertsCity.format(
+            city=city, ALERTAS_URL=bot_messages.ALERTAS_URL
+        )
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -427,11 +479,17 @@ def cmd_alerts_brazil(update, context):
 
     functionsLogger.debug("Getting alerts for Brazil...")
 
+    try:
+        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
+        if cep:
+            return cmd_alerts_CEP(update, context)
+    except:
+        # No zip code provided
+        pass
+
     # Ignore moderate alerts
     alerts = list(
-        models.INMETBotDB.alertsCollection.find(
-            {"severity": {"$ne": "Moderate"}}
-        )
+        models.INMETBotDB.alertsCollection.find({"severity": {"$ne": "Moderate"}})
     )
 
     if list(alerts):
@@ -460,8 +518,10 @@ def cmd_alerts_CEP(update, context):
     textArgs = update.message.text.split(" ")
 
     try:
-        cep = bot_utils.parse_CEP(update, context)
+        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
         city = viacep.get_cep_city(cep)
+        if not (cep or city):
+            raise pycep.excecoes.ExcecaoPyCEPCorreios
 
         # Include moderate alerts
         alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
@@ -482,6 +542,90 @@ def cmd_alerts_CEP(update, context):
             parse_mode="markdown",
         )
 
+        chat = models.create_chat_obj(update=update)
+        if chat.subscribed:
+            checkingForSubscribed = context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                reply_to_message_id=update.message.message_id,
+                text="*[🛠 BETA]* Irei checar os CEPs cadastrados no chat:",
+                parse_mode="markdown",
+            )
+
+            # STUB:
+            for cep in chat.CEPs:
+                try:
+                    city = viacep.get_cep_city(cep)
+                    functionsLogger.debug(f"- Checking {city}...")
+                except Exception as error:
+                    functionsLogger.warning(f"Viacep error: {error}")
+                    continue
+
+                # Get alerts, by city, that weren't notified to this chat
+                alerts = list(models.INMETBotDB.alertsCollection.find({"cities": city}))
+                if alerts:
+                    # Any alerts here are to be sent to the chat,
+                    # since they affect a zip code and the chat hasn't been notified yet
+                    alertCounter = 1
+                    alertMessage = ""
+                    functionsLogger.info(f"-- Existing alert for {city}. --")
+                    for alert in alerts:
+                        if alertCounter >= bot_messages.MAX_ALERTS_PER_MESSAGE:
+                            try:
+                                print(
+                                    chat.id,
+                                )
+                                context.bot.send_message(
+                                    chat_id=chat.id,
+                                    text=alertMessage,
+                                    parse_mode="markdown",
+                                    disable_web_page_preview=True,
+                                )
+                            except Exception as error:
+                                functionsLogger.error(
+                                    f"ERRO: unable to send message to {chat.id} ({chat.title}): {error}. Removing chat from DB......"
+                                )
+                                models.INMETBotDB.subscribedChatsCollection.delete_one(
+                                    {"chatID": chat.id}
+                                )
+
+                                alertMessage = ""
+                                alertCounter = 1
+
+                        alertObj = models.Alert(alertDict=alert)
+                        alertMessage += alertObj.get_alert_message(city)
+                        functionsLogger.info(
+                            f"-- Notifying chat {chat.id} about alert {alert['alertID']}... --"
+                        )
+
+                        models.INMETBotDB.alertsCollection.update_one(
+                            {"alertID": alert["alertID"]},
+                            {"$addToSet": {"notifiedChats": chat.id}},
+                        )
+                        alertCounter += 1
+
+                    # "Footer" message after all alerts
+                    alertMessage += f"\nMais informações em {bot_messages.ALERTAS_URL}."
+
+                    try:
+                        context.bot.send_message(
+                            chat_id=chat.id,
+                            text=alertMessage,
+                            parse_mode="markdown",
+                            disable_web_page_preview=True,
+                        )
+                    except Exception as error:
+                        functionsLogger.error(
+                            f"ERRO: unable to send message to {chat.id} ({chat.title}): {error}. Removing chat from DB......"
+                        )
+                        models.INMETBotDB.subscribedChatsCollection.delete_one(
+                            {"chatID": chat.id}
+                        )
+
+            context.bot.delete_message(
+                chat_id=checkingForSubscribed.chat.id,
+                message_id=checkingForSubscribed.message_id,
+            )
+
 
 @run_async
 @bot_utils.ignore_users
@@ -490,7 +634,7 @@ def cmd_alerts_CEP(update, context):
 def alerts_location(update, context):
     """Handle location messages by checking for alerts in that region.
 
-        Send message with current alerts, if any.
+    Send message with current alerts, if any.
     """
 
     # Parse location from message
@@ -514,7 +658,7 @@ def alerts_location(update, context):
 
         # Get data from response
         responseData = response.json()
-        functionsLogger.debug(f"reverseGeocode json: {responseData}")
+        # functionsLogger.debug(f"reverseGeocode json: {responseData}")
         state = responseData["nearest"]["state"]
 
         if state == "BR":
@@ -527,7 +671,7 @@ def alerts_location(update, context):
             alertMessage = bot_messages.locationOutsideBrazil
     else:
         functionsLogger.error("Failed GET request to reverse geocoding API.")
-        alertMessage = bot_messages.unableCheckAlertsLocation
+        alertMessage = bot_messages.unableToCheckAlertsLocation
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -564,7 +708,7 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
 
     context.bot.send_photo(
         chat_id=update.effective_chat.id,
-        caption="Fonte: http://www.inmet.gov.br/portal/alert-as/",
+        caption=f"Fonte: {bot_messages.ALERTAS_URL}",
         reply_to_message_id=update.message.message_id,
         photo=open(alertsMapPath, "rb"),
         timeout=20000,
@@ -588,7 +732,10 @@ def cmd_chat_subscribe_alerts(update, context):
 
     try:
         cep = bot_utils.parse_CEP(update, context, cepRequired=False)
-    except Exception:
+    except Exception as error:
+        functionsLogger.error(
+            f"Unknown error when parsing CEP for subscribed chat: {error}."
+        )
         subscribeMessage = bot_messages.invalidZipCode.format(textArgs=textArgs[0])
     else:
         chat = models.create_chat_obj(update)
@@ -613,7 +760,10 @@ def cmd_chat_unsubscribe_alerts(update, context):
 
     try:
         cep = bot_utils.parse_CEP(update, context, cepRequired=False)
-    except Exception:
+    except Exception as error:
+        functionsLogger.error(
+            f"Unknown error when parsing CEP for subscribed chat: {error}."
+        )
         unsubscribeMessage = bot_messages.invalidZipCode.format(textArgs=textArgs[0])
     else:
         chat = models.create_chat_obj(update)
@@ -652,7 +802,7 @@ def cmd_chat_subscription_status(update, context):
 @bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_deactivate(update, context):
-    """ Set chat's activated status to False. """
+    """Set chat's activated status to False."""
 
     chat = models.create_chat_obj(update=update)
     deactivateMessage = chat.toggle_subscription_callback(chat.deactivate)
@@ -669,7 +819,7 @@ def cmd_chat_deactivate(update, context):
 @bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_activate(update, context):
-    """ Set chat's activated status to True. """
+    """Set chat's activated status to True."""
 
     chat = models.create_chat_obj(update=update)
     activateMessage = chat.toggle_subscription_callback(chat.activate)
@@ -686,7 +836,7 @@ def cmd_chat_activate(update, context):
 @bot_utils.ignore_users
 @bot_utils.send_typing_action
 def cmd_chat_toggle_activated(update, context):
-    """ Toggle chat's activated status """
+    """Toggle chat's activated status"""
 
     chat = models.create_chat_obj(update=update)
     toggleMessage = chat.toggle_subscription_callback(chat.toggle_activated)
@@ -698,8 +848,8 @@ def cmd_chat_toggle_activated(update, context):
             text=toggleMessage,
             parse_mode="markdown",
         )
-    except:
-        pass
+    except Exception as error:
+        functionsLogger.error(f"Unexpected error: {error})")
 
 
 @run_async
@@ -723,7 +873,9 @@ def cmd_forecast(update, context):
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36"
         }
         response = requests.get(
-            f"{APIBaseURL}/previsao/{IBGECode}", headers=headers, allow_redirects=False,
+            f"{APIBaseURL}/previsao/{IBGECode}",
+            headers=headers,
+            allow_redirects=False,
         )
         if response.status_code == 200:
             functionsLogger.info("Successful GET request to APIPREVMET3 endpoint!")
@@ -768,7 +920,7 @@ def broadcast_message_subscribed_chats(update, context, message):
     for document in chats:
         time.sleep(2)
         context.bot.send_message(
-            chat_id=document['chatID'],
+            chat_id=document["chatID"],
             text=message,
             parse_mode="markdown",
         )
@@ -820,6 +972,16 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
         video="BAACAgEAAxkBAAICZ15HDelLB1IH1i3hTB8DaKwWlyPMAAJ8AAPfLzhG0hgf8dxd_zQYBA",
         reply_to_message_id=replyID,
     )
+
+
+@run_async
+@bot_utils.log_command
+@bot_utils.send_typing_action
+def cmd_update_alerts(update, context):
+    """Update alerts from database. (DEBUGGING)"""
+
+    delete_past_alerts_routine()
+    parse_alerts_routine()
 
 
 @run_async

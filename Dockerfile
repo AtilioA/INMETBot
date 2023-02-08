@@ -30,7 +30,3 @@ ENV CHROMEDRIVER_PATH="/usr/local/bin/chromedriver"
 
 RUN pip3 install --user -U pip \
     && pip3 install --no-warn-script-location --user --trusted-host pypi.python.org -r requirements.txt
-
-# Start the bot (README.md for more details)
-CMD ["python3", "main.py"]
-

@@ -1,7 +1,7 @@
 from telegram.ext import CommandHandler, Filters, MessageHandler
 
-from bot_config import dispatcher
 import bot_functions
+from bot_config import dispatcher
 
 # Initialize handlers
 start_handler = CommandHandler(
@@ -59,7 +59,9 @@ chat_subscription_status_handler = CommandHandler(
 )
 
 forecast_handler = CommandHandler(
-    ("previsao"), bot_functions.cmd_forecast, filters=~Filters.update.edited_message,
+    ("previsao"),
+    bot_functions.cmd_forecast,
+    filters=~Filters.update.edited_message,
 )
 
 deactivate_handler = CommandHandler(("desativar"), bot_functions.cmd_chat_deactivate)
@@ -82,6 +84,12 @@ sorrizoronaldo_will_rock_you_handler = CommandHandler(
         "sorriz",
     ),
     bot_functions.cmd_sorrizoronaldo_will_rock_you,
+    filters=~Filters.update.edited_message,
+)
+
+update_handler = CommandHandler(
+    ("update"),
+    bot_functions.cmd_update_alerts,
     filters=~Filters.update.edited_message,
 )
 
@@ -113,6 +121,8 @@ dispatcher.add_handler(forecast_handler)
 
 dispatcher.add_handler(sorrizoronaldo_handler)
 dispatcher.add_handler(sorrizoronaldo_will_rock_you_handler)
+
+dispatcher.add_handler(update_handler)
 
 dispatcher.add_handler(alerts_location_handler)
 
