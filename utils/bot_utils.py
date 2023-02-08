@@ -42,7 +42,8 @@ def ignore_users_decorator(logger):
             logger.debug(debugMessage)
 
             context.bot.send_message(
-                chat_id="-1001361751085", text=debugMessage,
+                chat_id="-1001361751085",
+                text=debugMessage,
             )
 
             return func(update, context, *args, **kwargs)
@@ -57,20 +58,31 @@ def log_command_decorator(logger):
     def decorator(func):
         @wraps(func)
         def command_func(update, context, *args, **kwargs):
-            if update.message.from_user.username:
-                hashed_username = hashlib.sha512(update.message.from_user.username.encode('utf-8') + SALT.encode('utf-8')).hexdigest()
-            else:
-                hashed_username = hashlib.sha512(update.message.from_user.name.encode('utf-8') + SALT.encode('utf-8')).hexdigest()
+            try:
+                if update.message.from_user.username:
+                    hashed_username = hashlib.sha512(
+                        update.message.from_user.username.encode("utf-8")
+                        + SALT.encode("utf-8")
+                    ).hexdigest()
+                else:
+                    hashed_username = hashlib.sha512(
+                        update.message.from_user.name.encode("utf-8")
+                        + SALT.encode("utf-8")
+                    ).hexdigest()
 
-            debugMessage = f"\"'{update.message.text}' from `{hashed_username[:6]}` ({update.message.chat.type})\""
+                debugMessage = f"\"'{update.message.text}' from `{hashed_username[:6]}` ({update.message.chat.type})\""
 
-            logger.debug(debugMessage.replace("`", ""))
+                logger.debug(debugMessage.replace("`", ""))
 
-            context.bot.send_message(
-                chat_id="-1001361751085", text=debugMessage, parse_mode="markdown",
-            )
+                context.bot.send_message(
+                    chat_id="-1001361751085",
+                    text=debugMessage,
+                    parse_mode="markdown",
+                )
 
-            return func(update, context, *args, **kwargs)
+                return func(update, context, *args, **kwargs)
+            except:
+                pass
 
         return command_func
 
@@ -116,7 +128,9 @@ def loadB64ImageToMemory(base64String):
     return bytesIOImage
 
 
-def get_vpr_images_data(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
+def get_vpr_images_data(
+    data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None
+):
     regiao = "BR"
     APIBaseURL = "https://apisat.inmet.gov.br"
 
@@ -157,8 +171,11 @@ def create_gif_vpr_data(data, nImages):
 
     return gifFilename
 
+
 def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
-    vprResponse = get_vpr_images_data(data, nImages, dayNow, nImagesForYesterday, dataYesterday)
+    vprResponse = get_vpr_images_data(
+        data, nImages, dayNow, nImagesForYesterday, dataYesterday
+    )
 
     create_gif_vpr_data(vprResponse, nImages)
 

@@ -2,7 +2,6 @@ import arrow
 import requests
 import logging
 import models
-from telegram.error import TelegramError
 from utils import viacep, parse_alerts, bot_messages
 from bot_config import updater
 
@@ -10,13 +9,9 @@ routinesLogger = logging.getLogger(__name__)
 routinesLogger.setLevel(logging.DEBUG)
 
 
-def ping(URL):
-    requests.get(URL)
-    routinesLogger.info(f"Pinged {URL}.")
-
-
 def delete_past_alerts_routine():
     """Delete past alerts published by INMET from the database."""
+    routinesLogger.info("Starting delete_past_alerts_routine routine.")
 
     alerts = list(models.INMETBotDB.alertsCollection.find({}))
     timeNow = arrow.utcnow().to("Brazil/East")
@@ -39,6 +34,8 @@ def parse_alerts_routine(ignoreModerate=False):
         If set to True, will ignore alerts of moderate severity. Defaults to False.
     """
 
+    routinesLogger.info("Starting parse_alerts_routine routine.")
+
     alertsXML = parse_alerts.parse_alerts_xml(ignoreModerate)
     if alertsXML:
         alerts = parse_alerts.instantiate_alerts_objects(alertsXML, ignoreModerate)
@@ -56,6 +53,8 @@ def notify_chats_routine():
     For every alert and chat, check if chat has been notified for that alert; if it has not, check if there is any city (obtained by CEPs in the chat's CEP list) that is included in the alert.
     If there is, notify chat and mark chat as notified (so it won't get notified again for the same alert).
     """
+
+    routinesLogger.info("Starting notify_chats_routine routine.")
 
     subscribedChats = list(models.INMETBotDB.subscribedChatsCollection.find({}))
     alertMessage = ""
