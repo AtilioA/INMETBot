@@ -14,7 +14,7 @@ defusedxml==0.7.1
 Deprecated==1.2.12
 dnspython==2.1.0
 fgrequests==0.1.1
-future==0.18.2
+future==0.18.3
 idna==2.8
 imageio==2.9.0
 imageio-ffmpeg==0.4.3
