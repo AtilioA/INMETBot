@@ -1,9 +1,13 @@
 # This file contains the routines that will be executed by the bot, such as updating the database with new alerts from INMET, deleting past alerts, and sending alerts to the users.
 
-from alerts import parse_alerts
 import arrow
 import logging
-from models import INMETBotDB, Alert
+
+from alerts import parse_alerts
+
+from models.db import INMETBotDB
+from models.Alert import Alert
+
 from utils import viacep, bot_messages
 from bot_config import updater
 

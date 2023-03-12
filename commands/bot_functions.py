@@ -11,13 +11,16 @@ import fgrequests
 import pycep_correios as pycep
 from telegram.ext.dispatcher import run_async
 
-from ..models import INMETBotDB, Alert, Chat
-from ..bot_routines import (
+from models.db import INMETBotDB
+from models.Alert import Alert
+from models.Chat import Chat
+
+from bot_routines import (
     delete_past_alerts_routine,
     parse_alerts_routine,
-    notify_chats_routine,
 )
-from ..utils import viacep, bot_messages, bot_utils
+
+from utils import viacep, bot_messages, bot_utils
 
 
 functionsLogger = logging.getLogger(__name__)
@@ -489,9 +492,7 @@ def cmd_alerts_brazil(update, context):
         pass
 
     # Ignore moderate alerts
-    alerts = list(
-        INMETBotDB.alertsCollection.find({"severity": {"$ne": "Moderate"}})
-    )
+    alerts = list(INMETBotDB.alertsCollection.find({"severity": {"$ne": "Moderate"}}))
 
     if list(alerts):
         return check_and_send_alerts_warning(update, context, alerts)
@@ -981,6 +982,7 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 def cmd_update_alerts(update, context):
     """Update alerts from database. (DEBUGGING)"""
 
+    functionsLogger.info("Updating alerts...")
     delete_past_alerts_routine()
     parse_alerts_routine()
 

@@ -1,7 +1,8 @@
 import logging
 import arrow
 import re
-from db import INMETBotDB
+
+from . import db
 
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
@@ -78,7 +79,7 @@ class Alert:
         # if not queryAlert:
         alertDocument = self.serialize()
         alertDocument["notifiedChats"] = []
-        INMETBotDB.alertsCollection.insert_one(alertDocument)
+        db.INMETBotDB.alertsCollection.insert_one(alertDocument)
         modelsLogger.info(f"Inserted new alert: {self}")
         # modelsLogger.info("Alert already exists; not inserted.")
 

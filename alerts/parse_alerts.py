@@ -13,7 +13,7 @@ from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from ..models import INMETBotDB, Alert
+import models
 
 sys.path.append(sys.path[0] + "/..")
 
@@ -133,7 +133,7 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
     if parsedXML:
         alertID = parsedXML.identifier.text.replace("urn:oid:", "")
         if alertID:
-            if INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
+            if models.db.INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
                 parsingLogger.debug("Alert already in database.")
                 return False
             else:
@@ -153,7 +153,7 @@ def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
     """
 
     if alertsXML:
-        return [Alert(alertXML) for alertXML in alertsXML]
+        return [models.Alert.Alert(alertXML) for alertXML in alertsXML]
 
 
 def parse_alerts_xml(ignoreModerate=True):

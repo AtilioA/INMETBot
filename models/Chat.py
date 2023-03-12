@@ -1,7 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 from utils import viacep
-from db import INMETBotDB
+
+from . import db
 
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
@@ -23,7 +24,7 @@ class Chat(ABC):
     title : str
         The title of the chat (group's title or user's username).
     CEPs : list : str
-        List of subscribed CEPs.
+        List of subscribed CEPs. This should be a relation with a different entity in a relational database.
     subscribed : bool
         Whether the chat is subscribed to alerts or not.
     activated : bool
@@ -50,7 +51,7 @@ class Chat(ABC):
     def setChatAttrs(self):
         """Set chat's CEPs list and subscribed status."""
 
-        queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
+        queryChat = db.INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
         if queryChat:
             self.subscribed = True
             self.CEPs = queryChat["CEPs"]
@@ -63,7 +64,7 @@ class Chat(ABC):
     def get_chat_CEPs(self):
         """Get chat's subscribed CEPs."""
 
-        queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
+        queryChat = db.INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
         if queryChat:
             return queryChat["CEPs"]
         else:
@@ -72,7 +73,7 @@ class Chat(ABC):
     def is_subscribed(chatID):
         """Check if chat is subscribed to alerts."""
 
-        queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": chatID})
+        queryChat = db.INMETBotDB.subscribedChatsCollection.find_one({"chatID": chatID})
         if queryChat:
             return True
         else:
@@ -107,7 +108,7 @@ class Chat(ABC):
                     )
                     return "CHAT_EXISTS_CITY_EXISTS"
                 else:  # Chat is already subscribed, new CEP
-                    INMETBotDB.subscribedChatsCollection.update_one(
+                    db.INMETBotDB.subscribedChatsCollection.update_one(
                         {"chatID": self.id}, {"$push": {"CEPs": cep}}
                     )
                     modelsLogger.info(f"CEP {cep} has been subscribed.")
@@ -117,7 +118,7 @@ class Chat(ABC):
                 modelsLogger.info(f"Chat {self.id} is already subscribed.")
         else:  # Chat is not subscribed, CEP is optional
             chatDocument = self.serialize(cep)
-            INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
+            db.INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
             if cep:
                 modelsLogger.info(f"Chat {self.id} and CEP {cep} have been subscribed.")
                 return "CHAT_AND_CEP_SUBSCRIBED"
@@ -135,7 +136,7 @@ class Chat(ABC):
         if self.subscribed:
             if cep:
                 if cep in self.CEPs:  # Chat is subscribed, CEP is subscribed
-                    INMETBotDB.subscribedChatsCollection.update_one(
+                    db.INMETBotDB.subscribedChatsCollection.update_one(
                         {"chatID": self.id}, {"$pull": {"CEPs": cep}}
                     )
                     unsubscribeMessage = (
@@ -147,7 +148,7 @@ class Chat(ABC):
                     modelsLogger.info(f"CEP {cep} isn't subscribed.")
                     return "CHAT_EXISTS_CEP_NOT_FOUND"
             else:  # Chat is subscribed, no CEP
-                INMETBotDB.subscribedChatsCollection.delete_one({"chatID": self.id})
+                db.INMETBotDB.subscribedChatsCollection.delete_one({"chatID": self.id})
                 modelsLogger.info(f"Chat {self.id} has been unsubscribed.")
                 return "CHAT_UNSUBSCRIBED"
         else:  # Chat is not subscribed, CEP is optional
@@ -186,7 +187,7 @@ class Chat(ABC):
         """Set chat's activated status to False."""
 
         if self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": False}}
             )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
@@ -199,7 +200,7 @@ class Chat(ABC):
         """Set chat's activated status to True."""
 
         if not self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": True}}
             )
             return "▶️ Ativei os alertas.\nDesative-os temporariamente com /desativar."
@@ -210,12 +211,12 @@ class Chat(ABC):
         """Negate the activated boolean attribute."""
 
         if self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": False}}
             )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
         else:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": True}}
             )
             return "▶️ Ativei os alertas novamente.\nDesative-os com /desativar."
