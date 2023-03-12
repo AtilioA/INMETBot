@@ -29,6 +29,8 @@ class Chat(ABC):
         Whether the chat is subscribed to alerts or not.
     activated : bool
         Whether the chat wants to be notified or not.
+    # subscription : Subscription
+    #     A Subscription object. This should be a relation in a relational database.
     """
 
     @classmethod
