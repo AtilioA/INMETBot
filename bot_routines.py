@@ -1,3 +1,5 @@
+
+from alerts import parse_alerts
 import arrow
 import requests
 import logging

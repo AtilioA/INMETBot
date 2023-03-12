@@ -172,14 +172,13 @@ def create_gif_vpr_data(data, nImages):
     return gifFilename
 
 
+# Unused
 def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
     vprResponse = get_vpr_images_data(
         data, nImages, dayNow, nImagesForYesterday, dataYesterday
     )
 
-    create_gif_vpr_data(vprResponse, nImages)
-
-    return gifFilename
+    return create_gif_vpr_data(vprResponse, nImages)
 
 
 def parse_n_images_input(update, context):

@@ -13,7 +13,7 @@ from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-import models
+from ..models import INMETBotDB, Alert
 
 sys.path.append(sys.path[0] + "/..")
 
@@ -27,18 +27,21 @@ HEADERS = {
 
 ALERTS_MAP_URL = "http://alert-as.inmet.gov.br/cv/"
 
+
 def take_screenshot_alerts_map():
     """Take screenshot of the alerts map and store it in the tmp folder."""
 
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--window-size=1280x720")
     # If chrome needs more memory
     # chrome_options.add_argument("--disable-dev-shm-usage")
 
-    driver = webdriver.Chrome(options=chrome_options, executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+    driver = webdriver.Chrome(
+        options=chrome_options, executable_path=os.environ.get("CHROMEDRIVER_PATH")
+    )
 
     driver.get(ALERTS_MAP_URL)
     parsingLogger.debug(f"Accessed alert-as map.")
@@ -49,26 +52,26 @@ def take_screenshot_alerts_map():
     # Wait for JavaScript to load
     time.sleep(1)
 
-    alertsMapElement = driver.find_element_by_xpath('//*[@id="root"]/div/div[2]/div[1]/div')
+    alertsMapElement = driver.find_element_by_xpath(
+        '//*[@id="root"]/div/div[2]/div[1]/div'
+    )
     # print(alertsMapElement)
     mapSize = alertsMapElement.size
     mapLocation = alertsMapElement.location
 
-    alertsMapElement.screenshot(
-        alertsMapPath
-    )
+    alertsMapElement.screenshot(alertsMapPath)
 
     # Crop map UI
-    im = Image.open(alertsMapPath) # uses PIL library to open image in memory
+    im = Image.open(alertsMapPath)  # uses PIL library to open image in memory
 
     # Define crop points
     left = 70
     top = 0
-    right = mapSize['width'] - 25
-    bottom = mapSize['height'] - 50
+    right = mapSize["width"] - 25
+    bottom = mapSize["height"] - 50
 
     im = im.crop((left, top, right, bottom))
-    im.save(alertsMapPath) # Save cropped image
+    im.save(alertsMapPath)  # Save cropped image
 
     return alertsMapPath
 
@@ -130,7 +133,7 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
     if parsedXML:
         alertID = parsedXML.identifier.text.replace("urn:oid:", "")
         if alertID:
-            if models.INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
+            if INMETBotDB.alertsCollection.find_one({"alertID": alertID}):
                 parsingLogger.debug("Alert already in database.")
                 return False
             else:
@@ -141,7 +144,7 @@ def is_wanted_alert(alertXML, ignoreModerate=True):
 
 
 def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
-    """Create and return `list` of `alert` objects from list of alert XMLs
+    """Create and return `list` of `Alert` objects from list of alert XMLs
 
     Parameters
     --------
@@ -150,7 +153,7 @@ def instantiate_alerts_objects(alertsXML, ignoreModerate=True):
     """
 
     if alertsXML:
-        return [models.Alert(alertXML) for alertXML in alertsXML]
+        return [Alert(alertXML) for alertXML in alertsXML]
 
 
 def parse_alerts_xml(ignoreModerate=True):
