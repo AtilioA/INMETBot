@@ -181,6 +181,59 @@ def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=N
     return create_gif_vpr_data(vprResponse, nImages)
 
 
+def check_and_send_alerts_warning(update, context, alerts, city=None):
+    """Check for alerts and send message to the user. Limits search to city if passed as input.
+
+    Returns
+    --------
+    warned : bool
+        True if any alert was sent, False otherwise.
+    """
+
+    warned = False
+    alertMessage = ""
+    alertCounter = 0
+
+    if alerts:
+        for alert in alerts:
+            alertObj = Alert(alertDict=alert)
+            alertMessage += alertObj.get_alert_message(
+                location=city, brazil=not (bool(city))
+            )
+            alertCounter += 1
+
+            if alertCounter >= bot_messages.MAX_ALERTS_PER_MESSAGE:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    reply_to_message_id=update.message.message_id,
+                    text=alertMessage,
+                    parse_mode="markdown",
+                    disable_web_page_preview=True,
+                )
+                alertMessage = ""
+                alertCounter = 0
+        warned = True
+
+        # "Footer" message after all alerts
+        alertMessage += bot_messages.moreInfoAlertAS
+    elif not city:
+        alertMessage = bot_messages.noAlertsBrazil
+    else:
+        alertMessage = bot_messages.noAlertsCity.format(
+            city=city, ALERTAS_URL=bot_messages.ALERTAS_URL
+        )
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        reply_to_message_id=update.message.message_id,
+        text=alertMessage,
+        parse_mode="markdown",
+        disable_web_page_preview=True,
+    )
+
+    return warned
+
+
 def parse_n_images_input(update, context):
     """Parse input for VPR gifs. Input must exist and be numeric.
 

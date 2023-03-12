@@ -11,7 +11,7 @@ from models.Chat import Chat
 
 
 from utils import viacep, bot_messages, bot_utils
-from .command_utils import check_and_send_alerts_warning
+
 
 alertsFunctionsLogger = logging.getLogger(__name__)
 alertsFunctionsLogger.setLevel(logging.DEBUG)
@@ -187,7 +187,7 @@ def cmd_alerts_brazil(update, context):
     alerts = list(INMETBotDB.alertsCollection.find({"severity": {"$ne": "Moderate"}}))
 
     if list(alerts):
-        return check_and_send_alerts_warning(update, context, alerts)
+        return bot_utils.check_and_send_alerts_warning(update, context, alerts)
     else:
         alertMessage = bot_messages.noAlertsBrazil
 
@@ -219,7 +219,7 @@ def cmd_alerts_CEP(update, context):
 
         # Include moderate alerts
         alerts = list(INMETBotDB.alertsCollection.find({"cities": city}))
-        check_and_send_alerts_warning(update, context, alerts, city)
+        bot_utils.check_and_send_alerts_warning(update, context, alerts, city)
     except (
         pycep.excecoes.ExcecaoPyCEPCorreios,
         KeyError,
@@ -360,7 +360,7 @@ def alerts_location(update, context):
 
             # Include moderate alerts
             alerts = list(INMETBotDB.alertsCollection.find({"cities": city}))
-            return check_and_send_alerts_warning(update, context, alerts, city)
+            return bot_utils.check_and_send_alerts_warning(update, context, alerts, city)
         else:
             alertMessage = bot_messages.locationOutsideBrazil
     else:
