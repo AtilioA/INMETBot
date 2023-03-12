@@ -116,3 +116,6 @@ ignore/
 .devcontainer
 chromedriver
 venv*
+
+# venv
+vinmetbot/
