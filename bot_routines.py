@@ -1,10 +1,10 @@
+# This file contains the routines that will be executed by the bot, such as updating the database with new alerts from INMET, deleting past alerts, and sending alerts to the users.
 
 from alerts import parse_alerts
 import arrow
-import requests
 import logging
-import models
-from utils import viacep, parse_alerts, bot_messages
+from models import INMETBotDB, Alert
+from utils import viacep, bot_messages
 from bot_config import updater
 
 routinesLogger = logging.getLogger(__name__)
@@ -15,15 +15,16 @@ def delete_past_alerts_routine():
     """Delete past alerts published by INMET from the database."""
     routinesLogger.info("Starting delete_past_alerts_routine routine.")
 
-    alerts = list(models.INMETBotDB.alertsCollection.find({}))
+    alerts = list(INMETBotDB.alertsCollection.find({}))
     timeNow = arrow.utcnow().to("Brazil/East")
     for alert in alerts:
         if timeNow > arrow.get(alert["endDate"]):
             routinesLogger.info(
                 f"alert {alert['alertID']} is past and will be deleted."
             )
-            models.INMETBotDB.alertsCollection.delete_one({"alertID": alert["alertID"]})
+            INMETBotDB.alertsCollection.delete_one({"alertID": alert["alertID"]})
     routinesLogger.info("Finished delete_past_alerts_routine routine.")
+    return True
 
 
 def parse_alerts_routine(ignoreModerate=False):
@@ -45,6 +46,7 @@ def parse_alerts_routine(ignoreModerate=False):
         for alert in alerts:
             alert.insert_alert()
         routinesLogger.info("Finished parse_alerts_routine routine.")
+        return True
 
 
 # TODO: Reduce code duplication.
@@ -58,8 +60,11 @@ def notify_chats_routine():
 
     routinesLogger.info("Starting notify_chats_routine routine.")
 
-    subscribedChats = list(models.INMETBotDB.subscribedChatsCollection.find({}))
+    # Create a list of all subscribed chats
+    subscribedChats = list(INMETBotDB.subscribedChatsCollection.find({}))
+    # Create an empty string to store the alert message
     alertMessage = ""
+    # Create a counter to keep track of the number of alerts
     alertCounter = 1
 
     for chat in subscribedChats:
@@ -83,7 +88,7 @@ def notify_chats_routine():
 
                 # Get alerts, by city, that weren't notified to this chat
                 alerts = list(
-                    models.INMETBotDB.alertsCollection.find(
+                    INMETBotDB.alertsCollection.find(
                         {
                             "$and": [
                                 {"cities": city},
@@ -111,14 +116,14 @@ def notify_chats_routine():
                                 routinesLogger.error(
                                     f"ERRO: unable to send message to {chat['chatID']} ({chat['title']}): {error}.\nRemoving chat from DB......"
                                 )
-                                models.INMETBotDB.subscribedChatsCollection.delete_one(
+                                INMETBotDB.subscribedChatsCollection.delete_one(
                                     {"chatID": chat["chatID"]}
                                 )
 
                                 alertMessage = ""
                                 alertCounter = 1
 
-                        alertObj = models.Alert(alertDict=alert)
+                        alertObj = Alert(alertDict=alert)
 
                         affectedCities = [
                             city for city in cities if city in alertObj.cities
@@ -129,7 +134,7 @@ def notify_chats_routine():
                             f"-- Notifying chat {chat['chatID']} about alert {alert['alertID']}... --"
                         )
 
-                        models.INMETBotDB.alertsCollection.update_one(
+                        INMETBotDB.alertsCollection.update_one(
                             {"alertID": alert["alertID"]},
                             {"$addToSet": {"notifiedChats": chat["chatID"]}},
                         )
@@ -149,7 +154,7 @@ def notify_chats_routine():
                         routinesLogger.error(
                             f"ERRO: unable to send message to {chat['chatID']} ({chat['title']}): {error}.\nRemoving chat from DB......"
                         )
-                        models.INMETBotDB.subscribedChatsCollection.delete_one(
+                        INMETBotDB.subscribedChatsCollection.delete_one(
                             {"chatID": chat["chatID"]}
                         )
     routinesLogger.info("Finished notify_chats_routine routine.")
