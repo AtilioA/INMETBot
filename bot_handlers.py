@@ -1,6 +1,6 @@
 from telegram.ext import CommandHandler, Filters, MessageHandler
 
-import bot_functions
+import commands.bot_functions as bot_functions
 from bot_config import dispatcher
 
 # Initialize handlers
