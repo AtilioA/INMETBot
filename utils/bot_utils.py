@@ -24,7 +24,7 @@ MIN_VPR_IMAGES = 2
 DEFAULT_VPR_IMAGES = 13  # 2 hours of images
 MAX_VPR_IMAGES = 72  # 12 hours of images
 
-IGNORED_USERS = [1528688653, 1149342586]
+IGNORED_USERS = []
 
 
 # Decorator to ignore a user
