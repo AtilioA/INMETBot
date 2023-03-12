@@ -329,6 +329,11 @@ def alerts_location(update, context):
     Send message with current alerts, if any.
     """
 
+    # Don't send if chat isn't subscribed or doesn't have alerts activated
+    chat = Chat.create_chat_obj(update=update)
+    if not chat.subscribed or not chat.activate:
+        return
+
     # Parse location from message
     location = update.message
     if location:
@@ -358,7 +363,9 @@ def alerts_location(update, context):
 
             # Include moderate alerts
             alerts = list(INMETBotDB.alertsCollection.find({"cities": city}))
-            return bot_utils.check_and_send_alerts_warning(update, context, alerts, city)
+            return bot_utils.check_and_send_alerts_warning(
+                update, context, alerts, city
+            )
         else:
             alertMessage = bot_messages.locationOutsideBrazil
     else:
