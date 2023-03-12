@@ -1,68 +1,16 @@
 import logging
-import os
-import arrow
-import re
-import pymongo
 from abc import ABC, abstractmethod
 from utils import viacep
+
+from . import db
 
 modelsLogger = logging.getLogger(__name__)
 modelsLogger.setLevel(logging.DEBUG)
 
-MONGO_URI = os.getenv("INMETBOT_MONGO_URI")
-
-
-class BotDatabase:
-    """
-    The BotDatabase object facilitates connection to the database.
-
-    Attributes
-    ----------
-    client : MongoClient
-        A MongoClient instance.
-    db : Database
-        the INMETBot database.
-    alertsCollection : Collection
-        the Alerts collection.
-    subscribedChatsCollection : Collection
-        the SubscribedChats collection.
-    """
-
-    def __init__(self):
-        try:
-            if not MONGO_URI:
-                raise pymongo.errors.ConfigurationError(
-                    f"Connection string is {MONGO_URI}"
-                )
-            # throw ServerSelectionTimeoutError if serverTimeout is exceeded
-            serverTimeout = 20000
-            self.client = pymongo.MongoClient(
-                MONGO_URI, serverSelectionTimeoutMS=serverTimeout
-            )
-            self.client.server_info()
-            modelsLogger.info("Connected to the INMETBot database!")
-
-            self.db = self.client.INMETBot
-            self.alertsCollection = self.db.Alerts
-            self.subscribedChatsCollection = self.db.SubscribedChats
-        except pymongo.errors.ServerSelectionTimeoutError as mongoClientErr:
-            modelsLogger.error(
-                f"Failed to connect to the INMETBot database: {mongoClientErr}"
-            )
-            exit(-1)
-        except pymongo.errors.ConfigurationError as mongoClientErr:
-            modelsLogger.error(
-                f"Failed to connect to the INMETBot database: {mongoClientErr}"
-            )
-            exit(-1)
-
-
-INMETBotDB = BotDatabase()
-
 
 class Chat(ABC):
     """
-    The Chat class is an abstract class and serves as base class for GroupChat and PrivateChat.
+    The Chat class serves as an Abstract Base Class for GroupChat and PrivateChat.
     Parameters
     ----------
     update : Update
@@ -76,12 +24,22 @@ class Chat(ABC):
     title : str
         The title of the chat (group's title or user's username).
     CEPs : list : str
-        List of subscribed CEPs.
+        List of subscribed CEPs. This should be a relation with a different entity in a relational database.
     subscribed : bool
         Whether the chat is subscribed to alerts or not.
     activated : bool
         Whether the chat wants to be notified or not.
+    # subscription : Subscription
+    #     A Subscription object. This should be a relation in a relational database.
     """
+
+    @classmethod
+    def create_chat_obj(cls, update):
+        """Create Private or Group chat object according to chat type."""
+        if update.message.chat.type == "private":
+            return PrivateChat(update)
+        else:
+            return GroupChat(update)
 
     @abstractmethod
     def __init__(self, update):
@@ -95,7 +53,7 @@ class Chat(ABC):
     def setChatAttrs(self):
         """Set chat's CEPs list and subscribed status."""
 
-        queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
+        queryChat = db.INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
         if queryChat:
             self.subscribed = True
             self.CEPs = queryChat["CEPs"]
@@ -108,7 +66,7 @@ class Chat(ABC):
     def get_chat_CEPs(self):
         """Get chat's subscribed CEPs."""
 
-        queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
+        queryChat = db.INMETBotDB.subscribedChatsCollection.find_one({"chatID": self.id})
         if queryChat:
             return queryChat["CEPs"]
         else:
@@ -117,7 +75,7 @@ class Chat(ABC):
     def is_subscribed(chatID):
         """Check if chat is subscribed to alerts."""
 
-        queryChat = INMETBotDB.subscribedChatsCollection.find_one({"chatID": chatID})
+        queryChat = db.INMETBotDB.subscribedChatsCollection.find_one({"chatID": chatID})
         if queryChat:
             return True
         else:
@@ -140,7 +98,7 @@ class Chat(ABC):
                     return "CHAT_EXISTS_CEP_EXISTS"
 
                 # Check if the city for this CEP is already subscribed (the alerts' granularity is only to the city level)
-                # REFACTOR: Maybe save cities to simplify comparison?
+                # REVIEW: Maybe save cities instead to simplify comparison?
                 # self.CEPs shouldn't be too long (1-10 entries), so this cost is negligible
                 cityCep = viacep.get_cep_city(cep)
                 citiesCEPs = [viacep.get_cep_city(cep) for cep in self.CEPs]
@@ -152,7 +110,7 @@ class Chat(ABC):
                     )
                     return "CHAT_EXISTS_CITY_EXISTS"
                 else:  # Chat is already subscribed, new CEP
-                    INMETBotDB.subscribedChatsCollection.update_one(
+                    db.INMETBotDB.subscribedChatsCollection.update_one(
                         {"chatID": self.id}, {"$push": {"CEPs": cep}}
                     )
                     modelsLogger.info(f"CEP {cep} has been subscribed.")
@@ -162,7 +120,7 @@ class Chat(ABC):
                 modelsLogger.info(f"Chat {self.id} is already subscribed.")
         else:  # Chat is not subscribed, CEP is optional
             chatDocument = self.serialize(cep)
-            INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
+            db.INMETBotDB.subscribedChatsCollection.insert_one(chatDocument)
             if cep:
                 modelsLogger.info(f"Chat {self.id} and CEP {cep} have been subscribed.")
                 return "CHAT_AND_CEP_SUBSCRIBED"
@@ -180,7 +138,7 @@ class Chat(ABC):
         if self.subscribed:
             if cep:
                 if cep in self.CEPs:  # Chat is subscribed, CEP is subscribed
-                    INMETBotDB.subscribedChatsCollection.update_one(
+                    db.INMETBotDB.subscribedChatsCollection.update_one(
                         {"chatID": self.id}, {"$pull": {"CEPs": cep}}
                     )
                     unsubscribeMessage = (
@@ -192,7 +150,7 @@ class Chat(ABC):
                     modelsLogger.info(f"CEP {cep} isn't subscribed.")
                     return "CHAT_EXISTS_CEP_NOT_FOUND"
             else:  # Chat is subscribed, no CEP
-                INMETBotDB.subscribedChatsCollection.delete_one({"chatID": self.id})
+                db.INMETBotDB.subscribedChatsCollection.delete_one({"chatID": self.id})
                 modelsLogger.info(f"Chat {self.id} has been unsubscribed.")
                 return "CHAT_UNSUBSCRIBED"
         else:  # Chat is not subscribed, CEP is optional
@@ -231,7 +189,7 @@ class Chat(ABC):
         """Set chat's activated status to False."""
 
         if self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": False}}
             )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
@@ -244,7 +202,7 @@ class Chat(ABC):
         """Set chat's activated status to True."""
 
         if not self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": True}}
             )
             return "▶️ Ativei os alertas.\nDesative-os temporariamente com /desativar."
@@ -255,12 +213,12 @@ class Chat(ABC):
         """Negate the activated boolean attribute."""
 
         if self.activated:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": False}}
             )
             return "⏸️ Desativei os alertas temporariamente.\nAtive-os novamente com /ativar."
         else:
-            INMETBotDB.subscribedChatsCollection.update_one(
+            db.INMETBotDB.subscribedChatsCollection.update_one(
                 {"chatID": self.id}, {"$set": {"activated": True}}
             )
             return "▶️ Ativei os alertas novamente.\nDesative-os com /desativar."
@@ -430,214 +388,3 @@ class GroupChat(Chat):
             return callback_func()
         else:
             return "❌ O grupo não está inscrito nos alertas. Inscreva-o com /inscrever."
-
-
-class Alert:
-    """The Alert object can carry information about an alert (reads from XML file or json).
-
-    Parameters
-    ----------
-    alertXML : BeautifulSoup
-        A BS4-parsed XML file.
-    alertDict : dict
-        A dictionary containing the Alert's information.
-
-    Attributes
-    ----------
-    id : str
-        The Alert ID.
-    event : str
-        The Alert event/header.
-    severity : str
-        The Alert's severity ("Moderate", "Severe", "Extreme")
-    startDate : Arrow
-        The date on which the Alert begins.
-    endDate : Arrow
-        The date on which the Alert expires.
-    description : str
-        A description of the Alert.
-    area : list : str
-        List of regions warned by the Alert.
-    cities : list : str
-        List of cities warned by the Alert.
-    """
-
-    def __init__(self, alertXML=None, alertDict=None):
-        if alertXML:
-            self.get_id_from_XML(alertXML)
-            self.get_event_from_XML(alertXML)
-            self.get_severity_from_XML(alertXML)
-            self.get_startDate_from_XML(alertXML)
-            self.get_endDate_from_XML(alertXML)
-            self.get_description_from_XML(alertXML)
-            self.get_area_from_XML(alertXML)
-            self.get_cities_from_XML(alertXML)
-        elif alertDict:
-            self.id = alertDict["alertID"]
-            self.event = alertDict["event"]
-            self.severity = alertDict["severity"]
-            self.startDate = arrow.get(alertDict["startDate"])
-            self.endDate = arrow.get(alertDict["endDate"])
-            self.description = alertDict["description"]
-            self.area = alertDict["area"]
-            self.cities = alertDict["cities"]
-        else:
-            self.id = None
-            self.event = None
-            self.severity = None
-            self.startDate = None
-            self.endDate = None
-            self.description = None
-            self.area = None
-            self.cities = None
-
-    def __repr__(self):
-        """String representation of alert."""
-
-        return f"Alert ID: {self.id}, Alert event: {self.event}"
-
-    def insert_alert(self):
-        """Insert alert in the database if isn't in the database."""
-
-        # queryAlert = INMETBotDB.alertsCollection.find_one({"alertID": self.id})
-        # if not queryAlert:
-        alertDocument = self.serialize()
-        alertDocument["notifiedChats"] = []
-        INMETBotDB.alertsCollection.insert_one(alertDocument)
-        modelsLogger.info(f"Inserted new alert: {self}")
-        # modelsLogger.info("Alert already exists; not inserted.")
-
-    def determine_severity_emoji(self):
-        """Determine emoji for alert message and return it."""
-
-        if isinstance(self.severity, str):
-            emojiDict = {
-                "Moderate": "⚠️",  # Yellow alert
-                "Severe": "🔶",  # Orange alert
-                "Extreme": "🚨",  # Red alert
-            }
-            return emojiDict.get(self.severity.title(), None)
-        else:
-            logging.error(f"severity is not string: {self.severity}")
-            return None
-
-    def get_alert_message(self, location=None, brazil=False):
-        """Create alert message string from alert object and return it."""
-
-        severityEmoji = self.determine_severity_emoji()
-        if brazil:
-            area = ",".join(self.area)
-            area = f"\n*Áreas afetadas*: {area}."
-        else:  # Omit "áreas afetadas" for region-specific alerts
-            area = ""
-        formattedStartDate = self.startDate.strftime("%d/%m/%Y %H:%M")
-        formattedEndDate = self.endDate.strftime("%d/%m/%Y %H:%M")
-
-        if isinstance(location, list):
-            header = f"{severityEmoji} *{self.event[:-1]} para {', '.join(location)}.*"
-        elif location:
-            header = f"{severityEmoji} *{self.event[:-1]} para {location}.*"
-        else:
-            header = f"{severityEmoji} *{self.event}*"
-
-        messageString = f"""
-{header}
-        {area}
-        *Vigor*: De {formattedStartDate} a {formattedEndDate}.
-        {self.description}
-"""
-        return messageString
-
-    def serialize(self):
-        """Serialize Alert object for database insertion."""
-
-        alertDocument = {
-            "alertID": self.id,
-            "event": self.event,
-            "severity": self.severity,
-            "startDate": self.startDate.for_json(),
-            "endDate": self.endDate.for_json(),
-            "description": self.description,
-            "area": self.area,
-            "cities": self.cities,
-        }
-        return alertDocument
-
-    def get_id_from_XML(self, alertXML):
-        """Extract id string from XML."""
-
-        alertID = alertXML.identifier.text.replace("urn:oid:", "")
-        self.id = alertID
-
-    def get_event_from_XML(self, alertXML):
-        """Extract event string from XML."""
-
-        eventPattern = r"(.*?)(?= Severidade)"
-        rawEvent = alertXML.info.headline.text
-        eventMatch = re.search(eventPattern, rawEvent)
-        if eventMatch:
-            self.event = eventMatch.group(1)
-
-    def get_severity_from_XML(self, alertXML):
-        """Extract severity string from XML."""
-
-        rawSeverity = alertXML.info.headline.text
-        severityPattern = r"(?<=Severidade Grau: )(.*)"
-        severityMatch = re.search(severityPattern, rawSeverity)
-        if severityMatch:
-            self.severity = severityMatch.group(1)
-
-    def get_description_from_XML(self, alertXML):
-        """Extract description string from XML."""
-
-        rawDescription = alertXML.info.description.text
-        descriptionPattern = r"INMET publica aviso iniciando em: .*?\. (.*)"
-        descriptionMatch = re.search(descriptionPattern, rawDescription)
-        if descriptionMatch:
-            self.description = descriptionMatch.group(1)
-
-    def get_area_from_XML(self, alertXML):
-        """Extract area string from XML, process it and put it in a list."""
-
-        rawArea = alertXML.info.area.areaDesc.text
-        areaPattern = r"(?<=Aviso para as áreas: )(.*)"
-        areaMatch = re.search(areaPattern, rawArea)
-        if areaMatch:
-            self.area = [region for region in areaMatch.group(1).split(",")]
-
-    def get_cities_from_XML(self, alertXML):
-        """Extract cities string from XML, process it and put it in a list."""
-
-        parameters = alertXML.info.find_all("parameter")
-        citiesParameter = None
-        for parameter in parameters:
-            if "Municipio" in parameter.valueName.text:
-                citiesParameter = parameter
-        rawCities = citiesParameter.value.text.split(",")
-        cities = [re.sub(r"\s\-.*?\)", "", city).strip() for city in rawCities]
-        self.cities = cities
-
-    def get_startDate_from_XML(self, alertXML):
-        """Extract startDate string from XML (convert to arrow Object)."""
-
-        startDate = arrow.get(str(alertXML.info.onset.text))
-        self.startDate = startDate
-
-    def get_endDate_from_XML(self, alertXML):
-        """Extract endDate string from XML (convert to arrow Object)."""
-
-        endDate = arrow.get(str(alertXML.info.expires.text))
-        self.endDate = endDate
-
-
-def create_chat_obj(update):
-    """Create Private or Group chat object according to chat type."""
-
-    if update.message.chat.type == "private":
-        return PrivateChat(update)
-    else:
-        return GroupChat(update)
-
-
-if __name__ == "__main__":
-    pass

@@ -12,106 +12,18 @@ import arrow
 import fgrequests
 import pycep_correios as pycep
 
-import sys
+from utils import bot_messages
+from models.Alert import Alert
 
-sys.path.append(sys.path[0] + "/..")
 
-SALT = str(uuid.uuid4())
 utilsLogger = logging.getLogger(__name__)
 utilsLogger.setLevel(logging.DEBUG)
 
+# Minimum number of images to be fetched from the API when creating GIFs
 MIN_VPR_IMAGES = 2
-DEFAULT_VPR_IMAGES = 13  # 2 hours of images
-MAX_VPR_IMAGES = 72  # 12 hours of images
+DEFAULT_VPR_IMAGES = 13  # ~2 hours of images
+MAX_VPR_IMAGES = 72  # ~12 hours of images
 
-IGNORED_USERS = [1528688653, 1149342586]
-
-
-# Decorator to ignore a user
-def ignore_users_decorator(logger):
-    def decorator(func):
-        @wraps(func)
-        def command_func(update, context, *args, **kwargs):
-            if update.message.from_user.id in IGNORED_USERS:
-                return
-            else:
-                return func(update, context, *args, **kwargs)
-
-            debugMessage = f"Ignoring {update.message.from_user.id}"
-
-            logger.debug(debugMessage)
-
-            context.bot.send_message(
-                chat_id="-1001361751085",
-                text=debugMessage,
-            )
-
-            return func(update, context, *args, **kwargs)
-
-        return command_func
-
-    return decorator
-
-
-# Decorator to log user interaction
-def log_command_decorator(logger):
-    def decorator(func):
-        @wraps(func)
-        def command_func(update, context, *args, **kwargs):
-            try:
-                if update.message.from_user.username:
-                    hashed_username = hashlib.sha512(
-                        update.message.from_user.username.encode("utf-8")
-                        + SALT.encode("utf-8")
-                    ).hexdigest()
-                else:
-                    hashed_username = hashlib.sha512(
-                        update.message.from_user.name.encode("utf-8")
-                        + SALT.encode("utf-8")
-                    ).hexdigest()
-
-                debugMessage = f"\"'{update.message.text}' from `{hashed_username[:6]}` ({update.message.chat.type})\""
-
-                logger.debug(debugMessage.replace("`", ""))
-
-                context.bot.send_message(
-                    chat_id="-1001361751085",
-                    text=debugMessage,
-                    parse_mode="markdown",
-                )
-
-                return func(update, context, *args, **kwargs)
-            except:
-                pass
-
-        return command_func
-
-    return decorator
-
-
-# Decorators to simulate user feedback
-def send_action(action):
-    """Send `action` while processing func command."""
-
-    def decorator(func):
-        @wraps(func)
-        def command_func(update, context, *args, **kwargs):
-            context.bot.send_chat_action(
-                chat_id=update.effective_message.chat_id, action=action
-            )
-            return func(update, context, *args, **kwargs)
-
-        return command_func
-
-    return decorator
-
-
-log_command = log_command_decorator(utilsLogger)
-ignore_users = ignore_users_decorator(utilsLogger)
-send_typing_action = send_action(telegram.ChatAction.TYPING)
-send_upload_photo_action = send_action(telegram.ChatAction.UPLOAD_PHOTO)
-send_upload_video_action = send_action(telegram.ChatAction.UPLOAD_VIDEO)
-send_upload_document_action = send_action(telegram.ChatAction.UPLOAD_DOCUMENT)
 
 
 def loadB64ImageToMemory(base64String):
@@ -172,14 +84,66 @@ def create_gif_vpr_data(data, nImages):
     return gifFilename
 
 
+# Unused
 def get_vpr_gif(data, nImages, dayNow, nImagesForYesterday=None, dataYesterday=None):
     vprResponse = get_vpr_images_data(
         data, nImages, dayNow, nImagesForYesterday, dataYesterday
     )
 
-    create_gif_vpr_data(vprResponse, nImages)
+    return create_gif_vpr_data(vprResponse, nImages)
 
-    return gifFilename
+
+def check_and_send_alerts_warning(update, context, alerts, city=None):
+    """Check for alerts and send message to the user. Limits search to city if passed as input.
+
+    Returns
+    --------
+    warned : bool
+        True if any alert was sent, False otherwise.
+    """
+
+    warned = False
+    alertMessage = ""
+    alertCounter = 0
+
+    if alerts:
+        for alert in alerts:
+            alertObj = Alert(alertDict=alert)
+            alertMessage += alertObj.get_alert_message(
+                location=city, brazil=not (bool(city))
+            )
+            alertCounter += 1
+
+            if alertCounter >= bot_messages.MAX_ALERTS_PER_MESSAGE:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    reply_to_message_id=update.message.message_id,
+                    text=alertMessage,
+                    parse_mode="markdown",
+                    disable_web_page_preview=True,
+                )
+                alertMessage = ""
+                alertCounter = 0
+        warned = True
+
+        # "Footer" message after all alerts
+        alertMessage += bot_messages.moreInfoAlertAS
+    elif not city:
+        alertMessage = bot_messages.noAlertsBrazil
+    else:
+        alertMessage = bot_messages.noAlertsCity.format(
+            city=city, ALERTAS_URL=bot_messages.ALERTAS_URL
+        )
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        reply_to_message_id=update.message.message_id,
+        text=alertMessage,
+        parse_mode="markdown",
+        disable_web_page_preview=True,
+    )
+
+    return warned
 
 
 def parse_n_images_input(update, context):
@@ -246,7 +210,7 @@ def parse_n_images_input(update, context):
     return (nImages, nImagesMessage)
 
 
-def parse_CEP(update, context, cepRequired=True):
+def enforce_CEP(update, context, cepRequired=True):
     """Parse CEP from user's text message."""
 
     text = update.message.text
@@ -256,7 +220,7 @@ def parse_CEP(update, context, cepRequired=True):
             context.args[0].strip().replace("-", "")
         )  # Get string after "/alertas_CEP"
     except (TypeError, IndexError):  # No number after /command
-        utilsLogger.warning(f'No input in parse_CEP. Message text: "{text}"')
+        utilsLogger.warning(f'No input in enforce_CEP. Message text: "{text}"')
         message = f"❌ *CEP não informado*!\nExemplo:\n`{text.split(' ')[0]} 29075-910`"
     else:
         if cep and not pycep.validar_cep(cep):

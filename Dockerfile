@@ -3,14 +3,9 @@ FROM python:3.8
 
 # Update package list and install dependencies
 RUN apt-get update && apt-get install -y \
-    # Download and install Selenium driver
+    # For downloading and installing Selenium driver
     unzip \
     wget \
-    # # Python and dependencies
-    # python3 \
-    # python3-setuptools \
-    # python3-pip \
-    # Python wheel dependency (cryptography)
     libssl-dev
 
 WORKDIR /app
