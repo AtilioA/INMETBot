@@ -1,4 +1,3 @@
-
 import time
 import os
 import logging
@@ -9,15 +8,16 @@ import requests
 import fgrequests
 from telegram.ext.dispatcher import run_async
 
-from utils import bot_messages, bot_utils
+from utils import bot_messages, bot_utils, decorators
 
 
 satellitesFunctionsLogger = logging.getLogger(__name__)
 satellitesFunctionsLogger.setLevel(logging.DEBUG)
 
+
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
+# @decorators.ignore_users
+@decorators.log_command
 def cmd_vpr(update, context):
     """Fetch and send latest VPR satellite image to the user."""
 
@@ -89,7 +89,9 @@ def cmd_vpr(update, context):
             if response.status_code == 200:
                 # Get only the latest image
                 data = response.json()[0]
-                satellitesFunctionsLogger.info("Successful GET request to API VPR endpoint!")
+                satellitesFunctionsLogger.info(
+                    "Successful GET request to API VPR endpoint!"
+                )
 
                 context.bot.send_chat_action(
                     chat_id=update.effective_message.chat_id,
@@ -116,7 +118,7 @@ def cmd_vpr(update, context):
             )
 
 
-@bot_utils.send_upload_video_action
+@decorators.send_upload_video_action
 def send_vpr_video(
     update,
     context,
@@ -153,9 +155,9 @@ def send_vpr_video(
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_typing_action
 def cmd_vpr_gif(update, context):
     """Create and send GIF made of recent VPR satellite images to the user."""
 
@@ -185,7 +187,9 @@ def cmd_vpr_gif(update, context):
             allow_redirects=True,
         )
         if response.status_code == 200:
-            satellitesFunctionsLogger.info("Successful GET request to API VPR endpoint!")
+            satellitesFunctionsLogger.info(
+                "Successful GET request to API VPR endpoint!"
+            )
             data = response.json()
 
             # Get images from today + images from yesterday (if needed)
@@ -239,9 +243,9 @@ def cmd_vpr_gif(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_upload_photo_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_upload_photo_action
 def cmd_acumulada(update, context):
     """Fetch and send accumulated precipitation within given interval satellite image to the user."""
 
@@ -283,7 +287,9 @@ def cmd_acumulada(update, context):
             f"{APIBaseURL}{dayNow}", headers=headers, allow_redirects=False
         )
         if response.status_code == 200:
-            satellitesFunctionsLogger.info("Successful GET request to INMET's APIPREC endpoint!")
+            satellitesFunctionsLogger.info(
+                "Successful GET request to INMET's APIPREC endpoint!"
+            )
 
             # Get data from response
             data = response.json()
@@ -328,7 +334,9 @@ def cmd_acumulada(update, context):
             )
         # If request has failed
         else:
-            satellitesFunctionsLogger.error("Failed GET request to INMET's APIPREC endpoint.")
+            satellitesFunctionsLogger.error(
+                "Failed GET request to INMET's APIPREC endpoint."
+            )
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 reply_to_message_id=update.message.message_id,

@@ -13,14 +13,14 @@ from bot_routines import (
     parse_alerts_routine,
 )
 
-from utils import bot_messages, bot_utils
+from utils import bot_messages, bot_utils, decorators
 
 
 miscFunctionsLogger = logging.getLogger(__name__)
 miscFunctionsLogger.setLevel(logging.DEBUG)
 
 
-@bot_utils.send_typing_action
+@decorators.send_typing_action
 def send_instructions_message(update, context):
     """Reply to the last message with the instructions message."""
 
@@ -33,7 +33,7 @@ def send_instructions_message(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
+# @decorators.ignore_users
 def catch_all_if_private(update, context):
     """Reply to any message not handled (if not sent to a group/channel)."""
 
@@ -46,8 +46,8 @@ def catch_all_if_private(update, context):
         return send_instructions_message(update, context)
 
 
-@bot_utils.log_command
-@bot_utils.send_typing_action
+@decorators.log_command
+@decorators.send_typing_action
 def broadcast_message_subscribed_chats(update, context, message):
     """Send message to all subscribed chats."""
 
@@ -63,8 +63,8 @@ def broadcast_message_subscribed_chats(update, context, message):
 
 
 @run_async
-@bot_utils.log_command
-@bot_utils.send_upload_video_action
+@decorators.log_command
+@decorators.send_upload_video_action
 def cmd_sorrizoronaldo(update, context):
     """Send default Sorrizo Ronaldo video."""
 
@@ -87,8 +87,8 @@ def cmd_sorrizoronaldo(update, context):
 
 
 @run_async
-@bot_utils.log_command
-@bot_utils.send_upload_video_action
+@decorators.log_command
+@decorators.send_upload_video_action
 def cmd_sorrizoronaldo_will_rock_you(update, context):
     """Send "We Will Rock You" Sorrizo Ronaldo video variation."""
 
@@ -111,8 +111,8 @@ def cmd_sorrizoronaldo_will_rock_you(update, context):
 
 
 @run_async
-@bot_utils.log_command
-@bot_utils.send_typing_action
+@decorators.log_command
+@decorators.send_typing_action
 def cmd_update_alerts(update, context):
     """Update alerts from database. (DEBUGGING)"""
 

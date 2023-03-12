@@ -10,16 +10,16 @@ from telegram.ext.dispatcher import run_async
 from models.Alert import Alert
 from models.Chat import Chat
 
-from utils import viacep, bot_messages, bot_utils
+from utils import viacep, bot_messages, bot_utils, decorators
 
 utilsFunctionsLogger = logging.getLogger(__name__)
 utilsFunctionsLogger.setLevel(logging.DEBUG)
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_upload_photo_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_upload_photo_action
 def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
     """Send the alerts map screenshot."""
 
@@ -40,9 +40,9 @@ def send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage):
 
 
 @run_async
-@bot_utils.log_command
-# @bot_utils.ignore_users
-@bot_utils.send_typing_action
+@decorators.log_command
+# @decorators.ignore_users
+@decorators.send_typing_action
 def cmd_forecast(update, context):
     """Fetch and send weather forecast for the next 3 days for given CEP (zip code)."""
 
@@ -50,7 +50,7 @@ def cmd_forecast(update, context):
     textArgs = update.message.text.split(" ")
 
     try:
-        cep = bot_utils.parse_CEP(update, context)
+        cep = bot_utils.enforce_CEP(update, context)
         IBGECode = viacep.get_cep_IBGE(cep)
 
         APIBaseURL = f"https://apiprevmet3.inmet.gov.br"

@@ -1,12 +1,12 @@
 from telegram.ext.dispatcher import run_async
 
-from utils import bot_messages, bot_utils
+from utils import bot_messages, bot_utils, decorators
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_typing_action
 def cmd_help(update, context):
     """Send the help message to the user."""
 
@@ -20,9 +20,9 @@ def cmd_help(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_typing_action
 def cmd_start(update, context):
     """Send the start message to the user."""
 

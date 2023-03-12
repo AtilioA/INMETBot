@@ -10,16 +10,15 @@ from models.Alert import Alert
 from models.Chat import Chat
 
 
-from utils import viacep, bot_messages, bot_utils
-
+from utils import viacep, bot_messages, bot_utils, decorators
 
 alertsFunctionsLogger = logging.getLogger(__name__)
 alertsFunctionsLogger.setLevel(logging.DEBUG)
 
 
-@bot_utils.log_command
-# @bot_utils.ignore_users
-@bot_utils.send_typing_action
+@decorators.log_command
+# @decorators.ignore_users
+@decorators.send_typing_action
 def cmd_alerts_map(update, context):
     """Take screenshot of the alerts map with Selenium and send to the user."""
 
@@ -35,16 +34,16 @@ def cmd_alerts_map(update, context):
     send_alerts_map_screenshot(update, context, alertsMapPath, waitMessage)
 
 
-@bot_utils.log_command
-# @bot_utils.ignore_users
-@bot_utils.send_typing_action
+@decorators.log_command
+# @decorators.ignore_users
+@decorators.send_typing_action
 def cmd_chat_subscribe_alerts(update, context):
     """Subscribe chat and/or CEP."""
 
     textArgs = update.message.text.split(" ")
 
     try:
-        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
+        cep = bot_utils.enforce_CEP(update, context, cepRequired=False)
     except Exception as error:
         alertsFunctionsLogger.error(
             f"Unknown error when parsing CEP for subscribed chat: {error}."
@@ -63,16 +62,16 @@ def cmd_chat_subscribe_alerts(update, context):
     )
 
 
-@bot_utils.log_command
-# @bot_utils.ignore_users
-@bot_utils.send_typing_action
+@decorators.log_command
+# @decorators.ignore_users
+@decorators.send_typing_action
 def cmd_chat_unsubscribe_alerts(update, context):
     """Unsubscribe chat and/or CEP."""
 
     textArgs = update.message.text.split(" ")
 
     try:
-        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
+        cep = bot_utils.enforce_CEP(update, context, cepRequired=False)
     except Exception as error:
         alertsFunctionsLogger.error(
             f"Unknown error when parsing CEP for subscribed chat: {error}."
@@ -92,9 +91,9 @@ def cmd_chat_unsubscribe_alerts(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_typing_action
 def cmd_chat_subscription_status(update, context):
     """Send chat's subscription status."""
 
@@ -112,8 +111,8 @@ def cmd_chat_subscription_status(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.send_typing_action
 def cmd_chat_deactivate(update, context):
     """Set chat's activated status to False."""
 
@@ -129,8 +128,8 @@ def cmd_chat_deactivate(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.send_typing_action
 def cmd_chat_activate(update, context):
     """Set chat's activated status to True."""
 
@@ -146,8 +145,8 @@ def cmd_chat_activate(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.send_typing_action
 def cmd_chat_toggle_activated(update, context):
     """Toggle chat's activated status"""
 
@@ -165,18 +164,17 @@ def cmd_chat_toggle_activated(update, context):
         alertsFunctionsLogger.error(f"Unexpected error: {error})")
 
 
-
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_typing_action
 def cmd_alerts_brazil(update, context):
     """Fetch and send active high-risk alerts for Brazil."""
 
     alertsFunctionsLogger.debug("Getting alerts for Brazil...")
 
     try:
-        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
+        cep = bot_utils.enforce_CEP(update, context, cepRequired=False)
         if cep:
             return cmd_alerts_CEP(update, context)
     except:
@@ -201,9 +199,9 @@ def cmd_alerts_brazil(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_typing_action
 def cmd_alerts_CEP(update, context):
     """Fetch and send active high-risk alerts for given CEP (zip code)."""
 
@@ -212,7 +210,7 @@ def cmd_alerts_CEP(update, context):
     textArgs = update.message.text.split(" ")
 
     try:
-        cep = bot_utils.parse_CEP(update, context, cepRequired=False)
+        cep = bot_utils.enforce_CEP(update, context, cepRequired=False)
         city = viacep.get_cep_city(cep)
         if not (cep or city):
             raise pycep.excecoes.ExcecaoPyCEPCorreios
@@ -322,9 +320,9 @@ def cmd_alerts_CEP(update, context):
 
 
 @run_async
-# @bot_utils.ignore_users
-@bot_utils.log_command
-@bot_utils.send_typing_action
+# @decorators.ignore_users
+@decorators.log_command
+@decorators.send_typing_action
 def alerts_location(update, context):
     """Handle location messages by checking for alerts in that region.
 
