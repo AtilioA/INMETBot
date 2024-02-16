@@ -7,7 +7,7 @@ cached-property==1.5.2
 certifi==2023.7.22
 chardet==3.0.4
 cheroot==8.3.0
-cryptography==41.0.4
+cryptography==42.0.2
 decorator==4.4.1
 defusedxml==0.7.1
 Deprecated==1.2.12
