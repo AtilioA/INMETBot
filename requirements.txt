@@ -39,6 +39,6 @@ selenium==3.141.0
 six==1.14.0
 soupsieve==1.9.5
 tornado==6.4.1
-urllib3==1.26.18
+urllib3==1.26.19
 wrapt==1.12.1
 zeep==4.0.0
